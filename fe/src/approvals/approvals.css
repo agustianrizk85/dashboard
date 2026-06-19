@@ -1,0 +1,138 @@
+/* ====================================================================
+   Cross-division approval inbox (/approvals). Shell-level page — uses the
+   global Greenpark design tokens from styles.css. Self-contained classes
+   (apr-*) so it never collides with a division module's CSS.
+   ==================================================================== */
+.apr-stage {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex; flex-direction: column;
+}
+
+/* ---- Header ---- */
+.apr-hdr {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px clamp(16px, 4vw, 40px);
+  background: linear-gradient(120% 140% at 90% 0%, var(--green-600) 0%, var(--green-700) 55%, var(--navy-900) 100%);
+  color: #eafff1;
+}
+.apr-hdr-logo img { width: 46px; height: 46px; object-fit: contain; display: block; }
+.apr-hdr-titles h1 { font-family: var(--font-display); font-size: 22px; font-weight: 800; margin: 0; color: #fff; }
+.apr-sub { font-size: 12.5px; color: rgba(234, 255, 241, .8); margin-top: 2px; }
+.apr-hdr-spacer { flex: 1; }
+.apr-hdr-meta { display: flex; align-items: center; gap: 18px; }
+.apr-badge-total {
+  font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1;
+  color: var(--lime); display: flex; flex-direction: column; align-items: center;
+}
+.apr-badge-total small { font-size: 9px; font-weight: 700; letter-spacing: .12em; color: rgba(234,255,241,.7); margin-top: 3px; }
+.apr-hdr-user { text-align: right; }
+.apr-hdr-user .hu-name { font-size: 13px; font-weight: 700; color: #fff; }
+.apr-hdr-user .hu-role { font-size: 11px; color: rgba(234,255,241,.72); }
+.apr-logout {
+  width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08);
+  color: #eafff1; font-size: 15px;
+}
+.apr-logout:hover { background: rgba(255,255,255,.18); }
+
+/* ---- Division switcher bar (hosts the shared DivisionTabs) ---- */
+.apr-nav {
+  display: flex; align-items: flex-end; gap: 4px;
+  padding: 0 clamp(16px, 4vw, 40px);
+  background: var(--navy-900);
+}
+
+/* ---- Content ---- */
+.apr-content { padding: clamp(16px, 3vw, 28px) clamp(16px, 4vw, 40px); flex: 1; }
+.apr-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.apr-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.apr-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--ink-2); background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: 999px; padding: 7px 13px; cursor: pointer; transition: all .15s;
+}
+.apr-chip:hover { border-color: var(--green-600); }
+.apr-chip.on { background: var(--green-700); border-color: var(--green-700); color: #fff; }
+.apr-chip-count {
+  font-size: 11px; font-weight: 700; min-width: 18px; text-align: center;
+  background: rgba(0,0,0,.08); border-radius: 999px; padding: 1px 6px;
+}
+.apr-chip.on .apr-chip-count { background: rgba(255,255,255,.25); }
+.apr-refresh {
+  margin-left: auto; font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--green-700); background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: 9px; padding: 8px 14px; cursor: pointer;
+}
+.apr-refresh:hover:not(:disabled) { border-color: var(--green-600); }
+.apr-refresh:disabled { opacity: .55; cursor: default; }
+
+.apr-error {
+  font-size: 13px; color: #8a2a2e; background: var(--bad-bg);
+  border: 1px solid #f0c6c8; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
+}
+.apr-empty {
+  text-align: center; color: var(--ink-3); font-size: 15px;
+  padding: 60px 20px; background: var(--panel); border: 1px dashed var(--line-strong); border-radius: 14px;
+}
+
+/* ---- Cards ---- */
+.apr-grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+.apr-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  border-left: 4px solid var(--line-strong);
+  padding: 16px 16px 14px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.apr-card.div-perencanaan { border-left-color: #2f7fd1; }
+.apr-card.div-permit { border-left-color: var(--warn); }
+.apr-card.div-marketing { border-left-color: var(--green-600); }
+
+.apr-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.apr-tag {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px; color: #fff; background: var(--ink-3);
+}
+.apr-tag.div-perencanaan { background: #2f7fd1; }
+.apr-tag.div-permit { background: var(--warn); }
+.apr-tag.div-marketing { background: var(--green-600); }
+.apr-meta { font-size: 13px; font-weight: 700; color: var(--ink-2); font-family: var(--font-mono); }
+
+.apr-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin: 0; color: var(--ink); line-height: 1.25; }
+.apr-subtitle { font-size: 13px; color: var(--ink-2); margin: 0; }
+
+.apr-detail-toggle {
+  align-self: flex-start; background: none; border: none; padding: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--green-700);
+}
+.apr-detail { margin: 2px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.apr-detail-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; font-size: 12.5px; }
+.apr-detail-row dt { color: var(--ink-3); font-weight: 600; margin: 0; }
+.apr-detail-row dd { color: var(--ink); margin: 0; }
+
+.apr-note {
+  font-family: var(--font-body); font-size: 13px;
+  padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--panel-2); color: var(--ink); outline: none;
+}
+.apr-note:focus { border-color: var(--green-600); background: #fff; box-shadow: 0 0 0 3px rgba(19,138,89,.12); }
+.apr-card-err { font-size: 12px; font-weight: 600; color: #b22a30; background: var(--bad-bg); border-radius: 7px; padding: 6px 9px; }
+
+.apr-actions { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.apr-btn {
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; cursor: pointer;
+  border-radius: 9px; padding: 9px 14px; border: 1px solid transparent;
+}
+.apr-btn:disabled { opacity: .55; cursor: default; }
+.apr-btn.approve { background: linear-gradient(135deg, var(--green-600), var(--green-700)); color: #fff; }
+.apr-btn.approve:hover:not(:disabled) { filter: brightness(1.06); }
+.apr-btn.reject { background: #fff; color: #b22a30; border-color: #e6b3b5; }
+.apr-btn.reject:hover:not(:disabled) { background: var(--bad-bg); }
+.apr-btn.ghost { margin-left: auto; background: none; color: var(--ink-2); border-color: var(--line-strong); }
+.apr-btn.ghost:hover { border-color: var(--green-600); color: var(--green-700); }
+.apr-readonly { font-size: 12px; font-weight: 600; color: var(--ink-3); font-style: italic; }

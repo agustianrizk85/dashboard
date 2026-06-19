@@ -1,0 +1,69 @@
+/* ====================================================================
+   Sales division — shell chrome only (header / tabs / content).
+   Brand tokens (--navy-*, --green-*, --lime, fonts) come from the global
+   shell styles.css. The Control Tower ships its own scoped CSS (.ct-scope).
+   ==================================================================== */
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+
+/* Full-size responsive shell (consistent with the other divisions). */
+.sales-stage { min-height: 100vh; display: flex; flex-direction: column; }
+.sales-canvas {
+  width: 100%; height: 100vh;
+  background: var(--bg);
+  display: flex; flex-direction: column; overflow: hidden; position: relative;
+}
+
+/* ---- Header --------------------------------------------------------- */
+.sales-canvas .hdr {
+  display: flex; align-items: center; gap: 22px;
+  padding: 16px 30px;
+  background: linear-gradient(100deg, var(--navy-900), var(--navy-700) 70%);
+  color: var(--ink-inv);
+  border-bottom: 3px solid var(--lime);
+}
+.sales-canvas .hdr-logo {
+  width: 54px; height: 54px; flex: none;
+  background: #fff; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 7px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(8, 44, 22, .18);
+}
+.sales-canvas .hdr-logo img { width: 100%; height: 100%; object-fit: contain; }
+.sales-canvas .hdr-titles { line-height: 1.12; }
+.sales-canvas .hdr-titles h1 { font-family: var(--font-display); font-weight: 800; font-size: 25px; margin: 0; letter-spacing: .01em; }
+.sales-canvas .hdr-titles .sub { font-size: 12.5px; color: #bfded0; margin-top: 3px; font-weight: 500; }
+.sales-canvas .hdr-titles .tag { font-size: 11px; color: var(--lime); margin-top: 2px; letter-spacing: .08em; font-weight: 700; }
+.sales-canvas .hdr-spacer { flex: 1; }
+.sales-canvas .hdr-meta { display: flex; align-items: center; gap: 16px; }
+.sales-canvas .clock { font-family: var(--font-mono); text-align: right; line-height: 1.15; }
+.sales-canvas .clock .t { font-size: 21px; font-weight: 600; letter-spacing: .02em; }
+.sales-canvas .clock .d { font-size: 11px; color: #a9c7b4; }
+.sales-canvas .hdr-user { display: flex; flex-direction: column; line-height: 1.1; text-align: right; }
+.sales-canvas .hu-name { font-size: 13px; font-weight: 700; color: var(--ink-inv); }
+.sales-canvas .hu-role { font-size: 9.5px; color: var(--lime); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.sales-canvas .logout-btn {
+  background: rgba(255, 255, 255, .1); border: none; color: var(--ink-inv);
+  width: 36px; height: 36px; border-radius: 9px; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.sales-canvas .logout-btn:hover { background: rgba(255, 255, 255, .22); }
+
+/* ---- Tabs ----------------------------------------------------------- */
+.sales-canvas .tabs {
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 30px 0; background: var(--navy-800);
+}
+.sales-canvas .tab {
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: #a9c7b4; background: transparent; border: none;
+  padding: 10px 16px; border-radius: 9px 9px 0 0; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+}
+.sales-canvas .tab:hover { color: #eafff1; background: rgba(255, 255, 255, .06); }
+.sales-canvas .tab.on { background: var(--bg); color: var(--navy-800); }
+
+/* ---- Content -------------------------------------------------------- */
+.sales-canvas .content {
+  flex: 1; min-height: 0; overflow-y: auto;
+  background: var(--bg); padding: 16px 20px 20px;
+}

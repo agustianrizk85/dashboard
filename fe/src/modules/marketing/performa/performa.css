@@ -1,0 +1,290 @@
+/* Marketing "Performa Iklan" — Alert System + Content & Winning Campaign.
+   Scoped under .mkperf so it never collides with the rest of the marketing CSS.
+   Uses the Greenpark shell tokens (var(--*)) defined globally in styles.css. */
+.mkperf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  align-items: stretch; /* cards in a row share height → bottoms aligned */
+}
+.mkperf-state {
+  padding: 48px 20px; text-align: center; color: var(--ink-3, #7a899f); font-size: 15px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.mkperf-state.error { color: #b22a30; }
+.mkperf-retry {
+  font: inherit; font-weight: 700; cursor: pointer;
+  color: #fff; background: #138a59; border: none; border-radius: 8px; padding: 8px 16px;
+}
+
+.mkperf-card {
+  background: #fff; border: 1px solid var(--line, #e2e7ee); border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16,42,76,.05), 0 8px 22px rgba(16,42,76,.05);
+  overflow: hidden;
+  display: flex; flex-direction: column; /* body fills stretched height */
+}
+.mkperf-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 15px 18px; border-bottom: 1px solid var(--line, #e2e7ee);
+}
+.mkperf-head h2 {
+  display: flex; align-items: center; gap: 10px; margin: 0;
+  font-family: var(--font-display, sans-serif); font-size: 16px; font-weight: 800; color: var(--ink, #14233b);
+}
+.mkperf-bar { width: 4px; height: 18px; border-radius: 3px; background: #b22a30; }
+.mkperf-pill {
+  font-size: 11px; font-weight: 600; color: var(--ink-3, #7a899f);
+  background: var(--panel-2, #f6f8fb); border: 1px solid var(--line, #e2e7ee);
+  border-radius: 999px; padding: 4px 11px;
+}
+.mkperf-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.mkperf .muted { color: var(--ink-3, #7a899f); font-weight: 500; }
+
+/* ---- Alert System ---- */
+.mkperf-alert-group + .mkperf-alert-group { margin-top: 16px; }
+.mkperf-alert-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 800; margin-bottom: 7px;
+}
+.mkperf-alert-title.red { color: #c5343a; }
+.mkperf-alert-title.yellow { color: #c98a06; }
+.mkperf-alert-title.green { color: #0f8a52; }
+.mkperf-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.mkperf-count {
+  margin-left: auto; min-width: 22px; text-align: center;
+  font-size: 12px; font-weight: 700; color: var(--ink-2, #46566e);
+  background: var(--panel-2, #f1f4f8); border-radius: 999px; padding: 1px 8px;
+}
+.mkperf-alert-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.mkperf-alert-list li {
+  position: relative; padding-left: 15px;
+  font-size: 13px; line-height: 1.45; color: var(--ink-2, #46566e);
+}
+.mkperf-alert-list li::before {
+  content: ""; position: absolute; left: 0; top: 8px;
+  width: 6px; height: 1.5px; border-radius: 2px; background: currentColor; opacity: .6;
+}
+.mkperf-alert-list.red li::before { background: #c5343a; }
+.mkperf-alert-list.yellow li::before { background: #c98a06; }
+.mkperf-alert-list.green li::before { background: #0f8a52; }
+
+/* ---- Content & Winning ---- */
+.mkperf-card:nth-child(2) .mkperf-bar,
+.mkperf-card .mkperf-bar.cnt { background: #138a59; }
+.mkperf-subhead { font-size: 13px; font-weight: 800; color: var(--ink, #14233b); margin-bottom: 11px; }
+.mkperf-winlist { display: flex; flex-direction: column; gap: 9px; }
+.mkperf-win {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--panel-2, #f6f8fb); border: 1px solid var(--line, #e9edf3);
+  border-radius: 10px; padding: 11px 13px;
+}
+.mkperf-win-name { font-size: 14px; font-weight: 700; color: var(--ink, #14233b); }
+.mkperf-win-sub { font-size: 12px; color: var(--ink-3, #7a899f); margin-top: 1px; }
+.mkperf-win-metrics { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.mkperf-win-metrics .m { font-size: 13px; font-weight: 600; color: var(--ink-2, #46566e); white-space: nowrap; }
+.mkperf-book {
+  font-size: 12.5px; font-weight: 700; color: #0f8a52;
+  background: #e6f6ee; border-radius: 999px; padding: 4px 11px; white-space: nowrap;
+}
+
+.mkperf-bw { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.mkperf-bw-col { border: 1px solid var(--line, #e9edf3); border-radius: 10px; padding: 11px 13px; }
+.mkperf-bw-col.best { background: #f0f9f3; border-color: #c7e9d4; }
+.mkperf-bw-col.worst { background: #fbf1f1; border-color: #f0cfd0; }
+.mkperf-bw-label { font-size: 12px; font-weight: 800; margin-bottom: 5px; }
+.mkperf-bw-col.best .mkperf-bw-label { color: #0f8a52; }
+.mkperf-bw-col.worst .mkperf-bw-label { color: #c5343a; }
+.mkperf-bw-name { font-size: 13.5px; font-weight: 700; color: var(--ink, #14233b); line-height: 1.3; }
+.mkperf-bw-sub { font-size: 12px; color: var(--ink-3, #7a899f); margin-top: 2px; }
+
+.mkperf-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.mkperf-foot-chip { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 5px 12px; }
+.mkperf-foot-chip.rework { color: #c98a06; background: #fcf3df; }
+.mkperf-foot-chip.pause { color: #c5343a; background: #fbe9e9; }
+
+@media (max-width: 520px) { .mkperf-bw { grid-template-columns: 1fr; } }
+
+/* ════════ Unified Ringkasan + Performa dashboard (merged tab) ════════════ */
+/* The whole tab is one .mkperf-wrap column; sections are separated by labeled
+   headings so the local ops summary and the live ad performance read as one. */
+.mkperf-sec-h {
+  display: flex; align-items: center; gap: 11px;
+  font-family: var(--font-display, sans-serif); font-size: 18px; font-weight: 800;
+  color: var(--ink, #14233b); letter-spacing: -.01em;
+  margin-top: 4px;
+}
+.mkperf-sec-h:not(:first-child) { margin-top: 12px; }
+.mkperf-sec-h > span { width: 5px; height: 21px; border-radius: 3px; background: var(--green-600, #138a59); }
+
+/* coloured panel accent bars */
+.mkperf-bar.red { background: #c5343a; }
+.mkperf-bar.amber { background: #c98a06; }
+.mkperf-bar.green { background: #138a59; }
+
+/* KPI strip */
+.mkperf-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.mkperf-kpi {
+  background: #fff; border: 1px solid var(--line, #e2e7ee); border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16,42,76,.05), 0 8px 22px rgba(16,42,76,.05);
+  padding: 14px 16px;
+}
+.mkperf-kpi.ok { background: linear-gradient(180deg, #f0f9f3, #fff); border-color: #c7e9d4; }
+.mkperf-kpi-lbl { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3, #7a899f); }
+.mkperf-kpi-val { font-family: var(--font-display, sans-serif); font-size: 30px; font-weight: 800; color: var(--ink, #14233b); line-height: 1.1; margin: 4px 0 2px; }
+.mkperf-kpi.ok .mkperf-kpi-val { color: #0f8a52; }
+.mkperf-kpi-sub { font-size: 12px; color: var(--ink-3, #7a899f); }
+
+/* Early Warning list */
+.mkperf-warn { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; max-height: 360px; overflow-y: auto; }
+.mkperf-warn-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--panel-2, #f6f8fb); border: 1px solid var(--line, #e9edf3);
+  border-left: 3px solid var(--ink-3, #7a899f); border-radius: 9px; padding: 9px 11px;
+}
+.mkperf-warn-row.red { border-left-color: #c5343a; }
+.mkperf-warn-row.orange { border-left-color: #e06d1f; }
+.mkperf-warn-row.yellow { border-left-color: #c98a06; }
+.mkperf-warn-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; background: currentColor; }
+.mkperf-warn-row.red .mkperf-warn-dot { background: #c5343a; }
+.mkperf-warn-row.orange .mkperf-warn-dot { background: #e06d1f; }
+.mkperf-warn-row.yellow .mkperf-warn-dot { background: #c98a06; }
+.mkperf-warn-tx { min-width: 0; }
+.mkperf-warn-ty { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3, #7a899f); }
+.mkperf-warn-ms { font-size: 13px; color: var(--ink, #14233b); line-height: 1.4; margin-top: 1px; }
+.mkperf-warn-more { font-size: 12px; padding: 4px 2px 0; }
+
+/* Distribusi per Alur bars — spread to fill the (stretched) card height */
+.mkperf-dist { display: flex; flex-direction: column; gap: 11px; flex: 1; justify-content: space-around; }
+.mkperf-dist-row { display: grid; grid-template-columns: 110px 1fr 28px; align-items: center; gap: 10px; }
+.mkperf-dist-lbl { font-size: 12.5px; font-weight: 600; color: var(--ink-2, #46566e); }
+.mkperf-dist-trk { height: 9px; background: #eef2f7; border-radius: 5px; overflow: hidden; }
+.mkperf-dist-trk > i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #1aa56c, #0e4d26); }
+.mkperf-dist-val { font-family: var(--font-mono, monospace); font-size: 12.5px; text-align: right; color: var(--ink, #14233b); }
+
+@media (max-width: 720px) { .mkperf-kpis { grid-template-columns: repeat(2, 1fr); } }
+
+/* ════════ Qualified Demand panels (Channel/Demand/MQL/SAL/Asset) ════════ */
+.mkperf-wrap { display: flex; flex-direction: column; gap: 16px; }
+/* Marketing — Qualified Demand Control Tower. Uses the unified brand tokens
+   (--ok green, --warn amber, --bad red, --lime, fonts) defined globally. */
+.qd-state { padding: 40px; text-align: center; color: var(--ink-3); font-weight: 600; }
+.qd-state.error { color: var(--bad); }
+
+.qd-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 16px;
+  align-items: stretch; /* cards fill their row → no white voids, bottoms aligned */
+}
+.qd-channels { grid-column: 1; grid-row: 1 / span 2; }
+/* short cards distribute their content so the stretched height isn't a void */
+.qd-scatter, .qd-card { justify-content: flex-start; }
+
+/* ---- card shell ---- */
+.qd-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.qd-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.qd-head h3 { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--ink); margin: 0; }
+.qd-tag { font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: var(--panel-2); border: 1px solid var(--line); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+
+/* tones */
+.t-ok { color: var(--green-700); }
+.t-warn { color: var(--warn); }
+.t-bad { color: var(--bad); }
+.t-ink { color: var(--ink); }
+.t-neutral { color: var(--ink-2); }
+
+.qd-pill { font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 20px; white-space: nowrap; }
+.qd-pill.ok { background: var(--ok-bg); color: var(--green-700); }
+.qd-pill.warn { background: var(--warn-bg); color: #9a6700; }
+.qd-pill.bad { background: var(--bad-bg); color: #b22a30; }
+.qd-pill.neutral { background: var(--panel-2); color: var(--ink-2); }
+
+/* ---- Channel Performance Matrix ---- */
+.qd-ch-head, .qd-ch-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.2fr 0.6fr 1fr 0.7fr 0.9fr;
+  align-items: center;
+  gap: 10px;
+}
+.qd-ch-head { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--ink-3); text-transform: uppercase; padding: 0 4px 8px; border-bottom: 1px solid var(--line); }
+.qd-ch-head .r, .qd-ch-row .r { text-align: right; }
+.qd-ch-body { display: flex; flex-direction: column; }
+.qd-ch-row { padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.qd-ch-row:last-child { border-bottom: none; }
+.qd-ch-row .mono { font-family: var(--font-mono); }
+.qd-ch-name b { display: block; font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.15; }
+.qd-ch-name span { font-size: 9px; font-weight: 700; letter-spacing: .06em; color: var(--ink-3); }
+.qd-ch-leads { display: flex; align-items: center; gap: 8px; }
+.qd-ch-leads i { height: 7px; border-radius: 5px; min-width: 4px; background: var(--ok); }
+.qd-ch-leads em { font-style: normal; font-family: var(--font-mono); font-weight: 600; margin-left: auto; }
+
+/* ---- Demand & Readiness scatter ---- */
+.qd-scatter .qd-plot {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  flex: 1; /* fill the card so the scatter grows with the row, no void */
+  min-height: 220px;
+  margin: 4px 6px 20px 16px;
+}
+.qd-grid-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.qd-grid-lines line { stroke: var(--line-strong); stroke-width: .5; stroke-dasharray: 2 2; }
+.qd-q { position: absolute; font-size: 9px; font-weight: 800; letter-spacing: .05em; color: var(--ink-3); }
+.qd-q.tl { top: 7px; left: 9px; }
+.qd-q.tr { top: 7px; right: 9px; }
+.qd-q.bl { bottom: 7px; left: 9px; }
+.qd-q.br { bottom: 7px; right: 9px; }
+.qd-axis-x { position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--ink-3); }
+.qd-axis-y { position: absolute; left: -14px; top: 50%; transform: rotate(-90deg) translateX(50%); transform-origin: left center; font-size: 9px; color: var(--ink-3); white-space: nowrap; }
+.qd-bubble { position: absolute; border-radius: 50%; transform: translate(-50%, 50%); opacity: .82; border: 1.5px solid #fff; box-shadow: 0 1px 3px rgba(8,44,22,.18); cursor: default; }
+
+/* ---- MQL scoring ---- */
+.qd-segbar { display: flex; height: 16px; border-radius: 6px; overflow: hidden; gap: 2px; margin-bottom: 12px; }
+.qd-segbar span { display: block; }
+.qd-buckets { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 14px; margin-bottom: 14px; }
+.qd-bk { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+.qd-bk i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.qd-bk b { margin-left: auto; font-family: var(--font-mono); font-weight: 700; color: var(--ink); }
+.qd-stat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.qd-stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 10px; text-align: left; }
+.qd-stat b { display: block; font-family: var(--font-mono); font-size: 22px; font-weight: 700; line-height: 1; }
+.qd-stat span { font-size: 10px; color: var(--ink-3); font-weight: 600; }
+.qd-tb { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; color: var(--ink-2); }
+.qd-tb .up { color: var(--green-700); font-weight: 700; }
+.qd-tb .down { color: var(--bad); font-weight: 700; }
+
+/* ---- SAL handover tiles ---- */
+.qd-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.qd-tile { background: var(--panel-2); border: 1px solid var(--line); border-radius: 11px; padding: 13px 12px; }
+.qd-tile b { display: block; font-family: var(--font-mono); font-size: 24px; font-weight: 700; line-height: 1; }
+.qd-tile span { display: block; font-size: 10.5px; color: var(--ink-3); font-weight: 600; margin-top: 6px; }
+
+/* ---- Asset registry ---- */
+.qd-assets { display: flex; flex-direction: column; gap: 11px; }
+.qd-asset { display: grid; grid-template-columns: 92px 1fr 60px 28px; align-items: center; gap: 10px; }
+.qd-asset > b { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.qd-handle { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qd-hbar { height: 7px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.qd-hbar i { display: block; height: 100%; border-radius: 5px; }
+.qd-asset em { font-style: normal; font-family: var(--font-mono); font-weight: 700; text-align: right; color: var(--ink-2); }
+.qd-ig { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.qd-ig-cap { font-size: 11px; color: var(--ink-3); margin-bottom: 9px; }
+.qd-ig-cap b { color: var(--ink); }
+.qd-ig-boxes { display: flex; flex-wrap: wrap; gap: 7px; }
+.qd-ig-box { width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; }
+.qd-ig-box.off { background: var(--bad-bg); color: #d68b86; border: 1px solid #f0c9c4; }
+
+@media (max-width: 1100px) {
+  .qd-grid { grid-template-columns: 1fr 1fr; }
+  .qd-channels { grid-column: 1 / -1; grid-row: auto; }
+}

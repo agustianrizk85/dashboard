@@ -1,0 +1,133 @@
+/* ====================================================================
+   Marketing Flow — additions on top of the perencanaan design system.
+   Reuses the same design tokens (--navy*, --green*, --line, etc.).
+   ==================================================================== */
+
+/* ---- Alur Kerja: step row (in the deliverable tree) ------------------- */
+.wf-step { padding: 11px 4px; border-bottom: 1px solid var(--line); }
+.wf-step:last-child { border-bottom: none; }
+.wf-step-top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.wf-code {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #fff;
+  background: var(--navy-600); padding: 1px 6px; border-radius: 5px; flex: none;
+}
+.wf-step-name { font-size: 12.5px; color: var(--ink); font-weight: 500; flex: 1; min-width: 180px; }
+.wf-flags { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+.wf-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px 14px; margin: 9px 0 2px; }
+.wf-field { display: flex; flex-direction: column; gap: 3px; }
+.wf-field-wide { grid-column: 1 / -1; }
+.wf-field span { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.wf-field input {
+  font-family: var(--font-body); font-size: 12.5px; padding: 7px 9px;
+  border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel); color: var(--ink);
+}
+.wf-field input:focus { outline: none; border-color: var(--green-600); }
+
+.wf-docs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.wf-doc {
+  font-size: 11px; color: var(--navy-600); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; text-decoration: none;
+}
+.wf-doc:hover { border-color: var(--green-600); color: var(--ink); }
+.wf-upload {
+  font-size: 11px; font-weight: 600; color: var(--ink-2); background: var(--panel);
+  border: 1px dashed var(--line-strong); border-radius: 6px; padding: 4px 11px; cursor: pointer;
+}
+.wf-upload:hover { border-color: var(--green-600); color: var(--ink); }
+.wf-err { font-size: 11px; color: var(--bad); margin-top: 6px; font-weight: 600; }
+
+/* tighten the status select used inline in step rows */
+.status-select.grey { color: var(--ink-3); }
+
+/* ====================================================================
+   Mobile-friendly layout — field roles (Talent & Videografer).
+   Touch-first, no fixed canvas scaling.
+   ==================================================================== */
+.m-app {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column;
+  background: var(--bg); color: var(--ink); font-family: var(--font-body);
+}
+.m-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 15px; color: var(--ink-inv);
+  background: linear-gradient(100deg, var(--navy-900), var(--navy-700) 70%);
+  border-bottom: 3px solid var(--green-600);
+}
+.m-bar-l { display: flex; align-items: center; gap: 11px; }
+.m-logo {
+  width: 40px; height: 40px; flex: none; border-radius: 11px;
+  background: linear-gradient(135deg, var(--green-600), var(--green-700));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 16px; color: #fff;
+}
+.m-title { font-family: var(--font-display); font-weight: 800; font-size: 18px; line-height: 1.1; }
+.m-sub { font-size: 11px; color: #b3ec55; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.m-logout {
+  background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2);
+  color: #eaf1fb; font-weight: 700; font-size: 13px; padding: 9px 15px; border-radius: 10px;
+}
+
+.m-filters {
+  display: flex; gap: 8px; padding: 11px 13px; overflow-x: auto;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.m-chip {
+  flex: none; font-size: 13px; font-weight: 600; color: var(--ink-2);
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 20px;
+  padding: 8px 15px; display: inline-flex; gap: 6px; align-items: center;
+}
+.m-chip.on { background: var(--navy-800); color: #fff; border-color: var(--navy-800); }
+.m-chip-n { font-family: var(--font-mono); font-size: 11px; background: rgba(0, 0, 0, .12); padding: 0 6px; border-radius: 10px; }
+.m-chip.on .m-chip-n { background: rgba(255, 255, 255, .2); }
+
+.m-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 13px; display: flex; flex-direction: column; gap: 13px; }
+.m-empty { text-align: center; color: var(--ink-3); padding: 36px 16px; font-size: 15px; }
+
+.m-card {
+  background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line-strong);
+  border-radius: 15px; box-shadow: var(--shadow); padding: 15px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.m-card.status-in_progress { border-left-color: var(--warn); }
+.m-card.status-done { border-left-color: var(--ok); }
+.m-card-top { display: flex; align-items: center; gap: 8px; }
+.m-alur { font-size: 11px; font-weight: 700; color: #fff; background: var(--navy-600); padding: 2px 10px; border-radius: 20px; }
+.m-code { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.m-due { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--ink-3); }
+.m-due.soon { color: var(--warn); }
+.m-due.late { color: var(--bad); }
+.m-card-title { font-size: 15.5px; font-weight: 600; color: var(--ink); line-height: 1.32; }
+.m-card-proj { font-size: 12.5px; color: var(--ink-3); }
+
+.m-field { display: flex; flex-direction: column; gap: 5px; }
+.m-field span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.m-field input {
+  font-size: 16px; padding: 12px 13px; border: 1px solid var(--line-strong);
+  border-radius: 11px; background: var(--panel-2); color: var(--ink);
+}
+.m-field input:focus { outline: none; border-color: var(--green-600); background: #fff; }
+
+.m-upload {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 14px; font-weight: 700; color: var(--navy-700);
+  background: var(--panel-2); border: 1.5px dashed var(--line-strong);
+  border-radius: 12px; padding: 14px; cursor: pointer;
+}
+.m-upload:active { background: var(--line); }
+.m-docs { display: flex; flex-direction: column; gap: 6px; }
+.m-docs a { font-size: 12.5px; color: var(--navy-600); text-decoration: none; word-break: break-all; }
+
+.m-status { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 3px; }
+.m-status-btn {
+  font-family: var(--font-body); font-size: 14px; font-weight: 700; padding: 14px 0;
+  border-radius: 12px; border: 1.5px solid var(--line-strong); background: var(--panel); color: var(--ink-2);
+}
+.m-status-btn.pending.on { background: var(--ink-3); color: #fff; border-color: var(--ink-3); }
+.m-status-btn.in_progress.on { background: var(--warn); color: #fff; border-color: var(--warn); }
+.m-status-btn.done.on { background: var(--ok); color: #fff; border-color: var(--ok); }
+.m-status-btn:disabled { opacity: .6; }
+
+.m-err { margin: 11px 13px; padding: 10px 12px; background: var(--bad-bg); border: 1px solid #f3c9cb; border-radius: 10px; color: #b22a30; font-size: 13px; font-weight: 600; }
+.m-err.inline { margin: 4px 0 0; }

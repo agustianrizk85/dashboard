@@ -1,0 +1,75 @@
+/* Marketing — Meta (Ads / WhatsApp / Instagram) tabs. Uses global brand tokens. */
+.meta-wrap { display: flex; flex-direction: column; gap: 16px; }
+.meta-state { padding: 40px; text-align: center; color: var(--ink-3); font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.meta-state.error { color: var(--bad); }
+.meta-state code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+.meta-retry { font: inherit; font-weight: 700; color: #fff; background: var(--green-600); border: none; border-radius: 9px; padding: 8px 18px; cursor: pointer; }
+
+.meta-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px 16px; }
+.meta-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.meta-head h3 { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--ink); margin: 0; }
+.meta-tag { font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: var(--panel-2); border: 1px solid var(--line); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.meta-sub { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); margin: 14px 0 8px; }
+.meta-empty { font-size: 13px; color: var(--ink-3); line-height: 1.6; background: var(--panel-2); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; }
+.meta-empty code { background: #fff; padding: 1px 6px; border-radius: 5px; }
+.meta-mono, .meta-table .mono { font-family: var(--font-mono); }
+/* breakdown grid + bars + chart */
+.meta-bd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.meta-bd-wide { grid-column: 1 / -1; }
+.meta-bdlist { display: flex; flex-direction: column; gap: 6px; }
+.meta-bd-head { display: grid; grid-template-columns: 1.4fr 1fr 64px 46px; gap: 8px; font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); font-weight: 700; order: -1; padding-bottom: 4px; }
+.meta-bd-head .r { text-align: right; }
+.meta-bd-row { display: grid; grid-template-columns: 1.4fr 1fr 64px 46px; gap: 8px; align-items: center; font-size: 11.5px; }
+.meta-bd-lbl { color: var(--ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta-bd-bar { height: 8px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
+.meta-bd-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green-600), var(--green-500)); border-radius: 5px; }
+.meta-bd-val { text-align: right; font-weight: 700; color: var(--ink); }
+.meta-bd-res { text-align: right; color: var(--green-700); font-weight: 700; }
+.meta-chart { width: 100%; height: 120px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; }
+.meta-chart-x { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-3); margin-top: 6px; }
+.meta-chart-x span:nth-child(2) { font-weight: 700; color: var(--ink-2); }
+@media (max-width: 900px) { .meta-bd-grid { grid-template-columns: 1fr; } }
+
+.meta-link { color: var(--green-700); text-decoration: none; cursor: pointer; }
+.meta-link:hover { text-decoration: underline; color: var(--green-600); }
+.meta-table tr:hover td { background: #f1f8f1; }
+.meta-table .muted, .muted { color: var(--ink-3); }
+
+.meta-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.meta-pill.ok { background: var(--ok-bg); color: var(--green-700); }
+.meta-pill.warn { background: var(--warn-bg); color: #9a6700; }
+.meta-pill.bad { background: var(--bad-bg); color: #b22a30; }
+.meta-pill.neutral { background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); }
+
+/* account header */
+.meta-acct { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.meta-acct > div:first-child b { font-size: 16px; font-weight: 800; color: var(--ink); display: block; }
+.meta-acct > div:first-child span { font-size: 11px; color: var(--ink-3); font-family: var(--font-mono); }
+.meta-acct-m { display: flex; flex-direction: column; }
+.meta-acct-m span { font-size: 10px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.meta-acct-m b { font-family: var(--font-mono); font-size: 16px; color: var(--ink); }
+
+/* metric tiles */
+.meta-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.meta-tile { background: var(--panel-2); border: 1px solid var(--line); border-radius: 11px; padding: 13px 12px; }
+.meta-tile b { display: block; font-family: var(--font-mono); font-size: 22px; font-weight: 700; line-height: 1; color: var(--ink); }
+.meta-tile span { display: block; font-size: 10.5px; color: var(--ink-3); font-weight: 600; margin-top: 6px; }
+
+/* table */
+.meta-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.meta-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); font-weight: 700; padding: 0 8px 8px; border-bottom: 1px solid var(--line); }
+.meta-table th.r, .meta-table td.r { text-align: right; }
+.meta-table td { padding: 9px 8px; border-bottom: 1px solid var(--line); color: var(--ink-2); }
+.meta-table tr:last-child td { border-bottom: none; }
+
+/* whatsapp */
+.meta-wa-phones { display: flex; flex-direction: column; gap: 9px; }
+.meta-wa-phone { display: flex; align-items: center; gap: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 13px; }
+.meta-wa-phone > div:first-child { flex: 1; }
+.meta-wa-phone b { font-size: 14px; font-weight: 700; color: var(--ink); display: block; }
+.meta-wa-phone span { font-size: 11px; color: var(--ink-3); }
+.meta-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.meta-chip { font-size: 11px; font-weight: 600; color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line); border-radius: 20px; padding: 4px 11px; }
+.meta-chip.ok { background: var(--ok-bg); color: var(--green-700); border-color: #bfe6d2; }
+.meta-chip.warn { background: var(--warn-bg); color: #9a6700; border-color: #f0ddb0; }
+.meta-chip em { font-style: normal; opacity: .65; font-size: 9.5px; text-transform: uppercase; margin-left: 4px; }
