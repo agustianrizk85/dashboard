@@ -1,0 +1,5 @@
+# central OpenRouter key — NEVER commit
+.ai-key
+
+# deps
+node_modules/

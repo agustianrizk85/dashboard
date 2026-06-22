@@ -12,6 +12,7 @@
 import express from "express";
 import cors from "cors";
 import { google } from "googleapis";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -147,6 +148,32 @@ app.get("/api/sheets/data", async (req, res) => {
  */
 app.use(express.json({ limit: "4mb" }));
 
+/* Central OpenRouter key — stored server-side (file, git-ignored) so an admin
+ * sets it ONCE and every user's AI-map runs without pasting their own key. */
+const AI_KEY_FILE = path.resolve(__dirname, ".ai-key");
+function loadAiKey() {
+  try {
+    return fs.readFileSync(AI_KEY_FILE, "utf8").trim();
+  } catch {
+    return "";
+  }
+}
+let _aiKey = loadAiKey();
+const maskKey = (k) => (k ? k.slice(0, 9) + "…" + k.slice(-4) : "");
+
+app.get("/api/ai/key", (_req, res) => res.json({ configured: !!_aiKey, masked: maskKey(_aiKey) }));
+app.put("/api/ai/key", (req, res) => {
+  const k = String(req.body?.key ?? "").trim();
+  try {
+    if (k) fs.writeFileSync(AI_KEY_FILE, k, { mode: 0o600 });
+    else fs.rmSync(AI_KEY_FILE, { force: true });
+    _aiKey = k;
+    res.json({ configured: !!_aiKey, masked: maskKey(_aiKey) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 /** Extract the spreadsheet ID from a full Google Sheets URL, or pass through an ID. */
@@ -217,7 +244,7 @@ app.post("/api/ai/map", async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: "Sheet kosong / tidak terbaca." });
     const sample = rows.slice(0, 30); // cap tokens — model only needs the pattern
 
-    const key = String(openrouterKey || process.env.OPENROUTER_API_KEY || "").trim();
+    const key = String(openrouterKey || _aiKey || process.env.OPENROUTER_API_KEY || "").trim();
     if (!key) {
       // No key yet → return the input so the UI can preview structure & pick a tab.
       return res.json({

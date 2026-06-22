@@ -1,0 +1,77 @@
+.adm {
+  min-height: 100vh;
+  background: #0e1b30;
+  color: #e7eef7;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  padding: 22px clamp(14px, 4vw, 48px) 60px;
+}
+.adm-top { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.adm-back {
+  background: #1b2c47; color: #cfe0f5; border: 1px solid #2c4368;
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 600; white-space: nowrap;
+}
+.adm-back:hover { background: #24395c; }
+.adm-title { flex: 1; min-width: 200px; }
+.adm-title h1 { margin: 0; font-size: 22px; font-weight: 800; }
+.adm-title p { margin: 3px 0 0; font-size: 13px; color: #9db2cf; }
+.adm-title b { color: #cfe0f5; }
+.adm-tabs { display: flex; gap: 8px; }
+.adm-tabs button {
+  background: #13243d; border: 1px solid #243a5c; color: #b9cae3;
+  border-radius: 9px; padding: 9px 15px; cursor: pointer; font-weight: 700; font-size: 13px;
+}
+.adm-tabs button.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+.adm-grid { display: grid; grid-template-columns: minmax(340px, 440px) 1fr; gap: 18px; align-items: start; }
+.adm-grid.one { grid-template-columns: minmax(340px, 560px); }
+@media (max-width: 900px) { .adm-grid, .adm-grid.one { grid-template-columns: 1fr; } }
+
+.adm-card {
+  background: #13243d; border: 1px solid #243a5c; border-radius: 14px;
+  padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.adm-card h2 { margin: 0 0 14px; font-size: 16px; font-weight: 800; }
+
+.adm-f { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.adm-f > span { font-size: 11.5px; font-weight: 700; color: #b9cae3; text-transform: uppercase; letter-spacing: .04em; }
+.adm-f > span small { text-transform: none; font-weight: 500; color: #7e93b3; }
+.adm-f input {
+  background: #0e1b30; border: 1px solid #2c4368; color: #eaf1fb;
+  border-radius: 9px; padding: 9px 12px; font-size: 13.5px; width: 100%;
+}
+.adm-f input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.18); }
+
+.adm-super { display: flex; align-items: center; gap: 9px; margin: 6px 0 14px; font-size: 13px; color: #cdd; cursor: pointer; }
+.adm-super input { width: 16px; height: 16px; }
+
+.adm-roles { border-top: 1px solid #243a5c; padding-top: 12px; margin-bottom: 14px; }
+.adm-roles-h { font-size: 11.5px; font-weight: 700; color: #b9cae3; text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 8px; }
+.adm-role { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.adm-role > span { font-size: 13px; color: #ccdcf2; }
+.adm-role select { background: #0e1b30; border: 1px solid #2c4368; color: #eaf1fb; border-radius: 7px; padding: 5px 8px; font-size: 12.5px; min-width: 90px; }
+
+.adm-btn { background: #2563eb; color: #fff; border: none; border-radius: 9px; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.adm-btn:hover { background: #1d4fd0; }
+.adm-btn:disabled { opacity: .5; cursor: not-allowed; }
+.adm-btn.ghost { background: #1b2c47; border: 1px solid #2c4368; color: #cfe0f5; }
+.adm-keyrow { display: flex; gap: 10px; }
+
+.adm-ok { margin-top: 10px; color: #5fdca0; font-size: 13px; font-weight: 600; }
+.adm-ok.inline, .adm-err.inline { margin: 0; display: inline; }
+.adm-err { margin-top: 10px; color: #ff9ea1; font-size: 13px; }
+
+.adm-users { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow: auto; }
+.adm-u { display: flex; align-items: center; gap: 10px; background: #0e1b30; border: 1px solid #223a5c; border-radius: 10px; padding: 9px 12px; }
+.adm-u-main { display: flex; flex-direction: column; min-width: 150px; }
+.adm-u-main b { font-size: 13.5px; }
+.adm-u-main small { font-size: 11.5px; color: #8499b8; }
+.adm-u-roles { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; }
+.adm-badge { background: #1b2c47; border: 1px solid #2c4368; color: #aebfd9; border-radius: 5px; padding: 2px 7px; font-size: 10.5px; font-weight: 600; }
+.adm-badge.super { background: #b45309; border-color: #d97706; color: #ffe; margin-left: 6px; }
+.adm-del { background: transparent; border: 1px solid #4a2a30; color: #ff9ea1; border-radius: 7px; width: 28px; height: 28px; cursor: pointer; flex: none; }
+.adm-del:hover { background: rgba(210,59,65,.18); }
+
+.adm-note { font-size: 12.5px; color: #9db2cf; line-height: 1.5; margin: 0 0 12px; }
+.adm-note.small { font-size: 11.5px; margin-top: 12px; }
+.adm-note b, .adm-note code { color: #cfe0f5; }
+.adm-keystat { font-size: 13px; margin-bottom: 14px; color: #b9cae3; }
