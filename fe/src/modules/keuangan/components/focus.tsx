@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Dashboard, ProjectFin } from "../types";
 import { rp, toneClass } from "../lib/status";
-import { Pill, Stat, StatusPill } from "./ui";
+import { Pill, Stat } from "./ui";
 import { MonthlyChart } from "./CashflowChart";
 
 const num = (n: number) => n.toLocaleString("id-ID");
@@ -25,7 +25,7 @@ export const FOCUS_META: Record<string, FocusMeta> = {
           <tr>
             <th>Proyek</th><th>GP</th><th className="num">Akad</th><th className="num">Booking</th>
             <th className="num">Batal</th><th className="num">KPR%</th><th>Bank Utama</th>
-            <th className="num">DP</th><th className="num">Nilai Akad</th><th>Status</th>
+            <th className="num">DP</th><th className="num">Nilai Akad</th>
           </tr>
         </thead>
         <tbody>
@@ -35,7 +35,6 @@ export const FOCUS_META: Record<string, FocusMeta> = {
               <td className="num">{p.booking}</td><td className="num">{p.batal}</td>
               <td className="num">{p.kprPct}%</td><td>{p.topBank || "—"}</td>
               <td className="num">{rp(p.dp)}</td><td className="num">{rp(p.nilai)}</td>
-              <td><StatusPill status={p.status} /></td>
             </tr>
           ))}
         </tbody>
@@ -213,7 +212,6 @@ export function ProjectDetail({ p }: { p: ProjectFin }) {
       <div className="pd-meta">
         <div>GP: <b>{p.gp}</b></div>
         <div>Bank utama: <b>{p.topBank || "—"}</b></div>
-        <div>Status: <StatusPill status={p.status} /></div>
       </div>
       <p className="pd-note">{p.note}</p>
     </div>

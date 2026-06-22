@@ -8,6 +8,7 @@ const ICON_PATHS: Record<string, string> = {
   filter: "M3 5h18l-7 8v6l-4 2v-8z",
   cpu: "M6 6h12v12H6zM9 9h6v6H9M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3",
   expand: "M9 3H3v6M15 3h6v6M21 15v6h-6M3 15v6h6",
+  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 8h.01M12 11v5",
   rec: "M12 3a6 6 0 0 1 4 10c-.7.7-1 1.4-1 2H9c0-.6-.3-1.3-1-2a6 6 0 0 1 4-10zM9 19h6M10 22h4",
   // finance-specific
   wallet: "M3 7a2 2 0 0 1 2-2h12v4M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2M16 12h.01",

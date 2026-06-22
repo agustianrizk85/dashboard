@@ -4,10 +4,10 @@ import { useRealtimeSocket } from "@/lib/realtime";
 import type { Dashboard, ProjectFin } from "./types";
 import { api, AuthError } from "./api/client";
 import {
+  AchievementPanel,
   AiDecisionPanel,
   AlertPanel,
   BankPanel,
-  FunnelPanel,
   KpiRow,
   MonthlyPanel,
   PayMixPanel,
@@ -113,7 +113,7 @@ function Body({ D }: { D: Dashboard }) {
       </div>
       <KpiRow s={D.summary} />
       <div className="grid">
-        <FunnelPanel funnel={D.funnel} onExpand={() => openFocus("pipeline")} />
+        <AchievementPanel s={D.summary} onExpand={() => openFocus("kpi")} />
         <MonthlyPanel monthly={D.monthly} onExpand={() => openFocus("cashflow")} />
         <ProjectPanel projects={D.projects} onExpand={() => openFocus("project")} onRow={openProject} />
         <BankPanel banks={D.banks} onExpand={() => openFocus("bank")} />

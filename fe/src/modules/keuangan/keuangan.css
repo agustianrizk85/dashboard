@@ -323,7 +323,122 @@
 
 .kc-scope .panel-bd { flex: 1; min-height: 0; overflow: hidden; padding: 12px 15px; display: flex; flex-direction: column; }
 
+
+/* ---- Info tooltip (ⓘ data-source / business-process marker on each card) --
+ * The icon sits inside the card; the bubble is portaled to <body> with fixed
+ * positioning (class .kfin-tip, unscoped) so a card's overflow:hidden can
+ * NEVER clip it. JS flips it above the icon near the viewport bottom. */
+.kc-scope .infotip {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 0;
+  color: var(--ink-3);
+  cursor: help;
+}
+.kc-scope .infotip:hover,
+.kc-scope .infotip:focus-visible { color: var(--green-600); outline: none; }
+
+/* Portaled bubble — rendered on document.body, so deliberately NOT scoped. */
+.kfin-tip {
+  position: fixed;
+  z-index: 9999;
+  width: 260px;
+  box-sizing: border-box;
+  background: #102a4c;
+  color: #d6e2f0;
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .38);
+  pointer-events: none;
+  animation: kfin-tip-in .12s ease both;
+}
+.kfin-tip.flip { transform: translateY(-100%); }
+@keyframes kfin-tip-in { from { opacity: 0; } to { opacity: 1; } }
+
+.kfin-tip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border: 6px solid transparent;
+}
+.kfin-tip:not(.flip) .kfin-tip-arrow { bottom: 100%; border-bottom-color: #102a4c; }
+.kfin-tip.flip .kfin-tip-arrow { top: 100%; border-top-color: #102a4c; }
+
+.kfin-tip-row { display: block; }
+.kfin-tip-row + .kfin-tip-row { margin-top: 7px; }
+.kfin-tip-row b {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #7fe3b4;
+  margin-bottom: 2px;
+}
+
 .kc-scope .panel-bd.scroll { overflow-y: auto; }
+
+
+/* ---- Charts: donut / pie + radial gauge ------------------------------- */
+.kc-scope .chart-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+.kc-scope .donut-wrap { position: relative; flex: none; }
+.kc-scope .donut { display: block; }
+.kc-scope .donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+.kc-scope .donut-center .dc-main {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+  line-height: 1.05;
+}
+.kc-scope .donut-center .dc-sub {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-top: 2px;
+}
+
+.kc-scope .cl { display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 0; }
+.kc-scope .cl-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.kc-scope .cl-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.kc-scope .cl-name { flex: 1; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kc-scope .cl-val { font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+.kc-scope .cl-pct { font-family: var(--font-mono); color: var(--ink-3); width: 38px; text-align: right; }
+
+.kc-scope .ach-body { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; justify-content: center; }
+.kc-scope .gauge-grid { display: flex; gap: 10px; justify-content: space-around; }
+.kc-scope .gauge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.kc-scope .gauge svg { display: block; }
+.kc-scope .gauge .gauge-val { fill: var(--ink); font-family: var(--font-mono); font-weight: 700; font-size: 22px; }
+.kc-scope .gauge .gauge-cap { fill: var(--ink-3); font-family: var(--font-mono); font-size: 9px; }
+.kc-scope .gauge .gauge-label { font-size: 10.5px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.kc-scope .ach-stats { display: flex; gap: 10px; justify-content: space-around; border-top: 1px solid var(--line); padding-top: 12px; }
 
 
 /* ---- Tables ----------------------------------------------------------- */
