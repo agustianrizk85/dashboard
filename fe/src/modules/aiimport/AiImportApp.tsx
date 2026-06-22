@@ -84,7 +84,6 @@ export default function AiImportApp() {
   const run = useCallback(
     async (withAi: boolean) => {
       if (!link.trim() || !tab) return setError("Link + tab wajib diisi.");
-      if (withAi && !key.trim()) return setError("Isi OpenRouter API key dulu.");
       setBusy(withAi ? "map" : "preview");
       setError("");
       setResult(null);
@@ -124,7 +123,7 @@ export default function AiImportApp() {
         {/* ---- INPUT ---- */}
         <section className="aii-card">
           <label className="aii-f">
-            <span>🔑 OpenRouter API Key <small>(disimpan di browser ini)</small></span>
+            <span>🔑 OpenRouter API Key <small>(opsional — kosongkan untuk pakai key terpusat dari Panel Admin)</small></span>
             <input type="password" placeholder="sk-or-v1-…" value={key} onChange={(e) => saveKey(e.target.value)} />
             <small className="hint">Belum punya? Buat gratis di <b>openrouter.ai → Keys</b>. Model default gratis: <code>openai/gpt-oss-120b:free</code>.</small>
           </label>
