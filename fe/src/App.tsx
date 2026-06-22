@@ -15,6 +15,7 @@ const SalesApp = lazy(() => import("@/modules/sales/SalesApp"));
 const KeuanganApp = lazy(() => import("@/modules/keuangan/KeuanganApp"));
 const ApprovalsApp = lazy(() => import("@/approvals/ApprovalsApp"));
 const RekapApp = lazy(() => import("@/modules/rekap/RekapApp"));
+const AiImportApp = lazy(() => import("@/modules/aiimport/AiImportApp"));
 
 /** Where a given division's full dashboard lives. */
 function homePath(division: Division): string {
@@ -119,6 +120,14 @@ export function App() {
           element={
             <RequireAllAccess>
               <RekapApp />
+            </RequireAllAccess>
+          }
+        />
+        <Route
+          path="/ai-import/*"
+          element={
+            <RequireAllAccess>
+              <AiImportApp />
             </RequireAllAccess>
           }
         />

@@ -1,0 +1,62 @@
+.aii {
+  min-height: 100vh;
+  background: #0e1b30;
+  color: #e7eef7;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  padding: 22px clamp(14px, 4vw, 48px) 60px;
+}
+.aii-top { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.aii-back {
+  background: #1b2c47; color: #cfe0f5; border: 1px solid #2c4368;
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 600; white-space: nowrap;
+}
+.aii-back:hover { background: #24395c; }
+.aii-title h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: .2px; }
+.aii-title p { margin: 3px 0 0; font-size: 13px; color: #9db2cf; }
+
+.aii-grid { display: grid; grid-template-columns: minmax(360px, 480px) 1fr; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .aii-grid { grid-template-columns: 1fr; } }
+
+.aii-card {
+  background: #13243d; border: 1px solid #243a5c; border-radius: 14px;
+  padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+.aii-f { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.aii-f > span { font-size: 12px; font-weight: 700; color: #b9cae3; text-transform: uppercase; letter-spacing: .04em; }
+.aii-f > span small { text-transform: none; font-weight: 500; color: #7e93b3; letter-spacing: 0; }
+.aii-f input, .aii-f select, .aii-f textarea {
+  background: #0e1b30; border: 1px solid #2c4368; color: #eaf1fb;
+  border-radius: 9px; padding: 10px 12px; font-size: 13.5px; font-family: inherit; width: 100%;
+}
+.aii-f input:focus, .aii-f select:focus, .aii-f textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.18); }
+.aii-f .hint { font-size: 11.5px; color: #8499b8; }
+.aii-f .hint code, .aii-f .hint b { color: #aebfd9; }
+.aii-row { display: flex; gap: 8px; }
+.aii-row input, .aii-row select { flex: 1; }
+.aii-code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12.5px; white-space: pre; }
+
+.aii-btn {
+  background: #2563eb; color: #fff; border: none; border-radius: 9px;
+  padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.aii-btn:hover { background: #1d4fd0; }
+.aii-btn:disabled { opacity: .5; cursor: not-allowed; }
+.aii-btn.ghost { background: #1b2c47; color: #cfe0f5; border: 1px solid #2c4368; }
+.aii-btn.ghost:hover { background: #24395c; }
+
+.aii-actions { display: flex; gap: 10px; margin-top: 4px; }
+.aii-err { margin-top: 12px; background: rgba(210,59,65,.12); border: 1px solid rgba(210,59,65,.4); color: #ffb4b7; border-radius: 9px; padding: 9px 12px; font-size: 13px; }
+.aii-note { background: rgba(217,144,8,.12); border: 1px solid rgba(217,144,8,.4); color: #ffd98a; border-radius: 9px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; }
+
+.aii-empty { color: #7e93b3; font-size: 14px; padding: 30px 8px; text-align: center; }
+.aii-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12px; color: #9db2cf; margin-bottom: 12px; }
+.aii-meta .ok { color: #5fdca0; font-weight: 700; }
+.aii-sub { font-size: 12px; font-weight: 700; color: #b9cae3; text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 6px; }
+.aii-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.aii-chips .chip { background: #1b2c47; border: 1px solid #2c4368; color: #ccdcf2; border-radius: 6px; padding: 3px 8px; font-size: 11.5px; }
+.aii-json {
+  background: #0a1525; border: 1px solid #223a5c; border-radius: 10px; padding: 12px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; color: #cfe0f5;
+  max-height: 460px; overflow: auto; white-space: pre; line-height: 1.5;
+}

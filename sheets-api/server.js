@@ -135,7 +135,140 @@ app.get("/api/sheets/data", async (req, res) => {
   }
 });
 
+/* ── AI MAPPING ────────────────────────────────────────────────────────────
+ * Generic, dynamic sheet → schema mapper. Everything is passed at REQUEST time
+ * (no env, no hardcode): the spreadsheet link/ID, the tab, the TARGET SCHEMA,
+ * and the OpenRouter API key. An LLM transforms the raw sheet rows into JSON
+ * matching the schema. Without a key it returns the raw sheet structure so the
+ * caller can preview what the model would receive.
+ *
+ *   POST /api/ai/map
+ *   { link|spreadsheetId, tab|range, schema, instruction?, openrouterKey, model? }
+ */
+app.use(express.json({ limit: "4mb" }));
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+/** Extract the spreadsheet ID from a full Google Sheets URL, or pass through an ID. */
+function parseSheetId(s) {
+  if (!s) return null;
+  const m = String(s).match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : String(s).trim();
+}
+
+/** Read a tab of ANY spreadsheet the service account can access (first row = headers). */
+async function fetchSheetRows(spreadsheetId, tab, range) {
+  const a1 = range ? String(range) : `'${String(tab).replace(/'/g, "''")}'`;
+  const resp = await sheets.spreadsheets.values.get({ spreadsheetId, range: a1 });
+  const values = resp.data.values ?? [];
+  const [headers = [], ...body] = values;
+  const rows = body
+    .filter((r) => r.some((c) => String(c ?? "").trim() !== ""))
+    .map((r) => Object.fromEntries(headers.map((h, i) => [h || `col${i}`, r[i] ?? ""])));
+  return { headers, rows };
+}
+
+/** Pull the first valid JSON value out of a model reply (tolerating prose/fences). */
+function extractJson(text) {
+  let s = String(text ?? "").trim();
+  const a = s.indexOf("{");
+  const b = s.indexOf("[");
+  const start = a < 0 ? b : b < 0 ? a : Math.min(a, b);
+  if (start < 0) return { value: null, error: "tidak ada JSON di keluaran model" };
+  const end = Math.max(s.lastIndexOf("}"), s.lastIndexOf("]"));
+  s = s.slice(start, end + 1);
+  try {
+    return { value: JSON.parse(s), error: null };
+  } catch (e) {
+    return { value: null, error: e.message };
+  }
+}
+
+/** List VISIBLE tabs of ANY spreadsheet (dynamic link) — for the AI-map UI picker. */
+app.get("/api/ai/tabs", async (req, res) => {
+  try {
+    const sid = parseSheetId(req.query.link || req.query.spreadsheetId);
+    if (!sid) return res.status(400).json({ error: "link/spreadsheetId kosong." });
+    const meta = await sheets.spreadsheets.get({
+      spreadsheetId: sid,
+      fields: "properties.title,sheets.properties(title,hidden,gridProperties(rowCount,columnCount))",
+    });
+    const tabs = (meta.data.sheets ?? [])
+      .filter((s) => !s.properties.hidden)
+      .map((s) => ({
+        title: s.properties.title,
+        rows: s.properties.gridProperties?.rowCount ?? 0,
+        cols: s.properties.gridProperties?.columnCount ?? 0,
+      }));
+    res.json({ spreadsheet: meta.data.properties?.title ?? null, spreadsheetId: sid, tabs });
+  } catch (e) {
+    res.status(500).json({ error: e?.errors?.[0]?.message || e?.message || String(e) });
+  }
+});
+
+app.post("/api/ai/map", async (req, res) => {
+  try {
+    const { link, spreadsheetId, tab, range, schema, instruction, openrouterKey, model } = req.body ?? {};
+    const sid = parseSheetId(spreadsheetId || link);
+    if (!sid) return res.status(400).json({ error: "Sheet link/ID kosong (kirim 'link' atau 'spreadsheetId')." });
+    if (!tab && !range) return res.status(400).json({ error: "Sebutkan 'tab' atau 'range'." });
+
+    const { headers, rows } = await fetchSheetRows(sid, tab, range);
+    if (rows.length === 0) return res.status(404).json({ error: "Sheet kosong / tidak terbaca." });
+    const sample = rows.slice(0, 30); // cap tokens — model only needs the pattern
+
+    const key = String(openrouterKey || process.env.OPENROUTER_API_KEY || "").trim();
+    if (!key) {
+      // No key yet → return the input so the UI can preview structure & pick a tab.
+      return res.json({
+        spreadsheetId: sid, tab: tab || null, headers, rowCount: rows.length, sample,
+        mapped: null, note: "Belum ada OpenRouter key — kirim 'openrouterKey' untuk menjalankan AI-mapping.",
+      });
+    }
+    if (!schema) return res.status(400).json({ error: "Sebutkan 'schema' (struktur/JSON target yang diinginkan)." });
+
+    const usedModel = model || "openai/gpt-oss-120b:free";
+    const sys =
+      "Kamu adalah data-mapping engine. Diberi data mentah Google Sheet (headers + baris) dan SKEMA TARGET. " +
+      "Petakan & transformasikan data sheet menjadi JSON yang PERSIS mengikuti skema target. " +
+      "Balas HANYA JSON valid (tanpa markdown/teks/penjelasan). Pakai nilai dari sheet — JANGAN mengarang angka. " +
+      "Bersihkan format angka (hapus 'Rp', titik ribuan, '%') jadi number. Field yang tak ada di sheet isi 0 atau \"\".";
+    const user =
+      "SKEMA TARGET:\n" + (typeof schema === "string" ? schema : JSON.stringify(schema, null, 2)) +
+      (instruction ? "\n\nINSTRUKSI TAMBAHAN:\n" + instruction : "") +
+      "\n\nHEADERS:\n" + JSON.stringify(headers) +
+      `\n\nDATA (${rows.length} baris; contoh ${sample.length}):\n` + JSON.stringify(sample) +
+      "\n\nKeluarkan JSON hasil mapping sekarang.";
+
+    const orResp = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json", "X-Title": "Greenpark AI Map" },
+      body: JSON.stringify({
+        model: usedModel,
+        temperature: 0.1,
+        max_tokens: 6000,
+        messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+      }),
+    });
+    const orJson = await orResp.json().catch(() => ({}));
+    if (!orResp.ok) {
+      return res.status(502).json({ error: "OpenRouter " + orResp.status + ": " + (orJson?.error?.message || "gagal") });
+    }
+    const content = orJson?.choices?.[0]?.message?.content ?? "";
+    const { value: mapped, error: parseError } = extractJson(content);
+    res.json({
+      spreadsheetId: sid, tab: tab || null, model: usedModel,
+      headers, rowCount: rows.length, mapped,
+      ...(mapped ? {} : { raw: content, parseError }),
+    });
+  } catch (e) {
+    const msg = e?.errors?.[0]?.message || e?.message || String(e);
+    res.status(500).json({ error: msg });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Greenpark Sheets API -> http://localhost:${PORT}`);
   console.log(`  spreadsheet: ${SPREADSHEET_ID}`);
+  console.log(`  AI map: POST /api/ai/map (dynamic link + key + schema)`);
 });

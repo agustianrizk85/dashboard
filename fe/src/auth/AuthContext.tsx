@@ -49,7 +49,7 @@ const TOKEN_KEY = "gp_dashboard_token";
  * call the real endpoint instead of the demo table. Everything else (session
  * persistence, the division-aware routing in App.tsx) stays the same.
  * ──────────────────────────────────────────────────────────────────────── */
-const USE_REAL_AUTH = false;
+const USE_REAL_AUTH = true;
 
 interface MockAccount extends SessionUser {
   password: string;
@@ -235,8 +235,35 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
       }
       throw new Error(detail || "Login gagal — periksa kredensial Anda.");
     }
-    const data = (await res.json()) as { token: string; user: SessionUser };
-    return data;
+    const data = (await res.json()) as {
+      accessToken: string;
+      user: { username: string; name?: string; email?: string; super?: boolean; roles?: Record<string, string> };
+    };
+    const au = data.user;
+    const roles = au.roles ?? {};
+    const deptCodes = Object.keys(roles);
+    // super, OR roles across many depts (a director), ⇒ all-access overview.
+    const all = !!au.super || deptCodes.length >= 3;
+    // Map an auth department code → the dashboard's Division.
+    const DEPT2DIV: Record<string, Division> = {
+      finance: "keuangan",
+      legalpermit: "permit",
+      marketing: "marketing",
+      sales: "sales",
+      perencanaan: "perencanaan",
+    };
+    const ownDept = deptCodes.find((d) => DEPT2DIV[d]);
+    const division: Division = (ownDept && DEPT2DIV[ownDept]) || "keuangan";
+    const user: SessionUser = {
+      username: au.username,
+      name: au.name || au.username,
+      email: au.email,
+      role: au.super ? "ceo" : ownDept ? roles[ownDept] : "viewer",
+      division,
+      allAccess: all,
+      canApprove: !!au.super,
+    };
+    return { token: data.accessToken, user };
   }
 
   // Mock path — match against the demo account table (case-insensitive id).
@@ -275,9 +302,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { token, user: u } = await authenticate(identifier, password);
     // Obtain the module backend token(s) BEFORE the module mounts, so the first
     // requests carry them (otherwise: 401 → "missing bearer token" / redirect loop).
-    // The all-access CEO bridges every division so dashboards can be switched freely.
-    if (u.allAccess) await bridgeAllDivisions(!!u.canApprove);
-    else await bridgeModuleToken(u.division, identifier, password);
+    if (USE_REAL_AUTH) {
+      // One SSO access token is accepted by every department backend (each verifies
+      // it locally via the auth service's public key), so stash it under every
+      // module's token key. (Finance/keuangan uses its own local login and will
+      // self-heal by re-authenticating on a 401.)
+      ALL_MODULE_TOKEN_KEYS.forEach((k) => localStorage.setItem(k, token));
+    } else if (u.allAccess) {
+      // The all-access CEO bridges every division so dashboards can be switched freely.
+      await bridgeAllDivisions(!!u.canApprove);
+    } else {
+      await bridgeModuleToken(u.division, identifier, password);
+    }
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(SESSION_KEY, JSON.stringify(u));
     setUser(u);
