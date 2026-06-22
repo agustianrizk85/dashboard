@@ -6,10 +6,15 @@ import { Dashboard } from "./components/Dashboard";
 import "./perencanaan.css";
 
 export default function PerencanaanApp() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   useEffect(() => {
-    api.setUnauthorizedHandler(logout); // a 401 from the perencanaan API → shell logout
-  }, [logout]);
+    // A 401 from the perencanaan API normally ends the dashboard session. But an
+    // all-access director (CEO/Dirops) merely browsing this division must NOT be
+    // logged out globally when this module's token is missing (e.g. the SSO
+    // bridge is unavailable) — let the module surface its own error instead.
+    // Native single-division perencanaan users are still logged out (correct).
+    api.setUnauthorizedHandler(user?.allAccess ? () => {} : logout);
+  }, [logout, user]);
   return (
     <RealtimeProvider url={api.realtimeURL()}>
       <div className="pz-stage">

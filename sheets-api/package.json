@@ -1,0 +1,16 @@
+{
+  "name": "greenpark-sheets-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Read-only Google Sheets bridge for the Greenpark dashboard",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "googleapis": "^173.0.0"
+  }
+}

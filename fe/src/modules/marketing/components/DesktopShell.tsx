@@ -9,7 +9,6 @@ import { TugasSayaView } from "./views/TugasSayaView";
 import { PerformaView } from "../performa/PerformaView";
 import { AdsView, WhatsAppView, InstagramView } from "../meta/MetaViews";
 import { DivisionTabs } from "@/components/DivisionTabs";
-import { FinanceStrip } from "@/components/FinanceStrip";
 
 type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig";
 
@@ -112,8 +111,6 @@ export function DesktopShell({ user }: { user: User }) {
             self-loading "Tugas Saya" board also refetches live. */}
         <main className="content" key={rev}>
           {err && <div className="empty-note error">{err}</div>}
-          {/* All-access directors get a cross-division finance ringkasan on the landing. */}
-          {allAccess && tab === "ringkasan" && <FinanceStrip />}
           {tab === "ringkasan" && <PerformaView items={items} warnings={warnings} />}
           {tab === "alur" && <AlurKerjaView items={items} canEdit={user.role !== "viewer"} onChanged={reload} />}
           {tab === "tugas" && <TugasSayaView user={user} canEdit={user.role !== "viewer"} onChanged={reload} />}

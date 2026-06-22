@@ -39,11 +39,22 @@ api.interceptors.response.use(
   (error: AxiosError<{ error?: string }>) => {
     if (error.response?.status === 401) {
       tokenStore.clear();
-      // Also drop the unified dashboard session, otherwise /login bounces us
-      // straight back here (session still "in") and we redirect-loop.
-      localStorage.removeItem("gp_dashboard_session");
-      localStorage.removeItem("gp_dashboard_token");
-      if (location.pathname !== "/login") location.assign("/login");
+      // For an all-access director (CEO/Dirops) merely browsing Permit, a 401
+      // here (e.g. the SSO token bridge is unavailable) must NOT tear down the
+      // whole dashboard session — that would kick them out of every division.
+      // Only drop the unified session for a NATIVE permit user, otherwise /login
+      // bounces them straight back (session still "in") and we redirect-loop.
+      let allAccess = false;
+      try {
+        allAccess = !!JSON.parse(localStorage.getItem("gp_dashboard_session") || "{}").allAccess;
+      } catch {
+        /* malformed session — treat as not all-access */
+      }
+      if (!allAccess) {
+        localStorage.removeItem("gp_dashboard_session");
+        localStorage.removeItem("gp_dashboard_token");
+        if (location.pathname !== "/login") location.assign("/login");
+      }
     }
     const message = error.response?.data?.error || error.message || "Request failed";
     return Promise.reject(new Error(message));

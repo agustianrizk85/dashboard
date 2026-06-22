@@ -4,3 +4,9 @@ dist/
 .env
 .env.*
 .DS_Store
+
+# Google service account / API credentials (JANGAN di-commit!)
+gen-lang-client-*.json
+*service-account*.json
+*credentials*.json
+secrets/

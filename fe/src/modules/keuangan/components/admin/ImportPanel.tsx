@@ -168,14 +168,14 @@ export function ImportPanel({ reload }: { reload: () => void }) {
           </div>
 
           <div className="imp-rows">
-            {result.sheets.map((s) => (
+            {(result.sheets ?? []).map((s) => (
               <span key={s.name} className={"imp-chip imp-chip-" + s.kind}>
                 {s.name}: <b>{s.kind}</b>{s.rows ? ` · ${num(s.rows)} baris` : ""}
               </span>
             ))}
           </div>
 
-          <Issues issues={result.issues} />
+          <Issues issues={result.issues ?? []} />
 
           <div className="imp-actions">
             <button className="adm-btn primary" disabled={busy !== ""} onClick={approve}>
