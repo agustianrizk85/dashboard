@@ -125,7 +125,8 @@ export function RadialGauge({
   label?: ReactNode;
   sub?: ReactNode;
 }) {
-  const pct = Math.max(0, Math.min(100, value));
+  const safe = Number.isFinite(value) ? value : 0;
+  const pct = Math.max(0, Math.min(100, safe));
   const r = (size - thickness) / 2;
   const cx = size / 2;
   const circ = 2 * Math.PI * r;
@@ -159,7 +160,7 @@ export function RadialGauge({
           transform={`rotate(135 ${cx} ${cx})`}
         />
         <text x={cx} y={cx} textAnchor="middle" dominantBaseline="central" className="gauge-val">
-          {Math.round(value)}%
+          {Math.round(safe)}%
         </text>
         {sub != null && (
           <text x={cx} y={cx + 18} textAnchor="middle" className="gauge-cap">

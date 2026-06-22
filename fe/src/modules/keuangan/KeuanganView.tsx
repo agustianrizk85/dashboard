@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useRealtimeSocket } from "@/lib/realtime";
-import type { Dashboard, ProjectFin } from "./types";
+import type { Dashboard, ProjectFin, Summary } from "./types";
 import { api, AuthError } from "./api/client";
 import {
   AchievementPanel,
@@ -23,6 +23,34 @@ import "./keuangan.css";
 // gated by the unified login. admin lets the optional Sync tab work too.
 const FIN_USER = { user: "admin", pass: "admin123" };
 
+/**
+ * Coerce the backend payload into a render-safe shape. Go serialises empty
+ * slices as JSON `null`; without this, panels doing `.map`/`.slice` on a null
+ * array would crash the whole view to a white screen. Keeps the dashboard
+ * resilient to backends that return partial/older payloads.
+ */
+function normalizeDashboard(d: Dashboard): Dashboard {
+  const arr = <T,>(x: T[] | null | undefined): T[] => (Array.isArray(x) ? x : []);
+  return {
+    ...d,
+    years: arr(d.years),
+    funnel: arr(d.funnel),
+    monthly: arr(d.monthly),
+    projects: arr(d.projects),
+    banks: arr(d.banks),
+    sales: arr(d.sales),
+    payMix: arr(d.payMix),
+    pipeline: arr(d.pipeline),
+    akads: arr(d.akads),
+    alerts: arr(d.alerts),
+    ai: arr(d.ai),
+    decisions: arr(d.decisions),
+    kpis: arr(d.kpis),
+    triggers: arr(d.triggers),
+    summary: d.summary ?? ({} as Summary),
+  };
+}
+
 type LoadState =
   | { status: "loading"; data: null; error: "" }
   | { status: "ready"; data: Dashboard; error: "" }
@@ -38,7 +66,7 @@ export function KeuanganView() {
     setState((s) => (s.status === "ready" ? s : { status: "loading", data: null, error: "" }));
     const fetchOnce = async () => {
       if (!api.hasToken()) await api.login(FIN_USER.user, FIN_USER.pass);
-      return api.dashboard();
+      return normalizeDashboard(await api.dashboard());
     };
     try {
       setState({ status: "ready", data: await fetchOnce(), error: "" });
@@ -46,7 +74,7 @@ export function KeuanganView() {
       if (e instanceof AuthError) {
         try {
           await api.login(FIN_USER.user, FIN_USER.pass);
-          setState({ status: "ready", data: await api.dashboard(), error: "" });
+          setState({ status: "ready", data: normalizeDashboard(await api.dashboard()), error: "" });
           return;
         } catch (e2) {
           setState({ status: "error", data: null, error: e2 instanceof Error ? e2.message : String(e2) });
