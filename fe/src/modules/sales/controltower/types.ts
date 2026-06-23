@@ -89,6 +89,15 @@ export interface ReasonMetaItem {
   target: string;
 }
 
+/** One lost prospect's identity behind a reason code (from MASTER DATA_LEADS). */
+export interface ReasonLead {
+  name: string;
+  phone: string;
+  project: string;
+  date: string;
+  status: string;
+}
+
 export interface Reason {
   _id?: string;
   code: string;
@@ -96,6 +105,8 @@ export interface Reason {
   id: string;
   layer: "L1" | "L2" | "L3";
   count: number;
+  /** Capped identity sample backing the drill-down table. */
+  leads?: ReasonLead[];
 }
 
 export interface Agent {
@@ -167,6 +178,22 @@ export interface Summary {
   status: string;
 }
 
+/** One transaction record from DATA PENJUALAN (drill-down for Panel 8 & Purchaser). */
+export interface SaleRow {
+  project: string;
+  unit?: string;
+  name: string;
+  phone?: string;
+  closer?: string;
+  status: "akad" | "proses" | "batal";
+  rawStatus?: string;
+  booking?: string;
+  akad?: string;
+  revenue: number;
+  sumber?: string;
+  channel?: string; // cleaned Platform category (matches the Sumber Penjualan panel)
+}
+
 /** Per-project slice of the dashboard, used by the project filter. */
 export interface ProjectView {
   exec: Exec;
@@ -198,6 +225,7 @@ export interface Dashboard {
   kpis: KPI[];
   summary: Summary;
   byProject?: Record<string, ProjectView>;
+  saleRows?: SaleRow[];
 }
 
 /** Authenticated account (mirrors backend domain.User, no password material). */

@@ -507,6 +507,48 @@
   border-radius: 10px;
   padding: 9px 12px;
 }
+/* Clickable Ring (akad list) + side cells (Gap / Pipeline drill-downs). */
+.ct-scope .ring-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: transform 0.06s, filter 0.12s;
+}
+.ct-scope .ring-btn:hover {
+  filter: drop-shadow(0 2px 6px rgba(31, 157, 84, 0.28));
+}
+.ct-scope .ring-btn:active {
+  transform: scale(0.98);
+}
+.ct-scope .ring-btn:focus-visible {
+  outline: 2px solid var(--green, #1f9d54);
+  outline-offset: 2px;
+}
+.ct-scope button.cell-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.06s;
+}
+.ct-scope button.cell-btn:hover {
+  border-color: var(--accent, #0e5c34);
+  box-shadow: 0 1px 6px rgba(14, 92, 52, 0.14);
+}
+.ct-scope button.cell-btn:active {
+  transform: translateY(1px);
+}
+.ct-scope button.cell-btn:focus-visible {
+  outline: 2px solid var(--accent, #0e5c34);
+  outline-offset: 1px;
+}
 .ct-scope .ec-k {
   font-size: 10.5px;
   color: var(--muted);
@@ -535,6 +577,26 @@
   border-radius: 10px;
   padding: 9px 6px;
   text-align: center;
+}
+/* Clickable KPI tiles (drill into Booking→Akad→Cash-In, filtered by status). */
+.ct-scope button.ek-btn {
+  display: block;
+  width: 100%;
+  border: 1px solid transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.06s, box-shadow 0.12s;
+}
+.ct-scope button.ek-btn:hover {
+  border-color: var(--accent, #0e5c34);
+  box-shadow: 0 1px 6px rgba(14, 92, 52, 0.14);
+}
+.ct-scope button.ek-btn:active {
+  transform: translateY(1px);
+}
+.ct-scope button.ek-btn:focus-visible {
+  outline: 2px solid var(--accent, #0e5c34);
+  outline-offset: 1px;
 }
 .ct-scope .ek-v {
   font-size: 22px;
@@ -943,6 +1005,14 @@
   border-radius: 9px;
   padding: 9px 4px;
   text-align: center;
+}
+.ct-scope .cs-click {
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.ct-scope .cs-click:hover {
+  background: #eef4ef;
+  box-shadow: inset 0 0 0 1px var(--line, #d7e2da);
 }
 .ct-scope .cs-v {
   font-size: 21px;
@@ -1484,6 +1554,168 @@
 .ct-scope .dtable .row-low {
   background: #fdf1f0;
 }
+
+/* ---- KPI scorecard drill-down ---- */
+.ct-scope .kpi-scorecard .kpi-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.ct-scope .kpi-scorecard .kpi-row:hover {
+  background: #f4faf6;
+}
+.ct-scope .kpi-scorecard .kpi-row.open {
+  background: #eef7f1;
+}
+.ct-scope .kpi-scorecard .kpi-caret {
+  display: inline-block;
+  width: 12px;
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.ct-scope .dtable .kpi-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.ct-scope .dtable .kpi-row:hover {
+  background: #f4faf6;
+}
+.ct-scope .dtable .kpi-row.open {
+  background: #eef7f1;
+}
+.ct-scope .dtable .kpi-caret {
+  display: inline-block;
+  width: 12px;
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.ct-scope .kpi-detail-row > td {
+  background: #fafbfa;
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+}
+.ct-scope .kpi-detail {
+  padding: 10px 12px 12px;
+}
+.ct-scope .kpi-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.ct-scope .kpi-detail-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #0E5C34;
+  background: #e8f6ed;
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+.ct-scope .kpi-detail-formula {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-style: italic;
+}
+.ct-scope .kpi-detail-table {
+  width: 100%;
+  max-width: 460px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ct-scope .kpi-detail-table td {
+  padding: 5px 10px;
+  border-bottom: 1px dashed var(--line);
+  color: var(--ink2);
+}
+.ct-scope .kpi-detail-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ct-scope .kpi-detail-table .muted {
+  color: var(--muted);
+  font-size: 11px;
+}
+.ct-scope .kpi-detail-table .kpi-detail-total td {
+  border-bottom: none;
+  border-top: 2px solid var(--line);
+  color: var(--ink);
+}
+
+/* ---- DATA PENJUALAN transaction drill-down (SaleTable) ---- */
+.ct-scope .funnel-row.clickable {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.ct-scope .funnel-row.clickable:hover {
+  background: #f4faf6;
+}
+.ct-scope .funnel-row.clickable.open {
+  background: #eef7f1;
+}
+.ct-scope .funnel-detail-row > td {
+  background: #fafbfa;
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+}
+.ct-scope .sale-drill {
+  margin-top: 8px;
+}
+.ct-scope .sale-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ct-scope .sf-chip {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink2);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 11px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.ct-scope .sf-chip:hover {
+  background: #eef4ef;
+}
+.ct-scope .sf-chip.active {
+  background: #eef7f1;
+  border-color: #0E5C34;
+  color: #0E5C34;
+}
+.ct-scope .sf-chip b {
+  font-weight: 800;
+}
+.ct-scope .sale-scroll {
+  max-height: 52vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ct-scope .sale-table {
+  font-size: 12px;
+  margin: 0;
+}
+.ct-scope .sale-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f4faf6;
+  z-index: 1;
+}
+.ct-scope .sale-table .sale-total td {
+  position: sticky;
+  bottom: 0;
+  background: #f4faf6;
+  font-weight: 700;
+  border-top: 2px solid var(--line);
+}
 .ct-scope .tbar {
   height: 8px;
   background: var(--bg);
@@ -1601,6 +1833,142 @@
   font-size: 11.5px;
   font-weight: 800;
   text-align: right;
+}
+.ct-scope .rd-empty {
+  font-size: 10.5px;
+  padding: 8px 2px;
+  font-style: italic;
+}
+.ct-scope .rd-click {
+  cursor: pointer;
+  border-radius: 7px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 0 -5px;
+  transition: background 0.12s;
+}
+.ct-scope .rd-click:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.ct-scope .rd-click.open {
+  background: rgba(0, 0, 0, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.ct-scope tr.row-click {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.ct-scope tr.row-click:hover {
+  background: rgba(0, 0, 0, 0.035);
+}
+.ct-scope tr.row-open {
+  background: rgba(31, 157, 84, 0.08);
+}
+.ct-scope .rd-detail {
+  margin-top: 14px;
+  background: var(--bg);
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.ct-scope .rd-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.ct-scope .rd-detail-head b {
+  font-size: 13px;
+}
+.ct-scope .rd-detail-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #6b7280;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.ct-scope .rd-detail-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #111;
+}
+.ct-scope .rd-detail-scroll {
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 8px;
+}
+.ct-scope .rd-idtable {
+  font-size: 11px;
+}
+.ct-scope .rd-idtable thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+/* channel (Sumber Penjualan) identity drill-down */
+.ct-scope .cdr-row {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.ct-scope .cdr-row:hover {
+  background: #f4faf6;
+}
+.ct-scope .cdr-row.open {
+  background: #eef7f1;
+}
+.ct-scope .cdr-row.open td {
+  border-bottom-color: transparent;
+}
+.ct-scope .cdr-caret {
+  display: inline-block;
+  width: 14px;
+  font-size: 10px;
+  margin-right: 4px;
+}
+.ct-scope .cdr-detail-row > td {
+  padding: 0 0 12px;
+  background: #f4faf6;
+}
+.ct-scope .cdr-detail {
+  background: #fff;
+  border: 1px solid var(--line, #e5e7eb);
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0 4px;
+}
+.ct-scope .cdr-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.ct-scope .cdr-detail-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #6b7280;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.ct-scope .cdr-detail-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #111;
+}
+.ct-scope .cdr-detail-scroll {
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 8px;
 }
 .ct-scope .login-wrap {
   position: fixed;
@@ -2580,3 +2948,364 @@
 .ct-scope .cmd-dl { font-weight: 800; color: #b97f09; white-space: nowrap; }
 .ct-scope .cmd-impact { display: flex; align-items: center; gap: 6px; color: var(--ink, #2a3b30); }
 .ct-scope .cmd-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* ====================================================================
+   MOBILE / PHONE RESPONSIVENESS (Sales Control Tower)
+   The desktop war-room is a fixed 4-column bento built for 1920px. On
+   phones every panel grid collapses to a single-column scroll, fixed
+   sidebars stack, modals fill the viewport, and data tables/rows either
+   stack or scroll sideways rather than crushing their columns.
+   ==================================================================== */
+@media (max-width: 1024px) {
+  /* Below desktop, drop the fixed equal-height war-room behaviour: every
+     panel takes its natural content height and the page scrolls. Without
+     this, cards collapse shorter than their content and the charts (donut,
+     funnel bars, gauges) spill into the neighbouring card. */
+  .ct-scope .bento { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; align-items: start; }
+  .ct-scope.embed { display: block; height: auto; }
+  .ct-scope.embed .gp-root { height: auto; min-height: 0; overflow: visible; }
+  .ct-scope.embed .bento { min-height: 0; grid-template-rows: none; align-items: start; }
+  .ct-scope.embed .bento-col { min-height: 0; }
+  .ct-scope.embed .bento-col > * { flex: 0 0 auto; min-height: auto; }
+  .ct-scope .card { flex: 0 0 auto; }
+  .ct-scope .card-body { flex: 0 0 auto; min-height: auto; }
+  /* Long lists grow with the page instead of scrolling inside the card. */
+  .ct-scope.embed .sales-list,
+  .ct-scope.embed .reason-list,
+  .ct-scope.embed .proj-list,
+  .ct-scope.embed .alert-list,
+  .ct-scope.embed .cmd-table,
+  .ct-scope.embed .ag-list { max-height: none; overflow: visible; }
+}
+
+@media (max-width: 760px) {
+  /* Header / KPI rows */
+  .ct-scope .gp-header { padding: 12px 14px; }
+  .ct-scope .gp-root { padding: 12px 12px 14px; }
+
+  /* Fokus filter chips → horizontal scroll strip (no wrap / no clip). */
+  .ct-scope .filter-bar { gap: 8px; }
+  .ct-scope .fb-label { flex: none; }
+  .ct-scope .fb-chips {
+    flex: 1 1 auto; min-width: 0; flex-wrap: nowrap;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 2px;
+  }
+  .ct-scope .fb-chips::-webkit-scrollbar { display: none; }
+  .ct-scope .fb-chip { flex: none; white-space: nowrap; }
+
+  /* Main bento → single-column flex stack. */
+  .ct-scope .bento,
+  .ct-scope.embed .bento {
+    display: flex; flex-direction: column; flex: none;
+    grid-template-columns: none; grid-template-rows: none;
+    gap: 12px; min-height: 0; align-items: stretch;
+  }
+  .ct-scope .bento-col,
+  .ct-scope.embed .bento-col { flex: none; min-height: 0; gap: 12px; }
+
+  .ct-scope .bento-row { grid-template-columns: 1fr; }
+  .ct-scope .exec-kpis { grid-template-columns: repeat(2, 1fr); }
+  .ct-scope .cash-stages { grid-template-columns: repeat(2, 1fr); }
+  .ct-scope .lq-stats { grid-template-columns: 1fr; }
+  .ct-scope .ag-summary { grid-template-columns: repeat(3, 1fr); }
+
+  /* Detail / data rows: drop fixed label columns so the name can breathe. */
+  .ct-scope .fn-row { grid-template-columns: 110px 1fr 64px; }
+  .ct-scope .proj-row { grid-template-columns: 5px 1fr 70px 60px; }
+  .ct-scope .sl-row { grid-template-columns: 18px 1fr 56px 30px; }
+  .ct-scope .rs-name { width: 92px; }
+
+  /* CEO command/alert table → stack each alert into a card. */
+  .ct-scope .cmd-head { display: none; }
+  .ct-scope .cmd-row { grid-template-columns: 1fr; gap: 4px; padding: 10px 12px; }
+
+  /* ===== Modal → bottom sheet on phones ===== */
+  .ct-scope .modal-scrim { padding: 0; align-items: flex-end; }
+  .ct-scope .modal, .ct-scope .modal-wide {
+    width: 100%; max-width: 100%; max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    animation: sheet 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes sheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .ct-scope .modal-h {
+    position: sticky; top: 0; z-index: 5; background: #fff;
+    padding: 18px 18px 12px; border-radius: 18px 18px 0 0;
+  }
+  .ct-scope .modal-h::before {
+    content: ""; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 42px; height: 4px; border-radius: 999px; background: var(--line);
+  }
+  .ct-scope .modal-h h2 { font-size: 18px; }
+  .ct-scope .modal-body { padding: 14px 14px 28px; }
+  .ct-scope .md-grid2, .ct-scope .md-grid3 { grid-template-columns: 1fr; gap: 18px; }
+  .ct-scope .md-lead { font-size: 13.5px; }
+  .ct-scope .callout { font-size: 12.5px; }
+
+  /* Admin sidebar → horizontal scroll strip on top. */
+  .ct-scope .adm-root { flex-direction: column; }
+  .ct-scope .adm-nav { width: 100%; flex-direction: row; overflow-x: auto; flex-shrink: 1; -webkit-overflow-scrolling: touch; }
+  .ct-scope .adm-nav-item { white-space: nowrap; flex: none; }
+
+  /* Admin/import tables still scroll sideways (not card-friendly). */
+  .ct-scope .adm-table, .ct-scope .imp-drop-table {
+    display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+  }
+  .ct-scope .imp-issue { grid-template-columns: 1fr; gap: 4px; }
+
+  /* ===== Modal data tables → stacked cards =====
+     Entity tables (those with a <thead>) collapse into one card per row; the
+     column header becomes an inline label via data-label. 2-column attribute
+     tables (no <thead>) keep their normal vertical label/value layout. */
+  .ct-scope .modal-body .dtable:has(thead) > thead { display: none; }
+  .ct-scope .modal-body .dtable:has(thead),
+  .ct-scope .modal-body .dtable:has(thead) > tbody,
+  .ct-scope .modal-body .dtable:has(thead) > tfoot { display: block; width: 100%; }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px 13px;
+    margin-bottom: 10px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(11, 20, 16, 0.04);
+  }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.row-top { border-color: #bfe3cd; background: #f4faf6; }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.row-low { border-color: #f0c9c4; background: #fdf1f0; }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.open,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.row-open { border-color: #0E5C34; box-shadow: 0 0 0 1px #0E5C34 inset; }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr > td {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    text-align: right; white-space: normal;
+    padding: 8px 0; border: none; border-bottom: 1px solid var(--line);
+  }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr > td:last-child { border-bottom: none; }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr > td::before {
+    content: attr(data-label);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--muted); text-align: left; flex: 0 0 auto;
+  }
+  /* a few cells read better as full-width blocks (long text / bars / sub-lines) */
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr > td .tbar { flex: 1 1 auto; min-width: 90px; }
+
+  /* Inline drill-down rows (colSpan panels) stay full width, not cards. */
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.kpi-detail-row,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.funnel-detail-row,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.cdr-detail-row {
+    border: none; padding: 0; margin: -2px 0 10px; background: transparent; box-shadow: none;
+  }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.kpi-detail-row > td,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.funnel-detail-row > td,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.cdr-detail-row > td {
+    display: block; padding: 0; border: none; text-align: left;
+  }
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.kpi-detail-row > td::before,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.funnel-detail-row > td::before,
+  .ct-scope .modal-body .dtable:has(thead) > tbody > tr.cdr-detail-row > td::before { content: none; }
+
+  /* SaleTable total footer → simple strip. */
+  .ct-scope .modal-body .dtable:has(thead) > tfoot > tr {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 11px 13px; font-weight: 700; border-top: 2px solid var(--line);
+  }
+  .ct-scope .modal-body .dtable:has(thead) > tfoot > tr > td { display: inline; border: none; padding: 0; }
+
+  /* Nested scroll wrappers don't need to clip once rows are cards. */
+  .ct-scope .sale-scroll, .ct-scope .rd-detail-scroll, .ct-scope .cdr-detail-scroll {
+    max-height: none; border: none; border-radius: 0; overflow: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .ct-scope .exec-kpis, .ct-scope .cash-stages { grid-template-columns: 1fr 1fr; }
+  .ct-scope .ag-summary { grid-template-columns: 1fr; }
+}
+
+/* === CEO READABILITY (auto-generated) — bigger text for the embedded
+   CEO dashboard (60-yo audience). Scoped to .embed + desktop so the
+   war-room base and mobile layout stay intact. === */
+@media (min-width: 900px) {
+  .ct-scope.embed .splash { font-size: 16.5px; }
+  .ct-scope.embed .splash-title { font-size: 24.2px; }
+  .ct-scope.embed .splash-msg { font-size: 15px; }
+  .ct-scope.embed .splash-btn { font-size: 15px; }
+  .ct-scope.embed .hdr-logo { font-size: 22px; }
+  .ct-scope.embed .hdr-titles h1 { font-size: 27.5px; }
+  .ct-scope.embed .hdr-titles h1 span { font-size: 19.5px; }
+  .ct-scope.embed .hdr-titles p { font-size: 15px; }
+  .ct-scope.embed .ht-meta { font-size: 15px; }
+  .ct-scope.embed .ht-meta b { font-size: 20.9px; }
+  .ct-scope.embed .ht-pct { font-size: 17.5px; }
+  .ct-scope.embed .hdr-stat span { font-size: 13.5px; }
+  .ct-scope.embed .hdr-stat b { font-size: 22px; }
+  .ct-scope.embed .hdr-updated { font-size: 13.5px; }
+  .ct-scope.embed .fb-label { font-size: 15px; }
+  .ct-scope.embed .fb-chip { font-size: 14.5px; }
+  .ct-scope.embed .fb-select { font-size: 14.5px; }
+  .ct-scope.embed .fb-reset { font-size: 14.5px; }
+  .ct-scope.embed .filter-flag { font-size: 14.5px; }
+  .ct-scope.embed .card-h h3 { font-size: 16px; }
+  .ct-scope.embed .card-tag { font-size: 13px; }
+  .ct-scope.embed .ring-c b { font-size: 16.5px; }
+  .ct-scope.embed .ring-c span { font-size: 12.5px; }
+  .ct-scope.embed .ring-big { font-size: 37.4px; }
+  .ct-scope.embed .ring-small { font-size: 13.5px; }
+  .ct-scope.embed .ring-pct { font-size: 15px; }
+  .ct-scope.embed .ec-k { font-size: 13px; }
+  .ct-scope.embed .ec-v { font-size: 28.6px; }
+  .ct-scope.embed .ec-s { font-size: 13px; }
+  .ct-scope.embed .ek-v { font-size: 24.2px; }
+  .ct-scope.embed .ek-k { font-size: 12px; }
+  .ct-scope.embed .er-k { font-size: 13px; }
+  .ct-scope.embed .er-v { font-size: 29.7px; }
+  .ct-scope.embed .er-k2 { font-size: 12.5px; }
+  .ct-scope.embed .er-side b { font-size: 16px; }
+  .ct-scope.embed .et-head { font-size: 13.5px; }
+  .ct-scope.embed .et-leg { font-size: 12.5px; }
+  .ct-scope.embed .mb-x { font-size: 12px; }
+  .ct-scope.embed .fn-name { font-size: 14.5px; }
+  .ct-scope.embed .fn-name small { font-size: 12px; }
+  .ct-scope.embed .fn-val { font-size: 15px; }
+  .ct-scope.embed .fn-conv { font-size: 14.5px; }
+  .ct-scope.embed .fn-std { font-size: 11.5px; }
+  .ct-scope.embed .funnel-note { font-size: 14px; }
+  .ct-scope.embed .lqr-v { font-size: 19.5px; }
+  .ct-scope.embed .lqr-k { font-size: 12.5px; }
+  .ct-scope.embed .lq-cap { font-size: 12.5px; }
+  .ct-scope.embed .lq-stats span { font-size: 12.5px; }
+  .ct-scope.embed .lq-stats b { font-size: 17.5px; }
+  .ct-scope.embed .chan-c b { font-size: 23.1px; }
+  .ct-scope.embed .chan-c span { font-size: 12px; }
+  .ct-scope.embed .ch-row { font-size: 13.5px; }
+  .ct-scope.embed .ch-conv { font-size: 13px; }
+  .ct-scope.embed .rs-code { font-size: 12px; }
+  .ct-scope.embed .rs-name { font-size: 14px; }
+  .ct-scope.embed .rs-count { font-size: 14.5px; }
+  .ct-scope.embed .reason-foot { font-size: 12.5px; }
+  .ct-scope.embed .cs-v { font-size: 23.1px; }
+  .ct-scope.embed .cs-k { font-size: 12px; }
+  .ct-scope.embed .cr-head { font-size: 14px; }
+  .ct-scope.embed .cr-head b { font-size: 16px; }
+  .ct-scope.embed .cash-money span { font-size: 12.5px; }
+  .ct-scope.embed .cash-money b { font-size: 17.5px; }
+  .ct-scope.embed .pr-name b { font-size: 14.5px; }
+  .ct-scope.embed .pr-name span { font-size: 12px; }
+  .ct-scope.embed .pr-akad b { font-size: 16.5px; }
+  .ct-scope.embed .pr-akad span { font-size: 11px; }
+  .ct-scope.embed .pr-rev { font-size: 13.5px; }
+  .ct-scope.embed .proj-legend { font-size: 12.5px; }
+  .ct-scope.embed .sl-rank { font-size: 16px; }
+  .ct-scope.embed .sl-name b { font-size: 14.5px; }
+  .ct-scope.embed .role { font-size: 11.5px; }
+  .ct-scope.embed .sl-akad { font-size: 16px; }
+  .ct-scope.embed .sl-conv { font-size: 13.5px; }
+  .ct-scope.embed .sales-foot { font-size: 13px; }
+  .ct-scope.embed .ag-s b { font-size: 22px; }
+  .ct-scope.embed .ag-s span { font-size: 12px; }
+  .ct-scope.embed .ag-row { font-size: 13.5px; }
+  .ct-scope.embed .ag-proj { font-size: 12.5px; }
+  .ct-scope.embed .ag-akad { font-size: 13px; }
+  .ct-scope.embed .ag-event { font-size: 13.5px; }
+  .ct-scope.embed .al-sev { font-size: 11.5px; }
+  .ct-scope.embed .al-title { font-size: 14.5px; }
+  .ct-scope.embed .al-action { font-size: 13px; }
+  .ct-scope.embed .al-due span { font-size: 12px; }
+  .ct-scope.embed .al-due b { font-size: 13.5px; }
+  .ct-scope.embed .pill { font-size: 12.5px; }
+  .ct-scope.embed .eff { font-size: 13px; }
+  .ct-scope.embed .modal-h h2 { font-size: 23.1px; }
+  .ct-scope.embed .modal-h p { font-size: 14.5px; }
+  .ct-scope.embed .md-lead { font-size: 16px; }
+  .ct-scope.embed .md-sub { font-size: 15px; }
+  .ct-scope.embed .md-foot { font-size: 14px; }
+  .ct-scope.embed .dtable { font-size: 14.5px; }
+  .ct-scope.embed .dtable thead th { font-size: 13px; }
+  .ct-scope.embed .dtable .small { font-size: 13.5px; }
+  .ct-scope.embed .kpi-scorecard .kpi-caret { font-size: 12.5px; }
+  .ct-scope.embed .dtable .kpi-caret { font-size: 12.5px; }
+  .ct-scope.embed .kpi-detail-tag { font-size: 13px; }
+  .ct-scope.embed .kpi-detail-formula { font-size: 14px; }
+  .ct-scope.embed .kpi-detail-table { font-size: 14.5px; }
+  .ct-scope.embed .kpi-detail-table .muted { font-size: 13.5px; }
+  .ct-scope.embed .sf-chip { font-size: 14px; }
+  .ct-scope.embed .sale-table { font-size: 14.5px; }
+  .ct-scope.embed .callout { font-size: 15px; }
+  .ct-scope.embed .md-pending { font-size: 14.5px; }
+  .ct-scope.embed .md-insight li { font-size: 14.5px; }
+  .ct-scope.embed .small { font-size: 13.5px; }
+  .ct-scope.embed .rd-h b { font-size: 15px; }
+  .ct-scope.embed .rd-h span { font-size: 13px; }
+  .ct-scope.embed .rd-code { font-size: 12.5px; }
+  .ct-scope.embed .rd-info b { font-size: 14px; }
+  .ct-scope.embed .rd-info span { font-size: 12px; }
+  .ct-scope.embed .rd-n { font-size: 14px; }
+  .ct-scope.embed .rd-empty { font-size: 13px; }
+  .ct-scope.embed .rd-detail-head b { font-size: 15px; }
+  .ct-scope.embed .rd-detail-close { font-size: 16px; }
+  .ct-scope.embed .rd-idtable { font-size: 13.5px; }
+  .ct-scope.embed .cdr-caret { font-size: 12.5px; }
+  .ct-scope.embed .cdr-detail-head { font-size: 15px; }
+  .ct-scope.embed .cdr-detail-close { font-size: 16px; }
+  .ct-scope.embed .login-logo { font-size: 20.9px; }
+  .ct-scope.embed .login-brand h1 { font-size: 20.9px; }
+  .ct-scope.embed .login-brand p { font-size: 14.5px; }
+  .ct-scope.embed .login-field span { font-size: 14px; }
+  .ct-scope.embed .login-field input { font-size: 16px; }
+  .ct-scope.embed .login-error { font-size: 14.5px; }
+  .ct-scope.embed .login-btn { font-size: 16px; }
+  .ct-scope.embed .login-hint { font-size: 13.5px; }
+  .ct-scope.embed .gp-tool-btn { font-size: 14.5px; }
+  .ct-scope.embed .gp-user { font-size: 14.5px; }
+  .ct-scope.embed .gp-user small { font-size: 12px; }
+  .ct-scope.embed .adm-nav-title { font-size: 13px; }
+  .ct-scope.embed .adm-nav-item { font-size: 15px; }
+  .ct-scope.embed .adm-section-h h2 { font-size: 20.9px; }
+  .ct-scope.embed .adm-count { font-size: 14.5px; }
+  .ct-scope.embed .adm-table { font-size: 14.5px; }
+  .ct-scope.embed .adm-table thead th { font-size: 13px; }
+  .ct-scope.embed .adm-link { font-size: 14.5px; }
+  .ct-scope.embed .adm-edit-table input, .ct-scope.embed .adm-edit-table select { font-size: 14.5px; }
+  .ct-scope.embed .adm-field > span { font-size: 14px; }
+  .ct-scope.embed .adm-field input, .ct-scope.embed .adm-field select { font-size: 15.5px; }
+  .ct-scope.embed .adm-btn { font-size: 15px; }
+  .ct-scope.embed .adm-error { font-size: 14.5px; }
+  .ct-scope.embed .adm-ok { font-size: 14.5px; }
+  .ct-scope.embed .imp-auto-title { font-size: 15px; }
+  .ct-scope.embed .imp-auto-sub { font-size: 14px; }
+  .ct-scope.embed .imp-auto-sel { font-size: 14.5px; }
+  .ct-scope.embed .imp-auto-sel select { font-size: 14.5px; }
+  .ct-scope.embed .imp-toggle { font-size: 13.5px; }
+  .ct-scope.embed .panel-empty { font-size: 14.5px; }
+  .ct-scope.embed .empty-emoji { font-size: 57.2px; }
+  .ct-scope.embed .empty-title { font-size: 24.2px; }
+  .ct-scope.embed .empty-msg { font-size: 15.5px; }
+  .ct-scope.embed .imp-title { font-size: 19.5px; }
+  .ct-scope.embed .imp-sub { font-size: 14.5px; }
+  .ct-scope.embed .imp-drop input[type="file"] { font-size: 15px; }
+  .ct-scope.embed .imp-panel-h { font-size: 13.5px; }
+  .ct-scope.embed .imp-metric { font-size: 15px; }
+  .ct-scope.embed .imp-metric-v.strong { font-size: 16.5px; }
+  .ct-scope.embed .imp-clean { font-size: 14px; }
+  .ct-scope.embed .imp-chip { font-size: 14px; }
+  .ct-scope.embed .imp-valid-h { font-size: 15px; }
+  .ct-scope.embed .imp-badge { font-size: 13.5px; }
+  .ct-scope.embed .imp-caret { font-size: 13.5px; }
+  .ct-scope.embed .imp-issue { font-size: 14.5px; }
+  .ct-scope.embed .imp-issue-empty { font-size: 14.5px; }
+  .ct-scope.embed .imp-block { font-size: 14.5px; }
+  .ct-scope.embed .imp-dtab { font-size: 14px; }
+  .ct-scope.embed .imp-drop-note { font-size: 14px; }
+  .ct-scope.embed .imp-drop-table { font-size: 14.5px; }
+  .ct-scope.embed .imp-drop-table th { font-size: 13px; }
+  .ct-scope.embed .imp-dtag { font-size: 12.5px; }
+  .ct-scope.embed .imp-history-h { font-size: 13.5px; }
+  .ct-scope.embed .imp-hfile { font-size: 15px; }
+  .ct-scope.embed .imp-hmeta { font-size: 13.5px; }
+  .ct-scope.embed .imp-hsum { font-size: 14.5px; }
+  .ct-scope.embed .ff-val { font-size: 14.5px; }
+  .ct-scope.embed .ff-conv { font-size: 13.5px; }
+  .ct-scope.embed .ff-name { font-size: 12.5px; }
+  .ct-scope.embed .cmd-table { font-size: 14.5px; }
+  .ct-scope.embed .cmd-head { font-size: 12px; }
+  .ct-scope.embed .cmd-issue small { font-size: 11.5px; }
+}

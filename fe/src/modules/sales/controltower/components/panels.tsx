@@ -20,10 +20,33 @@ function EmptyCard({ title, tag }: { title: string; tag?: string; onExpand?: () 
 }
 
 /* ===================== PANEL 1 — EXECUTIVE SNAPSHOT ===================== */
-export function ExecutivePanel({ d, onExpand }: PanelProps) {
+type ExecPick = (status: "akad" | "proses" | "batal" | null, bookingOnly?: boolean) => void;
+
+export function ExecutivePanel({ d, onExpand, onPick }: PanelProps & { onPick?: ExecPick }) {
   const e = d.exec;
   const ach = (e.akad / e.target2026) * 100;
   const pipeline = e.akad + e.proses;
+  // Each KPI tile drills into the Booking→Akad→Cash-In detail. Status tiles
+  // filter to that status; Total Booking scopes to active bookings (akad+proses,
+  // no Batal) so the list count ties to the KPI. Static tile if no handler.
+  const tile = (
+    value: number,
+    label: string,
+    color: string | undefined,
+    status: "akad" | "proses" | "batal" | null,
+    bookingOnly = false,
+  ) =>
+    onPick ? (
+      <button type="button" className="ek ek-btn" onClick={() => onPick(status, bookingOnly)} title={`Lihat detail ${label}`}>
+        <span className="ek-v" style={color ? { color } : undefined}>{value}</span>
+        <span className="ek-k">{label}</span>
+      </button>
+    ) : (
+      <div className="ek">
+        <span className="ek-v" style={color ? { color } : undefined}>{value}</span>
+        <span className="ek-k">{label}</span>
+      </div>
+    );
   return (
     <Card
       title="Executive Sales Snapshot"
@@ -40,50 +63,63 @@ export function ExecutivePanel({ d, onExpand }: PanelProps) {
       className="card-exec"
     >
       <div className="exec-top">
-        <Ring value={e.akad} max={e.target2026} size={150} stroke={15} color="#1F9D54">
-          <div className="ring-big">{e.akad}</div>
-          <div className="ring-small">/ {e.target2026} akad</div>
-          <div className="ring-pct">{pct(ach, 1)}</div>
-        </Ring>
+        {(() => {
+          const ring = (
+            <Ring value={e.akad} max={e.target2026} size={150} stroke={15} color="#1F9D54">
+              <div className="ring-big">{e.akad}</div>
+              <div className="ring-small">/ {e.target2026} akad</div>
+              <div className="ring-pct">{pct(ach, 1)}</div>
+            </Ring>
+          );
+          return onPick ? (
+            <button type="button" className="ring-btn" onClick={() => onPick("akad")} title={`Lihat ${e.akad} akad`}>
+              {ring}
+            </button>
+          ) : (
+            ring
+          );
+        })()}
         <div className="exec-side">
-          <div className="exec-cell">
-            <span className="ec-k">Gap ke Target</span>
-            <span className="ec-v" style={{ color: "#D6453A" }}>
-              {e.target2026 - e.akad}
-            </span>
-            <span className="ec-s">unit lagi menuju 500</span>
-          </div>
-          <div className="exec-cell">
-            <span className="ec-k">Pipeline Aktif</span>
-            <span className="ec-v">{pipeline}</span>
-            <span className="ec-s">akad + {e.proses} proses</span>
-          </div>
+          {/* Gap → ringkasan posisi target (Executive detail). */}
+          {onExpand ? (
+            <button type="button" className="exec-cell cell-btn" onClick={onExpand} title="Lihat posisi target">
+              <span className="ec-k">Gap ke Target</span>
+              <span className="ec-v" style={{ color: "#D6453A" }}>
+                {e.target2026 - e.akad}
+              </span>
+              <span className="ec-s">unit lagi menuju 500</span>
+            </button>
+          ) : (
+            <div className="exec-cell">
+              <span className="ec-k">Gap ke Target</span>
+              <span className="ec-v" style={{ color: "#D6453A" }}>
+                {e.target2026 - e.akad}
+              </span>
+              <span className="ec-s">unit lagi menuju 500</span>
+            </div>
+          )}
+          {/* Pipeline aktif = akad + proses = booking aktif (157). */}
+          {onPick ? (
+            <button type="button" className="exec-cell cell-btn" onClick={() => onPick(null, true)} title={`Lihat ${pipeline} booking aktif`}>
+              <span className="ec-k">Pipeline Aktif</span>
+              <span className="ec-v">{pipeline}</span>
+              <span className="ec-s">akad + {e.proses} proses</span>
+            </button>
+          ) : (
+            <div className="exec-cell">
+              <span className="ec-k">Pipeline Aktif</span>
+              <span className="ec-v">{pipeline}</span>
+              <span className="ec-s">akad + {e.proses} proses</span>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="exec-kpis">
-        <div className="ek">
-          <span className="ek-v">{e.booking}</span>
-          <span className="ek-k">Total Booking</span>
-        </div>
-        <div className="ek">
-          <span className="ek-v" style={{ color: "#1F9D54" }}>
-            {e.akad}
-          </span>
-          <span className="ek-k">Akad Selesai</span>
-        </div>
-        <div className="ek">
-          <span className="ek-v" style={{ color: "#D9930B" }}>
-            {e.proses}
-          </span>
-          <span className="ek-k">Menuju Akad</span>
-        </div>
-        <div className="ek">
-          <span className="ek-v" style={{ color: "#D6453A" }}>
-            {e.batal}
-          </span>
-          <span className="ek-k">Batal / Gugur</span>
-        </div>
+        {tile(e.booking, "Total Booking", undefined, null, true)}
+        {tile(e.akad, "Akad Selesai", "#1F9D54", "akad")}
+        {tile(e.proses, "Menuju Akad", "#D9930B", "proses")}
+        {tile(e.batal, "Batal / Gugur", "#D6453A", "batal")}
       </div>
 
       <div className="exec-rev">
@@ -456,7 +492,7 @@ export function ReasonPanel({ d, onExpand }: PanelProps) {
     >
       <div className="reason-list">
         {top.map((r) => (
-          <div className="rs-row" key={r.code} title={r.id}>
+          <div className="rs-row" key={r.layer + r.code} title={`${r.id} · ${r.layer} · ${num(r.count)} prospek`}>
             <span className="rs-code" style={{ background: LAYER_C[r.layer] }}>
               {r.code}
             </span>
@@ -487,14 +523,14 @@ export function ReasonPanel({ d, onExpand }: PanelProps) {
 }
 
 /* ===================== PANEL 8 — BOOKING → AKAD → CASH-IN ===================== */
-export function CashPanel({ d, onExpand }: PanelProps) {
+export function CashPanel({ d, onExpand, onPick }: PanelProps & { onPick?: (status: "akad" | "proses" | "batal" | null) => void }) {
   const e = d.exec;
   const baRate = (e.akad / e.booking) * 100;
-  const stages = [
-    { k: "Booking", v: e.booking, c: "#0E5C34" },
-    { k: "Proses/KPR", v: e.proses, c: "#D9930B" },
-    { k: "Akad", v: e.akad, c: "#1F9D54" },
-    { k: "Batal", v: e.batal, c: "#D6453A" },
+  const stages: { k: string; v: number; c: string; status: "akad" | "proses" | "batal" | null }[] = [
+    { k: "Booking", v: e.booking, c: "#0E5C34", status: null },
+    { k: "Proses/KPR", v: e.proses, c: "#D9930B", status: "proses" },
+    { k: "Akad", v: e.akad, c: "#1F9D54", status: "akad" },
+    { k: "Batal", v: e.batal, c: "#D6453A", status: "batal" },
   ];
   return (
     <Card
@@ -512,7 +548,12 @@ export function CashPanel({ d, onExpand }: PanelProps) {
     >
       <div className="cash-stages">
         {stages.map((s) => (
-          <div className="cs" key={s.k}>
+          <div
+            className={"cs" + (onPick ? " cs-click" : "")}
+            key={s.k}
+            onClick={onPick ? (ev) => { ev.stopPropagation(); onPick(s.status); } : undefined}
+            title={onPick ? "Klik untuk rincian transaksi" : undefined}
+          >
             <span className="cs-v" style={{ color: s.c }}>
               {s.v}
             </span>

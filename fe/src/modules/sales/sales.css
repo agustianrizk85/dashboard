@@ -67,3 +67,19 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
   flex: 1; min-height: 0; overflow-y: auto;
   background: var(--bg); padding: 16px 20px 20px;
 }
+
+/* ---- Mobile / phone responsiveness (Sales shell) ---- */
+@media (max-width: 860px) {
+  .sales-canvas .hdr { padding: 12px 16px; gap: 12px; flex-wrap: wrap; }
+  .sales-canvas .hdr-titles h1 { font-size: 19px; }
+  .sales-canvas .hdr-meta { gap: 12px; }
+  .sales-canvas .clock { display: none; }
+  .sales-canvas .tabs { padding: 6px 12px 0; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .sales-canvas .tabs::-webkit-scrollbar { display: none; }
+  .sales-canvas .tab { flex: none; white-space: nowrap; }
+  .sales-canvas .content { padding: 12px 12px 18px; }
+}
+@media (max-width: 480px) {
+  .sales-canvas .hdr-titles h1 { font-size: 17px; }
+  .sales-canvas .hdr-titles .sub, .sales-canvas .hdr-titles .tag { display: none; }
+}

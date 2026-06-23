@@ -62,7 +62,7 @@ const DRILLS: Record<string, DrillDef> = {
   sales: { title: "Sales Performance", tag: "Panel 4 · Ranking sales", render: (d) => <SalesDetail d={d} />, wide: true },
   lq: { title: "Lead Quality & Ads Efficiency", tag: "Panel 3 · Kualitas leads & cost/akad", render: (d) => <LeadQualityDetail d={d} />, wide: true },
   reason: { title: "Opportunity Loss · Reason Code", tag: "Panel 7 · 3-layer system", render: (d) => <ReasonDetail d={d} />, wide: true },
-  cash: { title: "Booking → Akad → Cash-In", tag: "Panel 8 · Kontrol transaksi", render: (d) => <CashDetail d={d} /> },
+  cash: { title: "Booking → Akad → Cash-In", tag: "Panel 8 · Kontrol transaksi", render: (d) => <CashDetail d={d} />, wide: true },
   chan: { title: "Sumber Penjualan", tag: "Panel 6 · Channel performance", render: (d) => <ChannelDetail d={d} /> },
   agent: { title: "Agent Performance", tag: "Panel 9 · Kontribusi eksternal", render: (d) => <AgentEventDetail d={d} />, wide: true },
   alert: { title: "CEO Command Panel", tag: "Panel 10 · Issue → Command → PIC → Deadline → Impact", render: (d) => <AlertDetail d={d} />, wide: true },
@@ -171,7 +171,7 @@ function mergeViews(views: ProjectView[]): ProjectView {
   const evB = views.reduce((s, v) => s + (v.events?.attributed?.booking ?? 0), 0);
   const evA = views.reduce((s, v) => s + (v.events?.attributed?.akad ?? 0), 0);
   const events = {
-    attributed: { name: "Walk-in / Undangan", booking: evB, akad: evA, conv: evB ? Math.round((evA / evB) * 100) : 0 },
+    attributed: { name: "Walkin", booking: evB, akad: evA, conv: evB ? Math.round((evA / evB) * 100) : 0 },
     note: views[0].events?.note ?? "",
   };
 
@@ -324,6 +324,9 @@ function CtHeader({ d }: { d: Dashboard }) {
 function DashboardBody({ base, fullScreen = false }: { base: Dashboard; fullScreen?: boolean }) {
   const [filter, setFilter] = useState<Filter>({ cat: "all", proj: null });
   const [drill, setDrill] = useState<string | null>(null);
+  // Pre-selected status when Panel 8's drill is opened from a stat cell.
+  const [cashStatus, setCashStatus] = useState<"akad" | "proses" | "batal" | null>(null);
+  const [cashBooking, setCashBooking] = useState(false);
   const d = useMemo(() => applyFilter(base, filter), [base, filter]);
 
   // AI Alert & Action Plan (OpenRouter). Falls back server-side to the
@@ -344,6 +347,11 @@ function DashboardBody({ base, fullScreen = false }: { base: Dashboard; fullScre
   const da = useMemo(() => (aiAlerts ? { ...d, alerts: aiAlerts } : d), [d, aiAlerts]);
 
   const open = (k: string) => setDrill(k);
+  const openCash = (status: "akad" | "proses" | "batal" | null, bookingOnly = false) => {
+    setCashStatus(status);
+    setCashBooking(bookingOnly);
+    setDrill("cash");
+  };
   const pickProject = (p: Project) => setFilter({ cat: "all", proj: p.code });
 
   const empty =
@@ -378,8 +386,8 @@ function DashboardBody({ base, fullScreen = false }: { base: Dashboard; fullScre
 
       <main className="bento">
         <div className="bento-col bento-col-1">
-          <ExecutivePanel d={d} onExpand={() => open("exec")} />
-          <CashPanel d={d} onExpand={() => open("cash")} />
+          <ExecutivePanel d={d} onExpand={() => open("exec")} onPick={openCash} />
+          <CashPanel d={d} onExpand={() => openCash(null)} onPick={openCash} />
         </div>
         <div className="bento-col bento-col-2">
           <FunnelPanel d={d} onExpand={() => open("funnel")} />
@@ -406,7 +414,11 @@ function DashboardBody({ base, fullScreen = false }: { base: Dashboard; fullScre
         wide={drill ? DRILLS[drill].wide : false}
         onClose={() => setDrill(null)}
       >
-        {drill ? DRILLS[drill].render(drill === "alert" ? da : d) : null}
+        {drill === "cash" ? (
+          <CashDetail d={d} initial={cashStatus} bookingOnly={cashBooking} />
+        ) : drill ? (
+          DRILLS[drill].render(drill === "alert" ? da : d)
+        ) : null}
       </Modal>
     </div>
   );
