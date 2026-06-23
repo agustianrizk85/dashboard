@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/auth/AuthContext";
+import { useAiGrounding } from "@/ai/AiAssistant";
 import { useRealtimeSocket } from "@/lib/realtime";
 import type { Alert, Cat, Dashboard, Exec, Project, ProjectView } from "./types";
 import { api, AuthError } from "./api/client";
@@ -185,6 +186,29 @@ type LoadState =
 
 export function ControlTowerView({ fullScreen = false }: { fullScreen?: boolean }) {
   const [state, setState] = useState<LoadState>({ status: "loading", data: null, error: "" });
+  const setGrounding = useAiGrounding();
+
+  // Publish a compact summary of the war-room to the AI assistant (omits the
+  // heavy saleRows/byProject so the prompt stays bounded).
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    const d = state.data;
+    setGrounding({
+      division: "Sales",
+      page: "Control Tower",
+      data: {
+        period: d.period,
+        summary: d.summary,
+        exec: d.exec,
+        funnel: d.funnel,
+        channels: d.channels,
+        reasons: d.reasons,
+        projects: d.projects?.map((p) => ({ code: p.code, name: p.name, akad: p.akad, proses: p.proses, batal: p.batal, rev: p.rev, cat: p.cat })),
+        sales: d.sales?.slice(0, 15).map((s) => ({ name: s.name, akad: s.akad, proses: s.proses, batal: s.batal, total: s.total })),
+        agents: d.agents?.slice(0, 15).map((a) => ({ name: a.name, akad: a.akad, total: a.total })),
+      },
+    });
+  }, [state, setGrounding]);
 
   const load = useCallback(async () => {
     setState((s) => (s.status === "ready" ? s : { status: "loading", data: null, error: "" }));

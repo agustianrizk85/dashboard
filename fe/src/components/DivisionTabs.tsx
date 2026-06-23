@@ -9,6 +9,8 @@ const TABS: { path: string; label: string }[] = [
   { path: "/keuangan", label: "Keuangan" },
   // Cross-division sales recap from Google Sheets (directors only).
   { path: "/rekap", label: "Rekap Penjualan" },
+  // Cross-division AI orchestrator (directors only). Set apart visually.
+  { path: "/orchestrator", label: "Orchestrator AI" },
   // Cross-division approval inbox (directors only). Set apart visually.
   { path: "/approvals", label: "Persetujuan" },
 ];
@@ -27,11 +29,11 @@ export function DivisionTabs() {
     <div className="divtabs">
       {TABS.map((t) => {
         const active = location.pathname.startsWith(t.path);
-        const isApprovals = t.path === "/approvals";
+        const accent = t.path === "/approvals" ? "divtab-approvals" : t.path === "/orchestrator" ? "divtab-orchestrator" : "";
         return (
           <button
             key={t.path}
-            className={`divtab ${active ? "on" : ""} ${isApprovals ? "divtab-approvals" : ""}`}
+            className={`divtab ${active ? "on" : ""} ${accent}`}
             onClick={() => navigate(t.path)}
           >
             {t.label}

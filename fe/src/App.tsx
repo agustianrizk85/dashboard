@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthContext";
 import type { Division, SessionUser } from "@/auth/AuthContext";
 import { Login } from "@/components/Login";
 import { LoadingSplash } from "@/components/Splash";
+import { AiAssistant } from "@/ai/AiAssistant";
 
 // Each division's module is code-split: only the logged-in division's bundle
 // (and its CSS) is ever loaded, which keeps the two design systems isolated.
@@ -15,6 +16,7 @@ const SalesApp = lazy(() => import("@/modules/sales/SalesApp"));
 const KeuanganApp = lazy(() => import("@/modules/keuangan/KeuanganApp"));
 const ApprovalsApp = lazy(() => import("@/approvals/ApprovalsApp"));
 const RekapApp = lazy(() => import("@/modules/rekap/RekapApp"));
+const OrchestratorApp = lazy(() => import("@/modules/orchestrator/OrchestratorApp"));
 const AiImportApp = lazy(() => import("@/modules/aiimport/AiImportApp"));
 const AdminApp = lazy(() => import("@/modules/admin/AdminApp"));
 
@@ -66,6 +68,7 @@ function LoginRoute() {
 
 export function App() {
   return (
+    <AiAssistant>
     <Routes>
       <Route path="/login" element={<LoginRoute />} />
         <Route
@@ -125,6 +128,14 @@ export function App() {
           }
         />
         <Route
+          path="/orchestrator/*"
+          element={
+            <RequireAllAccess>
+              <OrchestratorApp />
+            </RequireAllAccess>
+          }
+        />
+        <Route
           path="/ai-import/*"
           element={
             <RequireAllAccess>
@@ -143,5 +154,6 @@ export function App() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="*" element={<RootRedirect />} />
     </Routes>
+    </AiAssistant>
   );
 }

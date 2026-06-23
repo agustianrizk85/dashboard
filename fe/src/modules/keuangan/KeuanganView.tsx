@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useAiGrounding } from "@/ai/AiAssistant";
 import { useRealtimeSocket } from "@/lib/realtime";
 import type { Dashboard, ProjectFin, Summary } from "./types";
 import { api, AuthError } from "./api/client";
@@ -61,6 +62,32 @@ type Modal = { kind: "focus"; key: string } | { kind: "project"; p: ProjectFin }
 /** Embedded Finance dashboard (Akad/KPR control tower) for the unified shell. */
 export function KeuanganView() {
   const [state, setState] = useState<LoadState>({ status: "loading", data: null, error: "" });
+  const setGrounding = useAiGrounding();
+
+  // Publish a compact finance summary to the AI assistant (skips the heavy
+  // per-akad transaction list).
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    const d = state.data;
+    setGrounding({
+      division: "Keuangan",
+      page: "Akad / KPR",
+      data: {
+        period: d.period,
+        focusYear: d.focusYear,
+        summary: d.summary,
+        funnel: d.funnel,
+        monthly: d.monthly,
+        projects: d.projects,
+        banks: d.banks,
+        sales: d.sales,
+        payMix: d.payMix,
+        pipeline: d.pipeline,
+        alerts: d.alerts,
+        kpis: d.kpis,
+      },
+    });
+  }, [state, setGrounding]);
 
   const load = useCallback(async () => {
     setState((s) => (s.status === "ready" ? s : { status: "loading", data: null, error: "" }));

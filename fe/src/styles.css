@@ -220,6 +220,10 @@ body {
 }
 .divtab:hover { color: #eafff1; background: rgba(255, 255, 255, .06); }
 .divtab.on { background: var(--bg); color: var(--navy-800); }
+/* Cross-division AI orchestrator tab — sky accent so it stands apart. */
+.divtab-orchestrator { color: #8fd0ff; font-weight: 700; }
+.divtab-orchestrator:hover { color: #bfe6ff; background: rgba(143, 208, 255, .12); }
+.divtab-orchestrator.on { background: var(--bg); color: #0b6cb0; }
 /* Cross-division approval inbox tab — lime accent so it stands apart. */
 .divtab-approvals { color: var(--lime); font-weight: 700; }
 .divtab-approvals:hover { color: #cdf57e; background: rgba(179, 236, 85, .12); }
@@ -244,3 +248,37 @@ body {
 .fin-cell.warn .fin-cell-v { color: var(--warn, #b8860b); }
 .fin-cell.bad .fin-cell-v { color: var(--bad, #c0392b); }
 .fin-strip-go { margin-left: auto; align-self: center; padding: 0 16px; font-weight: 700; color: var(--green-700, #0f6b46); font-size: 12.5px; }
+
+/* ====================================================================
+   SHELL — mobile / phone responsiveness.
+   Tablet & phone overrides for shared chrome (login, division tabs,
+   finance strip). Each division module ships its own responsive block.
+   ==================================================================== */
+@media (max-width: 768px) {
+  .login-wrap { padding: 20px 16px; gap: 24px; }
+
+  /* Division switch tabs — never wrap; scroll horizontally instead so the
+     whole strip stays a single row that the user can swipe through. */
+  .divtabs {
+    margin-right: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .divtabs::-webkit-scrollbar { display: none; }
+  .divtab { flex: none; padding: 9px 12px; font-size: 12.5px; white-space: nowrap; }
+
+  /* Finance strip wraps onto multiple lines; keep cells comfortable. */
+  .fin-strip-tag { padding: 9px 12px; font-size: 11px; }
+  .fin-cell { padding: 7px 12px; flex: 1 1 40%; }
+  .fin-strip-go { margin-left: 0; padding: 8px 12px; width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .login-card { padding: 24px 18px 20px; border-radius: 14px; }
+  .login-brand h1 { font-size: 18px; }
+  /* 16px inputs stop iOS Safari from auto-zooming on focus. */
+  .login-field input { font-size: 16px; }
+  .fin-cell { flex: 1 1 100%; border-left: none; border-top: 1px solid var(--line); }
+}
