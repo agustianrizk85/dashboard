@@ -136,3 +136,16 @@
 .apr-btn.ghost { margin-left: auto; background: none; color: var(--ink-2); border-color: var(--line-strong); }
 .apr-btn.ghost:hover { border-color: var(--green-600); color: var(--green-700); }
 .apr-readonly { font-size: 12px; font-weight: 600; color: var(--ink-3); font-style: italic; }
+
+/* ---- Mobile / phone responsiveness (Approvals) ---- */
+@media (max-width: 600px) {
+  .apr-hdr { padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
+  .apr-hdr-titles h1 { font-size: 18px; }
+  .apr-hdr-meta { gap: 12px; }
+  .apr-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .apr-detail-row { grid-template-columns: 100px 1fr; gap: 6px; }
+}
+@media (max-width: 420px) {
+  .apr-detail-row { grid-template-columns: 1fr; gap: 2px; }
+  .apr-detail-row dt { margin-top: 6px; }
+}

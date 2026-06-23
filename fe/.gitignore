@@ -5,3 +5,5 @@ dist-ssr
 .env
 .env.production
 .DS_Store
+
+vite.log

@@ -288,3 +288,19 @@
   .qd-grid { grid-template-columns: 1fr 1fr; }
   .qd-channels { grid-column: 1 / -1; grid-row: auto; }
 }
+
+/* ---- Mobile / phone responsiveness (Performa Iklan) ---- */
+@media (max-width: 860px) {
+  .qd-grid { grid-template-columns: 1fr; }
+  .qd-channels { grid-column: auto; grid-row: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Keep the 7-column channel matrix readable by scrolling it sideways. */
+  .qd-ch-head, .qd-ch-row { min-width: 560px; }
+  .mkperf-kpis { grid-template-columns: repeat(2, 1fr); }
+  .qd-stat3, .qd-tiles { grid-template-columns: repeat(2, 1fr); }
+  .mkperf-dist-row { grid-template-columns: 84px 1fr 28px; }
+  .qd-asset { grid-template-columns: 64px 1fr 56px 24px; }
+}
+@media (max-width: 480px) {
+  .mkperf-kpis { grid-template-columns: 1fr; }
+  .qd-stat3, .qd-tiles { grid-template-columns: 1fr; }
+}

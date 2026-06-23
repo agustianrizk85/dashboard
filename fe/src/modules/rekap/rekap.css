@@ -133,3 +133,15 @@
   .rk-cards { grid-template-columns: repeat(2, 1fr); }
   .rk-breakdown { grid-template-columns: 1fr; }
 }
+
+/* ---- Mobile / phone responsiveness (Rekap) ---- */
+@media (max-width: 600px) {
+  .rk-hdr { padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
+  .rk-hdr-titles h1 { font-size: 17px; }
+  .rk-nav { padding: 6px 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rk-content { padding: 14px 14px 32px; }
+  .rk-cards { grid-template-columns: repeat(2, 1fr); }
+  .rk-breakdown { grid-template-columns: 1fr; }
+  .rk-search { min-width: 0; flex: 1 1 100%; }
+  .rk-tablewrap { max-height: 70vh; }
+}
