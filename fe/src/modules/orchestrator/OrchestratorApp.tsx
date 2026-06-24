@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth, AUTH_EXPIRED_EVENT } from "@/auth/AuthContext";
 import { DivisionTabs } from "@/components/DivisionTabs";
 import "./orchestrator.css";
 
@@ -127,6 +127,7 @@ export default function OrchestratorApp() {
           headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
           body: JSON.stringify({ stage: stage.key, divisions, prior }),
         });
+        if (res.status === 401) window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
         const body = (await res.json().catch(() => ({}))) as { output?: string; error?: string };
         if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
         const output = body.output || "(kosong)";

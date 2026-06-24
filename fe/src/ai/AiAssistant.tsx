@@ -1,8 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth, AUTH_EXPIRED_EVENT } from "@/auth/AuthContext";
 import "./ai.css";
+
+/** Fire the global session-expired event when an auth-gated call returns 401. */
+function check401(res: Response) {
+  if (res.status === 401) window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+}
 
 /** Live grounding a page publishes so the assistant can answer about its data. */
 export interface Grounding {
@@ -86,6 +91,7 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
     try {
       const token = localStorage.getItem(TOKEN_KEY);
       const res = await fetch(AUTH_API + "/ai/config", { headers: token ? { Authorization: "Bearer " + token } : {} });
+      check401(res);
       if (res.ok) setConfig((await res.json()) as { configured: boolean; model: string });
     } catch {
       /* leave config null */
@@ -107,6 +113,7 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
         body: JSON.stringify({ key: keyInput.trim(), model: modelInput.trim() }),
       });
+      check401(res);
       const body = (await res.json().catch(() => ({}))) as { configured?: boolean; model?: string; error?: string };
       if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
       setConfig({ configured: !!body.configured, model: body.model || "" });
@@ -150,6 +157,7 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
           context: grounding?.data ?? null,
         }),
       });
+      check401(res);
       const body = (await res.json().catch(() => ({}))) as { reply?: string; error?: string };
       if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
       setTurns((t) => [...t, { role: "assistant", content: body.reply || "(kosong)" }]);

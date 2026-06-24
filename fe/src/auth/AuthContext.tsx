@@ -164,8 +164,7 @@ const API_ID_OVERRIDE: Record<string, string> = {
  * module's API client looks. Never throws — if the backend is down the module
  * surfaces its own error rather than blocking the (mock) dashboard login.
  */
-async function bridgeModuleToken(division: Division, identifier: string, password: string): Promise<void> {
-  if (USE_REAL_AUTH) return; // a unified backend would issue one token for all
+async function bridgeModuleToken(division: Division, identifier: string, password: string): Promise<boolean> {
   const cfg = MODULE_BACKENDS[division];
   const id = API_ID_OVERRIDE[identifier.toLowerCase()] ?? identifier;
   const body = cfg.idField === "username" ? { username: id, password } : { email: id, password };
@@ -175,11 +174,16 @@ async function bridgeModuleToken(division: Division, identifier: string, passwor
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) return;
+    if (!res.ok) return false;
     const data = (await res.json()) as { token?: string };
-    if (data.token) localStorage.setItem(cfg.tokenKey, data.token);
+    if (data.token) {
+      localStorage.setItem(cfg.tokenKey, data.token);
+      return true;
+    }
+    return false;
   } catch {
     /* backend unreachable — leave the module to report it */
+    return false;
   }
 }
 
@@ -217,6 +221,21 @@ async function bridgeAllDivisions(approver: boolean): Promise<void> {
     (Object.keys(creds) as Division[]).map((div) => bridgeModuleToken(div, creds[div].id, creds[div].pass)),
   );
 }
+
+/** Marketing per-person job positions (the auth user model carries no position;
+ *  the Marketing module needs it, so we map it from the login identifier). */
+const MARKETING_POSITIONS: Record<string, string> = {
+  "marketing@greenpark.id": "Kepala Departemen Marketing",
+  "ichsan@greenpark.id": "Copywriter",
+  "sohee@greenpark.id": "Social Media Specialist",
+  "mila@greenpark.id": "Social Media Specialist",
+  "hilman@greenpark.id": "Design Grafis",
+  "hakim@greenpark.id": "Videografer",
+  "hanif@greenpark.id": "Video Editor",
+  "ivan@greenpark.id": "Video Editor",
+  "fatimah@greenpark.id": "Digital Marketing",
+  "rahadian@greenpark.id": "Digital Marketing",
+};
 
 async function authenticate(identifier: string, password: string): Promise<{ token: string; user: SessionUser }> {
   if (USE_REAL_AUTH) {
@@ -263,6 +282,9 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
       allAccess: all,
       canApprove: !!au.super,
     };
+    if (division === "marketing") {
+      user.position = MARKETING_POSITIONS[au.username.toLowerCase()] ?? (user.role === "kadep" ? "Kepala Departemen Marketing" : "Tim Marketing");
+    }
     return { token: data.accessToken, user };
   }
 
@@ -276,6 +298,25 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
   await new Promise((r) => setTimeout(r, 250));
   return { token: `mock.${account.username}.${account.division}`, user: stripPassword(account) };
 }
+
+/** Decode a JWT access token's `exp` (epoch seconds). Returns null for the mock
+ *  token (non-JWT) or anything unparseable. */
+function tokenExp(token: string): number | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const json = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(json) as { exp?: number };
+    return typeof payload.exp === "number" ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Any API client can fire this when a call returns 401, so the session ends
+ *  immediately (handles a token revoked/invalidated before its natural expiry,
+ *  e.g. after an auth-service restart). */
+export const AUTH_EXPIRED_EVENT = "gp-auth-expired";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -300,20 +341,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (identifier: string, password: string) => {
     const { token, user: u } = await authenticate(identifier, password);
-    // Obtain the module backend token(s) BEFORE the module mounts, so the first
-    // requests carry them (otherwise: 401 → "missing bearer token" / redirect loop).
-    if (USE_REAL_AUTH) {
-      // One SSO access token is accepted by every department backend (each verifies
-      // it locally via the auth service's public key), so stash it under every
-      // module's token key. (Finance/keuangan uses its own local login and will
-      // self-heal by re-authenticating on a 401.)
-      ALL_MODULE_TOKEN_KEYS.forEach((k) => localStorage.setItem(k, token));
-    } else if (u.allAccess) {
-      // The all-access CEO bridges every division so dashboards can be switched freely.
-      await bridgeAllDivisions(!!u.canApprove);
-    } else {
-      await bridgeModuleToken(u.division, identifier, password);
+    // The auth service (SSO) is the identity source, but each department backend
+    // still verifies its OWN token — so obtain a native data token per backend
+    // BEFORE the module mounts (otherwise the first calls 401 → redirect loop).
+    // Auth passwords are seeded to match the backends, so the typed credentials
+    // bridge the user's own division AS THAT SAME PERSON (preserving "tugas saya"
+    // etc.); all-access users additionally borrow service accounts for the rest.
+    const bridged = await bridgeModuleToken(u.division, identifier, password);
+    if (!bridged) {
+      // Per-person bridge failed — typically the backend rotated that user's
+      // password away from the auth seed (e.g. Marketing team), or the backend
+      // has no matching account (Sales/Keuangan self-serve). Fall back to the
+      // division's service account so the dashboard still loads its data.
+      const svc = allAccessCreds(!!u.canApprove)[u.division];
+      await bridgeModuleToken(u.division, svc.id, svc.pass);
     }
+    if (u.allAccess) await bridgeAllDivisions(!!u.canApprove);
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(SESSION_KEY, JSON.stringify(u));
     setUser(u);
@@ -327,6 +370,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("out");
   }, []);
+
+  // Auto-logout on session expiry: schedule a logout exactly when the access
+  // token's `exp` passes (immediately if already expired on load), and also log
+  // out the moment any API call reports 401 (AUTH_EXPIRED_EVENT). Without this
+  // an expired token just makes every call 401 silently.
+  useEffect(() => {
+    if (status !== "in") return;
+    const onExpired = () => logout();
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const token = localStorage.getItem(TOKEN_KEY);
+    const exp = token ? tokenExp(token) : null;
+    if (exp !== null) {
+      const ms = exp * 1000 - Date.now();
+      if (ms <= 0) {
+        logout();
+      } else {
+        timer = setTimeout(logout, ms + 500); // small buffer past expiry
+      }
+    }
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+      if (timer) clearTimeout(timer);
+    };
+  }, [status, logout]);
 
   return <AuthContext.Provider value={{ user, status, login, logout }}>{children}</AuthContext.Provider>;
 }
