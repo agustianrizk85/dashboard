@@ -32,6 +32,14 @@ export interface WorkItem {
   created_by: number;
   created_at: string;
   updated_at: string;
+  // Provenance — present when ingested from the Content Plan spreadsheet.
+  source?: string; // "content-plan" | "" (manual)
+  source_key?: string;
+  source_tab?: string; // exact sheet tab, e.g. "Copywrite LHL"
+  content_type?: string; // raw calendar label, e.g. "Softsell Instagram"
+  planned_date?: string | null;
+  brief?: string;
+  caption?: string;
   steps?: WorkStep[];
 }
 

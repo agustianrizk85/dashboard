@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { useRev } from "@/lib/realtime";
-import { DivisionTabs } from "@/components/DivisionTabs";
+import { DivisionTabBar } from "@/components/DivisionTabBar";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -17,6 +17,7 @@ const NAV = [
   { to: "/permit/vendors", label: "Vendor" },
   { to: "/permit/spk", label: "SPK" },
   { to: "/permit/deadline", label: "Deadline" },
+  { to: "/permit/sync", label: "Sync Sheet" },
   { to: "/permit/settings", label: "Setting" },
 ];
 
@@ -65,7 +66,7 @@ export function Layout() {
         </div>
       </header>
 
-      <nav className="topnav">
+      <DivisionTabBar navClass="topnav">
         {nav.map((n) => (
           <NavLink
             key={n.to}
@@ -76,8 +77,7 @@ export function Layout() {
             {n.label}
           </NavLink>
         ))}
-        <DivisionTabs />
-      </nav>
+      </DivisionTabBar>
 
       {/* key={rev} remounts the active page on each realtime push so every
           permit page (which loads its own data) refetches live. */}

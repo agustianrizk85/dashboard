@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import { useRev } from "@/lib/realtime";
-import { DivisionTabs } from "@/components/DivisionTabs";
+import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { api } from "../api/client";
 import type { DivisionOutputs, ProjectRollup, Summary } from "../types";
 import { roleLabel } from "../lib/format";
@@ -157,7 +157,7 @@ export function Dashboard() {
         </div>
       </header>
 
-      <nav className="tabs">
+      <DivisionTabBar>
         {(allAccess ? TABS.filter((t) => t.key === "summary") : TABS).map((tabItem) => (
           <Tooltip key={tabItem.key} tip={tabItem.tip} pos="bottom">
             <button
@@ -169,8 +169,7 @@ export function Dashboard() {
             </button>
           </Tooltip>
         ))}
-        <DivisionTabs />
-      </nav>
+      </DivisionTabBar>
 
       {/* key={rev} remounts the active view on each realtime push so views that
           load their own data (Tugas, Gambar Kerja, Tim, Master) refetch live. */}

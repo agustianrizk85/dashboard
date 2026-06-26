@@ -146,6 +146,82 @@ export interface Trigger {
   esc: string;
 }
 
+/* ---- Procurement (PR / Pembelian) ---- */
+
+export interface PurchaseDoc {
+  doc: "po" | "invoice";
+  tanggal: string;
+  nomor: string;
+  pemasok: string;
+  kode: string;
+  barang: string;
+  qty: number;
+  satuan: string;
+  diskon: number;
+  total: number;
+  blok: string;
+  proyek: string;
+  bulan: string;
+  tahun: number;
+}
+
+export interface PaymentDoc {
+  tanggal: string;
+  noBukti: string;
+  pemasok: string;
+  bank: string;
+  noFaktur: string;
+  totalFaktur: number;
+  terutang: number;
+  bayar: number;
+  bulan: string;
+  tahun: number;
+}
+
+export interface PurchasingSummary {
+  poValue: number;
+  poCount: number;
+  invoiceValue: number;
+  invoiceCount: number;
+  paidValue: number;
+  paymentCount: number;
+  outstanding: number;
+  supplierCount: number;
+  topSupplier: string;
+}
+
+export interface SupplierSpend {
+  name: string;
+  poValue: number;
+  invoiced: number;
+  paid: number;
+  outstanding: number;
+  docs: number;
+}
+
+export interface ProjectSpend {
+  project: string;
+  poValue: number;
+  items: number;
+}
+
+export interface PurchaseMonth {
+  period: string;
+  po: number;
+  invoice: number;
+  paid: number;
+}
+
+export interface Purchasing {
+  summary: PurchasingSummary;
+  bySupplier: SupplierSpend[];
+  byProject: ProjectSpend[];
+  monthly: PurchaseMonth[];
+  orders: PurchaseDoc[];
+  invoices: PurchaseDoc[];
+  payments: PaymentDoc[];
+}
+
 /** Full payload returned by GET /api/dashboard. */
 export interface Dashboard {
   period: string;
@@ -166,6 +242,7 @@ export interface Dashboard {
   decisions: Decision[];
   kpis: KPI[];
   triggers: Trigger[];
+  purchasing: Purchasing;
 }
 
 /* ---- ingest (async) types ---- */
@@ -179,11 +256,13 @@ export interface ImportSummary {
   batalCount: number;
   kprShare: number;
   issues: number;
+  purchaseValue?: number;
+  outstanding?: number;
 }
 
 export interface SheetInfo {
   name: string;
-  kind: "akad" | "pipeline" | "skipped";
+  kind: "akad" | "pipeline" | "pr_po" | "pr_invoice" | "pr_payment" | "skipped";
   rows: number;
 }
 
@@ -209,6 +288,96 @@ export interface AutoSyncStatus {
   lastSync: string;
   lastError: string;
   lastSummary: ImportSummary;
+}
+
+/* ---- AR / Piutang (GET /api/ar) — values in full Rupiah ---- */
+
+/** One project's AR input spreadsheet (project code → spreadsheet ID). */
+export interface ARSource {
+  code: string;
+  id: string;
+}
+
+export interface ARSummary {
+  nilaiKontrak: number;
+  totalTerbayar: number;
+  sisaPiutang: number;
+  progresPct: number;
+  unitTotal: number;
+  unitLunas: number;
+  unitBelumLunas: number;
+  cashIn: number;
+  pencairanKpr: number;
+  dpJatuhTempo: number;
+  dpSisa: number;
+}
+
+export interface ARTahap {
+  key: string;
+  label: string;
+  count: number;
+  nilai: number;
+}
+
+export interface ARAging {
+  bucket: string;
+  count: number;
+  nilai: number;
+}
+
+export interface ARMonth {
+  period: string;
+  cashIn: number;
+  kpr: number;
+}
+
+export interface ARBank {
+  name: string;
+  count: number;
+  nilai: number;
+}
+
+export interface ARProject {
+  code: string;
+  nilaiKontrak: number;
+  totalTerbayar: number;
+  sisaPiutang: number;
+  cashIn: number;
+  unit: number;
+  lunas: number;
+  progresPct: number;
+}
+
+export interface ARPiutangRow {
+  project: string;
+  customer: string;
+  blok: string;
+  bank: string;
+  hargaJual: number;
+  terbayar: number;
+  sisa: number;
+  status: string;
+}
+
+export interface ARSheetInfo {
+  project: string;
+  tab: string;
+  kind: "danamasuk" | "dp" | "laporan" | "skipped";
+  rows: number;
+}
+
+export interface ARData {
+  period: string;
+  updated: string;
+  focusYear: number;
+  summary: ARSummary;
+  tahapan: ARTahap[];
+  aging: ARAging[];
+  monthly: ARMonth[];
+  banks: ARBank[];
+  projects: ARProject[];
+  piutang: ARPiutangRow[];
+  sheets: ARSheetInfo[];
 }
 
 /** Authenticated account (mirrors backend domain.User, no password material). */

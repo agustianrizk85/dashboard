@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
  * The two departments ("divisi") the unified dashboard serves. The logged-in
  * user's division decides which module is rendered after login.
  */
-export type Division = "perencanaan" | "permit" | "marketing" | "sales" | "keuangan";
+export type Division = "perencanaan" | "permit" | "marketing" | "sales" | "keuangan" | "teknik";
 
 /** A unified session identity, independent of which backend authenticated it. */
 export interface SessionUser {
@@ -86,6 +86,8 @@ const MOCK_ACCOUNTS: MockAccount[] = [
   { username: "viewer@greenpark.id", password: "viewer123", name: "Sales Viewer", role: "viewer", division: "sales", email: "viewer@greenpark.id" },
   // ── Departemen Keuangan ── (Akad/KPR control tower; reads the finance backend :8084)
   { username: "keuangan@greenpark.id", password: "keuangan123", name: "Kepala Dept. Keuangan", role: "kadep", division: "keuangan", email: "keuangan@greenpark.id" },
+  // ── Departemen Teknik ── (kendali progres pembangunan; reads the teknik backend :8083)
+  { username: "teknik@greenpark.id", password: "teknik123", name: "Kepala Dept. Teknik", role: "kadep", division: "teknik", email: "teknik@greenpark.id" },
 ];
 
 function stripPassword({ password: _pw, ...user }: MockAccount): SessionUser {
@@ -146,6 +148,13 @@ const MODULE_BACKENDS: Record<Division, ModuleBackend> = {
   keuangan: {
     base: ((env.VITE_KEUANGAN_API as string) ?? "http://localhost:8084").replace(/\/$/, "") + "/api",
     tokenKey: "gp_keuangan_token",
+    idField: "username",
+  },
+  // Teknik (engineering) control dashboard backend (:8083). Token key matches
+  // the teknik module's own client; the dashboard self-authenticates there too.
+  teknik: {
+    base: ((env.VITE_TEKNIK_API as string) ?? "http://localhost:8083").replace(/\/$/, "") + "/api",
+    tokenKey: "gp_teknik_token",
     idField: "username",
   },
 };
@@ -211,6 +220,8 @@ function allAccessCreds(approver: boolean): Record<Division, { id: string; pass:
     sales: { id: "admin", pass: "admin123" },
     // Finance module signs in as admin so the Sync / Import tab works.
     keuangan: { id: "admin", pass: "admin123" },
+    // Teknik module signs in as admin so the Sync Spreadsheet / Master tabs work.
+    teknik: { id: "admin", pass: "admin123" },
   };
 }
 
@@ -270,6 +281,7 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
       marketing: "marketing",
       sales: "sales",
       perencanaan: "perencanaan",
+      teknik: "teknik",
     };
     const ownDept = deptCodes.find((d) => DEPT2DIV[d]);
     const division: Division = (ownDept && DEPT2DIV[ownDept]) || "keuangan";

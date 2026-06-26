@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useAiGrounding } from "@/ai/AiAssistant";
 import { useRealtimeSocket } from "@/lib/realtime";
-import type { Dashboard, ProjectFin, Summary } from "./types";
+import type { Dashboard, ProjectFin, Purchasing, Summary } from "./types";
 import { api, AuthError } from "./api/client";
 import {
   AchievementPanel,
@@ -14,6 +14,7 @@ import {
   PayMixPanel,
   PipelinePanel,
   ProjectPanel,
+  PurchasingPanel,
   SalesPanel,
 } from "./components/panels";
 import { FOCUS_META, ProjectDetail } from "./components/focus";
@@ -49,6 +50,15 @@ function normalizeDashboard(d: Dashboard): Dashboard {
     kpis: arr(d.kpis),
     triggers: arr(d.triggers),
     summary: d.summary ?? ({} as Summary),
+    purchasing: {
+      summary: d.purchasing?.summary ?? ({} as Purchasing["summary"]),
+      bySupplier: arr(d.purchasing?.bySupplier),
+      byProject: arr(d.purchasing?.byProject),
+      monthly: arr(d.purchasing?.monthly),
+      orders: arr(d.purchasing?.orders),
+      invoices: arr(d.purchasing?.invoices),
+      payments: arr(d.purchasing?.payments),
+    },
   };
 }
 
@@ -85,6 +95,11 @@ export function KeuanganView() {
         pipeline: d.pipeline,
         alerts: d.alerts,
         kpis: d.kpis,
+        purchasing: {
+          summary: d.purchasing.summary,
+          bySupplier: d.purchasing.bySupplier,
+          byProject: d.purchasing.byProject,
+        },
       },
     });
   }, [state, setGrounding]);
@@ -147,7 +162,8 @@ export function KeuanganView() {
 
 function Body({ D }: { D: Dashboard }) {
   const [modal, setModal] = useState<Modal | null>(null);
-  const empty = D.summary.akadCount === 0 && D.projects.length === 0;
+  const empty =
+    D.summary.akadCount === 0 && D.projects.length === 0 && (D.purchasing?.summary?.poCount ?? 0) === 0;
   const openFocus = (key: string) => setModal({ kind: "focus", key });
   const openProject = (p: ProjectFin) => setModal({ kind: "project", p });
 
@@ -175,6 +191,7 @@ function Body({ D }: { D: Dashboard }) {
         <SalesPanel sales={D.sales} onExpand={() => openFocus("sales")} />
         <PayMixPanel payMix={D.payMix} />
         <PipelinePanel pipeline={D.pipeline} onExpand={() => openFocus("pipeline")} />
+        <PurchasingPanel pur={D.purchasing} onExpand={() => openFocus("purchasing")} />
         <AlertPanel alerts={D.alerts} />
         <AiDecisionPanel insights={D.ai} decisions={D.decisions} onExpand={() => openFocus("ai")} />
       </div>

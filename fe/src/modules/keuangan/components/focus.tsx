@@ -174,6 +174,79 @@ export const FOCUS_META: Record<string, FocusMeta> = {
       </table>
     ),
   },
+  purchasing: {
+    tag: "PEMBELIAN (PR)",
+    title: "Pengadaan & Hutang Pemasok",
+    sub: "PO, faktur, pembayaran & hutang",
+    render: (d) => {
+      const pur = d.purchasing;
+      const s = pur.summary;
+      return (
+        <div className="focus-ai">
+          <div className="pd-stats" style={{ marginBottom: 14 }}>
+            <Stat label="Nilai PO" value={rp(s.poValue)} />
+            <Stat label="Total Faktur" value={rp(s.invoiceValue)} />
+            <Stat label="Dibayar" value={rp(s.paidValue)} tone="ok" />
+            <Stat label="Hutang (Terutang)" value={rp(s.outstanding)} tone={s.outstanding > 0 ? "bad" : "ok"} />
+            <Stat label="Jumlah PO" value={num(s.poCount)} />
+            <Stat label="Pemasok" value={num(s.supplierCount)} />
+          </div>
+
+          <h4>Pemasok</h4>
+          <table className="ftable">
+            <thead>
+              <tr><th>Pemasok</th><th className="num">Item PO</th><th className="num">Nilai PO</th><th className="num">Faktur</th><th className="num">Dibayar</th><th className="num">Hutang</th></tr>
+            </thead>
+            <tbody>
+              {pur.bySupplier.map((sup, i) => (
+                <tr key={sup.name + i}>
+                  <td>{sup.name}</td><td className="num">{sup.docs}</td>
+                  <td className="num">{rp(sup.poValue)}</td><td className="num">{rp(sup.invoiced)}</td>
+                  <td className="num">{rp(sup.paid)}</td>
+                  <td className="num">{sup.outstanding > 0 ? <Pill tone="orange" dot={false}>{rp(sup.outstanding)}</Pill> : "—"}</td>
+                </tr>
+              ))}
+              {pur.bySupplier.length === 0 && <tr><td colSpan={6}>Belum ada data.</td></tr>}
+            </tbody>
+          </table>
+
+          <h4>Pesanan Pembelian (PO) Terbaru</h4>
+          <table className="ftable">
+            <thead>
+              <tr><th>Tanggal</th><th>No PO</th><th>Pemasok</th><th>Barang</th><th className="num">Qty</th><th>Proyek</th><th className="num">Total</th></tr>
+            </thead>
+            <tbody>
+              {pur.orders.slice(0, 30).map((o, i) => (
+                <tr key={o.nomor + i}>
+                  <td>{o.tanggal}</td><td>{o.nomor}</td><td>{o.pemasok}</td><td>{o.barang}</td>
+                  <td className="num">{num(o.qty)}{o.satuan ? ` ${o.satuan}` : ""}</td><td>{o.proyek || "—"}</td>
+                  <td className="num">{rp(o.total)}</td>
+                </tr>
+              ))}
+              {pur.orders.length === 0 && <tr><td colSpan={7}>Belum ada PO.</td></tr>}
+            </tbody>
+          </table>
+
+          <h4>Pembayaran & Hutang</h4>
+          <table className="ftable">
+            <thead>
+              <tr><th>Tgl Bayar</th><th>No Bukti</th><th>Pemasok</th><th>Bank</th><th>No Faktur</th><th className="num">Total Faktur</th><th className="num">Dibayar</th><th className="num">Terutang</th></tr>
+            </thead>
+            <tbody>
+              {pur.payments.slice(0, 30).map((p, i) => (
+                <tr key={p.noBukti + i}>
+                  <td>{p.tanggal}</td><td>{p.noBukti}</td><td>{p.pemasok}</td><td>{p.bank || "—"}</td>
+                  <td>{p.noFaktur}</td><td className="num">{rp(p.totalFaktur)}</td><td className="num">{rp(p.bayar)}</td>
+                  <td className="num">{p.terutang > 0 ? <Pill tone="orange" dot={false}>{rp(p.terutang)}</Pill> : "—"}</td>
+                </tr>
+              ))}
+              {pur.payments.length === 0 && <tr><td colSpan={8}>Belum ada pembayaran.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      );
+    },
+  },
   triggers: {
     tag: "EARLY WARNING",
     title: "Trigger & Eskalasi",

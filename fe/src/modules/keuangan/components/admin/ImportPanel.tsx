@@ -147,6 +147,8 @@ export function ImportPanel({ reload }: { reload: () => void }) {
 
       <AutoSyncControl onApplied={reload} />
 
+      <ARSheetsControl onSynced={reload} />
+
       {error && <div className="adm-error">{error}</div>}
       {ok && <div className="adm-ok">{ok}</div>}
 
@@ -323,6 +325,105 @@ function AutoSyncControl({ onApplied }: { onApplied: () => void }) {
           <span className="imp-toggle-txt">{on ? "ON" : "OFF"}</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+type ARRow = { code: string; url: string };
+
+/**
+ * Manage the per-project AR (piutang) input spreadsheets from the UI: paste a
+ * Google Sheets URL (or ID) per project code, save, and optionally sync the AR
+ * dashboard immediately. Replaces the old env-only FINANCE_AR_GSHEETS config.
+ */
+function ARSheetsControl({ onSynced }: { onSynced: () => void }) {
+  const [rows, setRows] = useState<ARRow[]>([]);
+  const [busy, setBusy] = useState<"" | "save" | "sync">("");
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    api
+      .arSheets()
+      .then((r) => setRows(r.sheets.length ? r.sheets.map((s) => ({ code: s.code, url: s.id })) : [{ code: "", url: "" }]))
+      .catch(() => setRows([{ code: "", url: "" }]));
+  }, []);
+
+  const update = (i: number, k: keyof ARRow, v: string) =>
+    setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+  const add = () => setRows((rs) => [...rs, { code: "", url: "" }]);
+  const remove = (i: number) => setRows((rs) => (rs.length > 1 ? rs.filter((_, j) => j !== i) : rs));
+
+  async function save(sync: boolean) {
+    setBusy(sync ? "sync" : "save");
+    setMsg("");
+    setErr("");
+    try {
+      const clean = rows.filter((r) => r.code.trim() && r.url.trim());
+      const res = await api.arSetSheets(clean);
+      setRows(res.sheets.length ? res.sheets.map((s) => ({ code: s.code, url: s.id })) : [{ code: "", url: "" }]);
+      if (sync) {
+        const ar = await api.arSyncApprove();
+        setMsg(`Tersimpan & disinkronkan — ${clean.length} sheet. ${ar.updated ? "· " + ar.updated : ""}`);
+        onSynced();
+      } else {
+        setMsg(`Daftar sheet AR tersimpan (${clean.length} proyek).`);
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <div className="imp-auto" style={{ flexDirection: "column", alignItems: "stretch", gap: 10 }}>
+      <div className="imp-auto-l">
+        <span className="imp-auto-title">📒 Spreadsheet AR / Piutang per Proyek</span>
+        <span className="imp-auto-sub">
+          Tempel URL Google Sheets (atau ID) tiap proyek + kode proyek. Share tiap sheet ke email service account agar
+          bisa ditarik. Dipakai oleh tombol <b>Sync Sheet AR</b> di tab AR / Piutang.
+        </span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input
+              className="imp-ar-code"
+              style={{ width: 90, padding: "6px 8px", border: "1px solid var(--line,#cdd7d0)", borderRadius: 6, font: "inherit" }}
+              placeholder="KODE"
+              value={r.code}
+              onChange={(e) => update(i, "code", e.target.value)}
+            />
+            <input
+              style={{ flex: 1, padding: "6px 8px", border: "1px solid var(--line,#cdd7d0)", borderRadius: 6, font: "inherit" }}
+              placeholder="https://docs.google.com/spreadsheets/d/…  atau  ID spreadsheet"
+              value={r.url}
+              onChange={(e) => update(i, "url", e.target.value)}
+            />
+            <button className="adm-btn ghost" onClick={() => remove(i)} title="Hapus baris" disabled={rows.length <= 1}>
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button className="adm-btn ghost" onClick={add} disabled={busy !== ""}>
+          + Tambah Proyek
+        </button>
+        <span style={{ flex: 1 }} />
+        <button className="adm-btn" onClick={() => save(false)} disabled={busy !== ""}>
+          {busy === "save" ? "Menyimpan…" : "Simpan"}
+        </button>
+        <button className="adm-btn primary" onClick={() => save(true)} disabled={busy !== ""}>
+          {busy === "sync" ? "Menyinkronkan…" : "Simpan & Sync AR"}
+        </button>
+      </div>
+
+      {msg && <div className="adm-ok" style={{ margin: 0 }}>{msg}</div>}
+      {err && <div className="adm-error" style={{ margin: 0 }}>{err}</div>}
     </div>
   );
 }

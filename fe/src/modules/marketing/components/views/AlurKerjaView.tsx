@@ -3,6 +3,8 @@ import type { Alur, WorkItem, WorkStep, StepStatus, UpdateStepInput } from "../.
 import { workItemService } from "../../services/workitem.service";
 import { stepService } from "../../services/step.service";
 import { alurLabels, alurShort, phaseLabels, metadataFor } from "../../lib/alurCatalog";
+import { SyncContentPlan } from "./SyncContentPlan";
+import { contentPlanService } from "../../services/contentplan.service";
 
 const PHASE_ORDER = ["brief", "produksi", "review", "approval", "distribusi"];
 const statusTone: Record<StepStatus, string> = { pending: "grey", in_progress: "warn", done: "ok" };
@@ -11,14 +13,18 @@ const statusLabel: Record<StepStatus, string> = { pending: "Belum", in_progress:
 export function AlurKerjaView({
   items,
   canEdit,
+  canReset = false,
   onChanged,
 }: {
   items: WorkItem[];
   canEdit: boolean;
+  canReset?: boolean;
   onChanged: () => void;
 }) {
   const [selId, setSelId] = useState<number | null>(items[0]?.id ?? null);
   const [adding, setAdding] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (selId === null && items.length) setSelId(items[0].id);
@@ -33,11 +39,33 @@ export function AlurKerjaView({
           </span>
           <span style={{ flex: 1 }} />
           {canEdit && (
-            <button className="btn-primary sm" onClick={() => setAdding((v) => !v)}>
-              {adding ? "Tutup" : "+ Baru"}
-            </button>
+            <>
+              {canReset && (
+                <button className="btn-danger sm" onClick={() => setResetting(true)} title="Hapus semua konten & langkah (akun tetap)">
+                  🗑 Hapus Semua
+                </button>
+              )}
+              <button className="btn-ghost sm" onClick={() => setSyncing(true)} title="Tarik dari Google Sheet Content Plan">
+                ⟳ Sinkron
+              </button>
+              <button className="btn-primary sm" onClick={() => setAdding((v) => !v)}>
+                {adding ? "Tutup" : "+ Baru"}
+              </button>
+            </>
           )}
         </div>
+        {syncing && <SyncContentPlan onClose={() => setSyncing(false)} onApplied={onChanged} />}
+        {resetting && (
+          <ResetDataModal
+            count={items.length}
+            onClose={() => setResetting(false)}
+            onDone={() => {
+              setResetting(false);
+              setSelId(null);
+              onChanged();
+            }}
+          />
+        )}
         {adding && (
           <NewWorkItemForm
             onCreated={(it) => {
@@ -73,6 +101,65 @@ export function AlurKerjaView({
         ) : (
           <WorkItemTree id={selId} canEdit={canEdit} onChanged={onChanged} />
         )}
+      </div>
+    </div>
+  );
+}
+
+/** ResetDataModal confirms and runs the destructive "delete all data" action.
+ *  The user must type HAPUS to enable the button. Accounts are not touched. */
+function ResetDataModal({ count, onClose, onDone }: { count: number; onClose: () => void; onDone: () => void }) {
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState<{ work_items: number; work_steps: number; documents: number } | null>(null);
+
+  const run = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await workItemService.reset();
+      setDone(res.deleted);
+      setTimeout(onDone, 900);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal cp-sync" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-hd">
+          <h2>Hapus Semua Data</h2>
+          <span className="mh-sp" />
+          <button className="mclose" onClick={onClose} title="Tutup">✕</button>
+        </div>
+        <div className="modal-body cp-body">
+          {done ? (
+            <div className="cp-result ok">
+              ✓ Terhapus — {done.work_items} konten, {done.work_steps} langkah, {done.documents} lampiran. Akun tetap aman.
+            </div>
+          ) : (
+            <>
+              <p className="cp-hint">
+                Tindakan ini menghapus <b>SEMUA {count} konten</b> beserta langkah & lampirannya secara permanen.
+                Akun login dan akun Meta <b>tidak</b> dihapus. Tindakan tidak bisa dibatalkan.
+              </p>
+              <label className="form-field">
+                <span>Ketik <b>HAPUS</b> untuk konfirmasi</span>
+                <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="HAPUS" autoFocus />
+              </label>
+              {err && <div className="login-error">{err}</div>}
+              <div className="cp-actions">
+                <button className="btn-ghost sm" onClick={onClose} disabled={busy}>Batal</button>
+                <button className="btn-danger sm" onClick={run} disabled={busy || confirm.trim().toUpperCase() !== "HAPUS"}>
+                  {busy ? "Menghapus…" : "Hapus Semua Data"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -127,6 +214,95 @@ function NewWorkItemForm({ onCreated }: { onCreated: (it: WorkItem) => void }) {
   );
 }
 
+/** ContentSourceCard shows the data provenance for a synced item: which sheet &
+ *  tab it came from, the calendar type, planned date, plus the original brief and
+ *  caption. Every label carries a tooltip explaining where the value comes from,
+ *  and Brief/Caption are click-to-expand. Hidden for manually-created items. */
+function ContentSourceCard({ item }: { item: WorkItem }) {
+  const [sheetId, setSheetId] = useState("");
+  const [open, setOpen] = useState<"brief" | "caption" | null>(null);
+
+  useEffect(() => {
+    contentPlanService.source().then((s) => setSheetId(s.sheet_id)).catch(() => {});
+  }, []);
+
+  if (item.source !== "content-plan") return null;
+
+  const sheetUrl = sheetId ? `https://docs.google.com/spreadsheets/d/${sheetId}/edit` : undefined;
+  const planned = item.planned_date
+    ? new Date(item.planned_date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+    : "—";
+
+  return (
+    <div className="cs-card">
+      <div className="cs-hd">
+        <span className="cs-badge" title="Item ini disinkron otomatis dari Google Sheet 'Content Plan GP 2026' — bukan dibuat manual.">
+          📊 Disinkron dari Content Plan
+        </span>
+        {sheetUrl && (
+          <a className="cs-link" href={sheetUrl} target="_blank" rel="noreferrer" title="Buka spreadsheet sumber di tab baru">
+            Buka Google Sheets ↗
+          </a>
+        )}
+      </div>
+
+      <div className="cs-grid">
+        <CsField
+          label="Sumber"
+          value={`Content Plan GP 2026 › ${item.source_tab || "—"}`}
+          hint={`Diambil dari tab "${item.source_tab || "?"}" pada spreadsheet Content Plan GP 2026 (kolom Judul/Brief/Caption).`}
+        />
+        <CsField
+          label="Tipe Konten"
+          value={item.content_type || "—"}
+          hint="Tipe & platform dari tab Calendar (mis. Softsell Instagram). Inilah dasar penentuan Alur."
+        />
+        <CsField
+          label="Tanggal Tayang"
+          value={planned}
+          hint="Tanggal Upload dari tab Copywrite — dipakai sebagai acuan tenggat (SLA) tiap langkah alur."
+        />
+        <CsField
+          label="Alur"
+          value={alurLabels[item.alur]}
+          hint="Ditentukan otomatis dari Tipe Konten: Hardsell→A, Carousel/Photo→C, Reels/TikTok/Softsell-video→D."
+        />
+      </div>
+
+      {item.brief && (
+        <CsExpand label="Brief / Instruksi Produksi" body={item.brief} open={open === "brief"} onToggle={() => setOpen((o) => (o === "brief" ? null : "brief"))}
+          hint="Teks asli dari kolom Brief di spreadsheet — klik untuk lihat lengkap." />
+      )}
+      {item.caption && (
+        <CsExpand label="Caption (siap posting)" body={item.caption} open={open === "caption"} onToggle={() => setOpen((o) => (o === "caption" ? null : "caption"))}
+          hint="Teks asli dari kolom Caption di spreadsheet — klik untuk lihat lengkap." />
+      )}
+    </div>
+  );
+}
+
+function CsField({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="cs-field" title={hint}>
+      <span className="cs-field-l">{label}<i className="cs-info">ⓘ</i></span>
+      <span className="cs-field-v">{value}</span>
+    </div>
+  );
+}
+
+function CsExpand({ label, body, open, onToggle, hint }: { label: string; body: string; open: boolean; onToggle: () => void; hint: string }) {
+  return (
+    <div className="cs-expand">
+      <button className="cs-expand-h" onClick={onToggle} title={hint}>
+        <span className="cs-caret">{open ? "▾" : "▸"}</span>
+        {label}
+        <i className="cs-info">ⓘ</i>
+      </button>
+      {open && <pre className="cs-expand-b">{body}</pre>}
+    </div>
+  );
+}
+
 function WorkItemTree({ id, canEdit, onChanged }: { id: number; canEdit: boolean; onChanged: () => void }) {
   const [item, setItem] = useState<WorkItem | null>(null);
   const [err, setErr] = useState("");
@@ -163,7 +339,9 @@ function WorkItemTree({ id, canEdit, onChanged }: { id: number; canEdit: boolean
         <div>
           <div className="tree-title">{item.title}</div>
           <div className="tree-sub">
-            {alurLabels[item.alur]} · Proyek: {item.project || "—"}
+            <span title="Alur kerja konten — menentukan checklist langkah yang di-seed.">{alurLabels[item.alur]}</span>
+            {" · "}
+            <span title="Proyek / cluster perumahan terkait konten ini.">Proyek: {item.project || "—"}</span>
           </div>
         </div>
         <div className="tree-prog">
@@ -173,6 +351,8 @@ function WorkItemTree({ id, canEdit, onChanged }: { id: number; canEdit: boolean
           </div>
         </div>
       </div>
+
+      <ContentSourceCard item={item} />
 
       {grouped.map(([phase, list]) => (
         <div className="cat" key={phase}>

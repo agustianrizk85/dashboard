@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/auth/AuthContext";
-import { DivisionTabs } from "@/components/DivisionTabs";
+import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { ControlTowerView } from "./controltower/ControlTower";
 import { AdminView } from "./AdminView";
 import "./sales.css";
@@ -67,7 +67,7 @@ export default function SalesApp() {
           </div>
         </header>
 
-        <nav className="tabs">
+        <DivisionTabBar>
           <button className={`tab ${active === "tower" ? "on" : ""}`} onClick={() => setTab("tower")}>
             Control Tower
           </button>
@@ -76,8 +76,7 @@ export default function SalesApp() {
               Master Data
             </button>
           )}
-          <DivisionTabs />
-        </nav>
+        </DivisionTabBar>
 
         <main className="content">
           {active === "master" ? <AdminView /> : <ControlTowerView />}

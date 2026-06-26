@@ -44,9 +44,12 @@ export function toneClass(st: string): Tone {
  * Values ≥ 1.000 juta are shown in billions (miliar) to keep the war-room view tidy.
  */
 export function rp(juta: number): string {
-  if (Math.abs(juta) >= 1000) {
-    const miliar = juta / 1000;
+  // Null-safe: the backend may omit numeric fields (Go emits null/undefined for
+  // empty sections), and `undefined.toLocaleString()` would crash the whole view.
+  const v = Number(juta) || 0;
+  if (Math.abs(v) >= 1000) {
+    const miliar = v / 1000;
     return "Rp " + miliar.toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " M";
   }
-  return "Rp " + juta.toLocaleString("id-ID", { maximumFractionDigits: 0 }) + " jt";
+  return "Rp " + v.toLocaleString("id-ID", { maximumFractionDigits: 0 }) + " jt";
 }

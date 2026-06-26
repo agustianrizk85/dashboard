@@ -1,4 +1,6 @@
 import type {
+  ARData,
+  ARSource,
   AutoSyncStatus,
   Dashboard,
   ImportRecord,
@@ -80,6 +82,12 @@ export const api = {
   },
 
   dashboard: () => req<Dashboard>("GET", "/dashboard"),
+  ar: () => req<ARData>("GET", "/ar"),
+  arSheets: () => req<{ sheets: ARSource[] }>("GET", "/ar/sheets"),
+  arSetSheets: (sheets: { code: string; url: string }[]) =>
+    req<{ sheets: ARSource[] }>("PUT", "/ar/sheets", { sheets }),
+  arSyncPreview: () => req<ARData>("POST", "/ar/sync-preview"),
+  arSyncApprove: () => req<ARData>("POST", "/ar/sync-approve"),
   version: () => req<{ rev: number }>("GET", "/version"),
   realtimeURL: () => {
     if (!token) return null;

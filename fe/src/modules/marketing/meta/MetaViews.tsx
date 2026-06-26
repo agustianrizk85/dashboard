@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { metaApi } from "./metaApi";
-import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow } from "./metaApi";
+import { useEffect, useMemo, useState } from "react";
+import { metaApi, META_RANGES } from "./metaApi";
+import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage } from "./metaApi";
 import "./meta.css";
 
 /* ---------- helpers ---------- */
@@ -15,7 +15,7 @@ function rp(n: unknown): string {
 }
 const s = (v: unknown) => (v == null ? "" : String(v));
 
-function useMeta<T>(fn: () => Promise<T>) {
+function useMeta<T>(fn: () => Promise<T>, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ function useMeta<T>(fn: () => Promise<T>) {
     setErr("");
     fn().then(setData).catch((e) => setErr(e instanceof Error ? e.message : String(e))).finally(() => setLoading(false));
   };
-  useEffect(reload, []);
+  useEffect(reload, deps); // eslint-disable-line react-hooks/exhaustive-deps
   return { data, err, loading, reload };
 }
 
@@ -32,65 +32,218 @@ function Shell({ loading, err, reload, notConfigured, children }: { loading: boo
   if (loading) return <div className="meta-state">Memuat data Meta…</div>;
   if (err) return <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>;
   if (notConfigured)
-    return <div className="meta-state">Integrasi Meta belum dikonfigurasi. Jalankan backend Marketing dengan <code>META_ACCESS_TOKEN</code>.</div>;
+    return (
+      <div className="meta-state">
+        Belum ada akun Meta yang terhubung. Buka tab <b>Akun Meta</b> lalu klik <b>“Hubungkan Akun”</b> untuk login lewat
+        Facebook (OAuth, mendukung banyak akun).
+      </div>
+    );
   return <>{children}</>;
 }
 
-function Head({ title, tag }: { title: string; tag: string }) {
+function Head({ title, tag }: { title: string; tag: React.ReactNode }) {
   return <div className="meta-head"><h3>{title}</h3><span className="meta-tag">{tag}</span></div>;
 }
 
 /* ===================== ADS ===================== */
 const ACC_STATUS: Record<string, string> = { "1": "Aktif", "2": "Dinonaktifkan", "3": "Tidak terbayar", "7": "Review", "9": "Grace period", "101": "Tutup" };
 const stripAct = (id: string) => (id || "").replace(/^act_/, "");
-const amAccount = (id: string) => `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${stripAct(id)}`;
-const amCampaign = (act: string, cid: string) =>
-  `https://adsmanager.facebook.com/adsmanager/manage/adsets?act=${stripAct(act)}&selected_campaign_ids=${cid}`;
+// Link ke Ads Manager sengaja dihapus — semua interaksi tetap di dalam dashboard.
+
+type StatusFilter = "all" | "active" | "inactive";
+type SortKey = "spend" | "results" | "cpr" | "ctr" | "name";
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "spend", label: "Spend tertinggi" },
+  { key: "results", label: "Hasil terbanyak" },
+  { key: "cpr", label: "CPR termurah" },
+  { key: "ctr", label: "CTR tertinggi" },
+  { key: "name", label: "Nama (A–Z)" },
+];
+const effStatus = (c: MetaCampaign) => c.effectiveStatus || c.status;
+const isActive = (c: MetaCampaign) => effStatus(c) === "ACTIVE";
+
+/* Guardrail thresholds (Greenpark: KPI utama CPR chat WA). */
+const CPR_LIMIT = 60_000; // CPR boros di atas Rp60rb
+const FREQ_LIMIT = 3; // fatigue: 1 orang lihat ≥3x
+const CTR_FLOOR = 0.7; // CTR rendah < 0,7%
+const CTR_MIN_IMPR = 500; // hanya nilai CTR rendah bila tayang cukup
+
+// projectOf menebak kode proyek dari nama campaign (Verua, ZHL, THC, …) dengan
+// membuang token noise (HS, Sales, WA, Broad, tanggal, angka). Maintenance-free.
+const NOISE = new Set([
+  "hs", "sales", "traffic", "traffick", "trafick", "wa", "only", "broad", "behavior",
+  "behaviour", "pns", "dm", "re", "swasta", "try", "new", "test", "cbo", "abo", "ads",
+]);
+function projectOf(name: string): string {
+  for (const tk of name.split(/[\s\-_|/]+/).filter(Boolean)) {
+    const low = tk.toLowerCase();
+    if (NOISE.has(low) || /^\d/.test(tk)) continue;
+    const clean = tk.replace(/\d+$/, ""); // ZHL2 → ZHL
+    if (clean.length >= 2) return clean.toUpperCase();
+  }
+  return "LAINNYA";
+}
 
 export function AdsView() {
-  const { data, err, loading, reload } = useMeta<MetaAds>(metaApi.ads);
-  const detail = useMeta<MetaAdsDetail>(metaApi.adsDetail);
+  const [range, setRange] = useState<MetaRange>("30d");
+  const rangeLabel = META_RANGES.find((r) => r.key === range)?.label ?? "";
+  const { data, err, loading, reload } = useMeta<MetaAds>(() => metaApi.ads(range), [range]);
+  const detail = useMeta<MetaAdsDetail>(() => metaApi.adsDetail(range), [range]);
   const dt = detail.data;
-  const camps = data?.campaigns ?? [];
+
+  const [acctFilter, setAcctFilter] = useState<string | null>(null);
+  const [projFilter, setProjFilter] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState<SortKey>("spend");
+  const [openId, setOpenId] = useState<string | null>(null); // campaign drill-down
+
   const t = data?.totals;
   const accounts = data?.accounts ?? [];
+  const allCamps = useMemo(() => data?.campaigns ?? [], [data]);
   const accIns = (a: Record<string, unknown>) => (a.insights as Record<string, string> | undefined) ?? {};
+  const acctName = (id: string) => {
+    const a = accounts.find((x) => stripAct(s(x.id)) === id);
+    return a ? s(a.name) || s(a.connLabel) || s(a.id) : id;
+  };
+  const toggleAcct = (id: string) => setAcctFilter((cur) => (cur === id ? null : id));
+  const toggleProj = (p: string) => setProjFilter((cur) => (cur === p ? null : p));
+
+  const activeCount = useMemo(() => allCamps.filter(isActive).length, [allCamps]);
+
+  // Pivot per proyek (Verua / ZHL / THC …) dari semua campaign.
+  const projects = useMemo(() => {
+    const m = new Map<string, { key: string; spend: number; results: number; total: number; active: number }>();
+    for (const c of allCamps) {
+      const k = projectOf(c.name);
+      const e = m.get(k) ?? { key: k, spend: 0, results: 0, total: 0, active: 0 };
+      e.spend += c.spend; e.results += c.results; e.total += 1; if (isActive(c)) e.active += 1;
+      m.set(k, e);
+    }
+    return [...m.values()].sort((a, b) => b.spend - a.spend);
+  }, [allCamps]);
+
+  // Sinyal kesehatan / guardrail (rule-based, dari data sendiri).
+  const signals = useMemo(() => {
+    const activeZero = allCamps.filter((c) => isActive(c) && c.spend === 0);
+    const issues = allCamps.filter((c) => c.issues > 0 || ["WITH_ISSUES", "DISAPPROVED", "PENDING_REVIEW"].includes(c.effectiveStatus));
+    const highCpr = allCamps.filter((c) => c.results > 0 && c.costPerResult > CPR_LIMIT).sort((a, b) => b.costPerResult - a.costPerResult);
+    const fatigue = allCamps.filter((c) => c.frequency >= FREQ_LIMIT && c.spend > 0).sort((a, b) => b.frequency - a.frequency);
+    const lowCtr = allCamps.filter((c) => c.impressions >= CTR_MIN_IMPR && c.ctr > 0 && c.ctr < CTR_FLOOR).sort((a, b) => a.ctr - b.ctr);
+    return { activeZero, issues, highCpr, fatigue, lowCtr };
+  }, [allCamps]);
+
+  const camps = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const out = allCamps.filter((c) => {
+      if (acctFilter && c.accountId !== acctFilter) return false;
+      if (projFilter && projectOf(c.name) !== projFilter) return false;
+      if (status === "active" && !isActive(c)) return false;
+      if (status === "inactive" && isActive(c)) return false;
+      if (needle && !(`${c.name} ${c.account} ${c.objective}`.toLowerCase().includes(needle))) return false;
+      return true;
+    });
+    out.sort((a, b) => {
+      switch (sort) {
+        case "results": return b.results - a.results;
+        case "ctr": return b.ctr - a.ctr;
+        case "name": return a.name.localeCompare(b.name);
+        case "cpr": {
+          const av = a.results > 0 ? a.costPerResult : Infinity;
+          const bv = b.results > 0 ? b.costPerResult : Infinity;
+          return av - bv;
+        }
+        default: return b.spend - a.spend;
+      }
+    });
+    return out;
+  }, [allCamps, acctFilter, projFilter, status, q, sort]);
+
+  const filtersOn = !!acctFilter || !!projFilter || status !== "all" || q.trim() !== "";
+  const openCamp = (id: string) => () => setOpenId(id);
+
   return (
     <div className="meta-wrap">
       <Shell loading={loading} err={err} reload={reload} notConfigured={data ? !data.configured : false}>
-        {/* ===== KPI super-detail (30 hari, semua akun) ===== */}
+        {/* ===== Rentang waktu (semua tahun didukung) ===== */}
+        <div className="meta-rangebar">
+          <span className="meta-rangebar-lbl">Rentang</span>
+          {META_RANGES.map((r) => (
+            <button key={r.key} className={"meta-seg" + (range === r.key ? " on" : "")} onClick={() => setRange(r.key)}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ===== KPI super-detail (rentang terpilih, semua akun) ===== */}
         {t && (
           <section className="meta-card">
-            <Head title="KPI Performa Iklan — 30 Hari" tag={`${num(t.accounts)} akun · ${num(t.activeCampaigns)}/${num(t.campaigns)} campaign aktif`} />
+            <Head title={`KPI Performa Iklan — ${rangeLabel}`} tag={`${num(t.accounts)} akun · ${num(t.activeCampaigns)}/${num(t.campaigns)} campaign aktif`} />
             <div className="meta-tiles">
               <Tile k="Total Spend" v={rp(t.spend)} />
               <Tile k="Hasil (WA/Lead)" v={num(t.results)} />
               <Tile k="Cost / Hasil" v={rp(t.costPerResult)} />
+              <Tile k="Konversi (Hasil/Klik)" v={t.conversionRate ? t.conversionRate.toFixed(2) + "%" : "—"} />
               <Tile k="CTR" v={t.ctr ? t.ctr.toFixed(2) + "%" : "—"} />
               <Tile k="CPC" v={rp(t.cpc)} />
               <Tile k="CPM" v={rp(t.cpm)} />
+              <Tile k="Jangkauan (Reach)" v={num(t.reach)} />
+              <Tile k="Frekuensi" v={t.frequency ? t.frequency.toFixed(2) + "x" : "—"} />
               <Tile k="Impressions" v={num(t.impressions)} />
               <Tile k="Clicks" v={num(t.clicks)} />
               <Tile k="Campaign Aktif" v={`${num(t.activeCampaigns)} / ${num(t.campaigns)}`} />
+              <Tile k="Aktif & Tayang" v={`${num(t.deliveringCampaigns)} / ${num(t.activeCampaigns)}`} />
+              <Tile k="Campaign Bermasalah" v={num(t.issueCampaigns)} />
               <Tile k="Akun Iklan" v={num(t.accounts)} />
             </div>
           </section>
         )}
 
-        {/* ===== Akun iklan (klik → Ads Manager) ===== */}
+        {/* ===== Sinyal kesehatan & guardrail (rule-based) ===== */}
+        <HealthPanel signals={signals} onOpen={openCamp} />
+
+        {/* ===== Pivot per proyek (klik → saring) ===== */}
+        {projects.length > 0 && (
+          <section className="meta-card">
+            <Head title="Performa per Proyek" tag={`${projects.length} proyek · klik untuk saring`} />
+            <table className="meta-table meta-table-click">
+              <thead><tr><th>Proyek</th><th className="r">Campaign</th><th className="r">Aktif</th><th className="r">Spend</th><th className="r">Hasil</th><th className="r">CPR</th></tr></thead>
+              <tbody>
+                {projects.map((p) => {
+                  const cpr = p.results > 0 ? p.spend / p.results : 0;
+                  return (
+                    <tr key={p.key} className={projFilter === p.key ? "meta-row-on" : ""} onClick={() => toggleProj(p.key)} title="Klik untuk menyaring campaign proyek ini">
+                      <td><b className="meta-link">{p.key}</b></td>
+                      <td className="r mono">{num(p.total)}</td>
+                      <td className="r mono">{num(p.active)}</td>
+                      <td className="r mono">{rp(p.spend)}</td>
+                      <td className="r mono">{p.results ? num(p.results) : "—"}</td>
+                      <td className="r mono">{cpr ? rp(cpr) : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+        )}
+
+        {/* ===== Akun iklan (klik nama → saring campaign) ===== */}
         {accounts.length > 0 && (
           <section className="meta-card">
-            <Head title="Akun Iklan" tag="klik nama → buka Ads Manager ↗" />
+            <Head title="Akun Iklan" tag="klik nama → saring campaign di bawah" />
             <table className="meta-table">
-              <thead><tr><th>Akun</th><th>Status</th><th className="r">Spend 30h</th><th className="r">Impr.</th><th className="r">Klik</th><th className="r">CTR</th></tr></thead>
+              <thead><tr><th>Akun</th><th>Status</th><th className="r">Spend</th><th className="r">Impr.</th><th className="r">Klik</th><th className="r">CTR</th></tr></thead>
               <tbody>
                 {accounts.map((a, i) => {
                   const ai = accIns(a);
+                  const aid = stripAct(s(a.id));
                   return (
-                    <tr key={i}>
+                    <tr key={i} className={acctFilter === aid ? "meta-row-on" : ""}>
                       <td>
-                        <a className="meta-link" href={amAccount(s(a.id))} target="_blank" rel="noreferrer"><b>{s(a.name) || s(a.id)}</b> ↗</a>
-                        <div className="muted" style={{ fontSize: 9 }}>{s(a.id)}</div>
+                        <button className="meta-linkbtn" onClick={() => toggleAcct(aid)} title="Klik untuk menyaring campaign akun ini">
+                          <b>{s(a.name) || s(a.connLabel) || s(a.id)}</b>
+                        </button>
+                        <div className="muted" style={{ fontSize: 9 }}>{s(a.connLabel) ? `${s(a.connLabel)} · ` : ""}{s(a.id)}</div>
                       </td>
                       <td><span className={"meta-pill " + (s(a.account_status) === "1" ? "ok" : "neutral")}>{ACC_STATUS[s(a.account_status)] ?? s(a.account_status)}</span></td>
                       <td className="r mono">{rp(ai.spend)}</td>
@@ -105,40 +258,75 @@ export function AdsView() {
           </section>
         )}
 
-        {/* ===== Breakdown per campaign (klik → Ads Manager) ===== */}
+        {/* ===== Breakdown per campaign — filter + klik baris untuk detail ===== */}
         <section className="meta-card">
-          <Head title="Breakdown per Campaign" tag={`${camps.length} campaign · klik nama → Ads Manager ↗`} />
+          <Head
+            title="Breakdown per Campaign"
+            tag={`${camps.length}${filtersOn ? ` / ${allCamps.length}` : ""} campaign · ${activeCount} aktif`}
+          />
+
+          {/* control bar: status · cari · urutkan */}
+          <div className="meta-controls">
+            <div className="meta-segs">
+              {([["all", "Semua"], ["active", "Aktif saja"], ["inactive", "Non-aktif"]] as [StatusFilter, string][]).map(([k, lbl]) => (
+                <button key={k} className={"meta-seg" + (status === k ? " on" : "")} onClick={() => setStatus(k)}>{lbl}</button>
+              ))}
+            </div>
+            <input
+              className="meta-search"
+              placeholder="Cari campaign / objektif…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            <select className="meta-select" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+              {SORTS.map((sopt) => <option key={sopt.key} value={sopt.key}>{sopt.label}</option>)}
+            </select>
+            {acctFilter && (
+              <button className="meta-linkbtn" onClick={() => setAcctFilter(null)}>✕ Akun: {acctName(acctFilter)}</button>
+            )}
+            {projFilter && (
+              <button className="meta-linkbtn" onClick={() => setProjFilter(null)}>✕ Proyek: {projFilter}</button>
+            )}
+          </div>
+
           {camps.length ? (
-            <table className="meta-table">
-              <thead><tr><th>Campaign</th><th>Akun</th><th>Status</th><th className="r">Spend</th><th className="r">Hasil</th><th className="r">CPR</th><th className="r">CTR</th><th className="r">CPC</th><th className="r">Impr.</th></tr></thead>
+            <table className="meta-table meta-table-click">
+              <thead><tr><th>Campaign</th><th>Akun</th><th>Status</th><th className="r">Spend</th><th className="r">Hasil</th><th className="r">CPR</th><th className="r">CTR</th><th className="r">CPC</th><th className="r">Frek.</th><th className="r">Impr.</th></tr></thead>
               <tbody>
                 {camps.map((c) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} onClick={() => setOpenId(c.id)} title="Klik untuk lihat detail campaign">
                     <td>
-                      <a className="meta-link" href={amCampaign(c.accountId, c.id)} target="_blank" rel="noreferrer"><b>{c.name}</b> ↗</a>
+                      <b className="meta-link">{c.name}</b>
                       <div className="muted" style={{ fontSize: 9 }}>{[c.objective, c.resultLabel].filter(Boolean).join(" · ")}</div>
                     </td>
-                    <td className="muted">{c.account}</td>
-                    <td><span className={"meta-pill " + (c.status === "ACTIVE" ? "ok" : "neutral")}>{c.status || "—"}</span></td>
+                    <td className="muted">
+                      <button className="meta-linkbtn" onClick={(e) => { e.stopPropagation(); toggleAcct(c.accountId); }} title="Saring campaign akun ini">
+                        {c.account}
+                      </button>
+                    </td>
+                    <td><StatusPill c={c} /></td>
                     <td className="r mono">{rp(c.spend)}</td>
                     <td className="r mono">{c.results ? num(c.results) : "—"}</td>
                     <td className="r mono">{c.costPerResult ? rp(c.costPerResult) : "—"}</td>
                     <td className="r mono">{c.ctr ? c.ctr.toFixed(2) + "%" : "—"}</td>
                     <td className="r mono">{c.cpc ? rp(c.cpc) : "—"}</td>
+                    <td className="r mono">{c.frequency ? c.frequency.toFixed(2) + "x" : "—"}</td>
                     <td className="r mono">{num(c.impressions)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <div className="meta-empty">Belum ada campaign dengan data 30 hari.</div>
+            <div className="meta-empty">
+              {allCamps.length ? "Tidak ada campaign yang cocok dengan filter." : `Belum ada campaign dengan data untuk ${rangeLabel}.`}
+            </div>
           )}
         </section>
 
         {/* ===== Breakdown mendalam (tren harian + segmen) ===== */}
         {dt && dt.daily && dt.daily.length > 0 && (
           <section className="meta-card">
-            <Head title="Tren Harian — 30 Hari" tag="Spend & Hasil per hari" />
+            <Head title={`Tren Harian — ${rangeLabel}`} tag={<CprTrendTag rows={dt.daily} />} />
             <DailyChart rows={dt.daily} />
           </section>
         )}
@@ -148,10 +336,204 @@ export function AdsView() {
             <BreakdownCard title="Placement" rows={dt.placements} />
             <BreakdownCard title="Wilayah" rows={dt.regions} />
             <BreakdownCard title="Device" rows={dt.devices} />
+            <BreakdownCard title="Per Jam (zona pengiklan)" rows={dt.hourly} wide />
             <BreakdownCard title="Top Ads (Creative)" rows={dt.topAds} wide />
           </div>
         )}
+        {dt && <CreativeWinner items={dt.creatives ?? []} />}
       </Shell>
+
+      {openId && <CampaignModal id={openId} range={range} onClose={() => setOpenId(null)} />}
+    </div>
+  );
+}
+
+/* ---- status pill (effective_status + delivery issues) ---- */
+const STATUS_TONE: Record<string, string> = {
+  ACTIVE: "ok", PAUSED: "neutral", CAMPAIGN_PAUSED: "neutral", ADSET_PAUSED: "neutral",
+  ARCHIVED: "neutral", DELETED: "neutral", IN_PROCESS: "warn", PENDING_REVIEW: "warn",
+  WITH_ISSUES: "bad", DISAPPROVED: "bad",
+};
+function StatusPill({ c }: { c: MetaCampaign }) {
+  const st = c.effectiveStatus || c.status || "—";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start" }}>
+      <span className={"meta-pill " + (STATUS_TONE[st] ?? "neutral")}>{st}</span>
+      {c.issues > 0 && <span className="meta-pill bad" title={c.issueSummary}>⚠ {c.issues} isu</span>}
+    </div>
+  );
+}
+
+/* ---- tren CPR: paruh-awal vs paruh-akhir dari data harian (anomaly sederhana) ---- */
+function CprTrendTag({ rows }: { rows: MetaDailyRow[] }) {
+  if (rows.length < 4) return <>Spend &amp; Hasil per hari</>;
+  const mid = Math.floor(rows.length / 2);
+  const cpr = (rs: MetaDailyRow[]) => {
+    const sp = rs.reduce((a, r) => a + r.spend, 0);
+    const re = rs.reduce((a, r) => a + r.results, 0);
+    return re > 0 ? sp / re : 0;
+  };
+  const a = cpr(rows.slice(0, mid));
+  const b = cpr(rows.slice(mid));
+  if (!a || !b) return <>Spend &amp; Hasil per hari</>;
+  const delta = ((b - a) / a) * 100;
+  const worse = delta > 0; // CPR naik = makin boros
+  return (
+    <span className={worse ? "meta-trend bad" : "meta-trend ok"}>
+      CPR {worse ? "▲" : "▼"} {Math.abs(delta).toFixed(0)}% {worse ? "(makin boros)" : "(makin efisien)"}
+    </span>
+  );
+}
+
+/* ---- sinyal kesehatan & guardrail ---- */
+function HealthPanel({
+  signals,
+  onOpen,
+}: {
+  signals: { activeZero: MetaCampaign[]; issues: MetaCampaign[]; highCpr: MetaCampaign[]; fatigue: MetaCampaign[]; lowCtr: MetaCampaign[] };
+  onOpen: (id: string) => () => void;
+}) {
+  const groups = [
+    { key: "issues", tone: "bad", title: "Bermasalah / Ditolak", hint: "delivery error, ditolak, atau menunggu review", items: signals.issues, fmt: (c: MetaCampaign) => c.issueSummary || c.effectiveStatus },
+    { key: "zero", tone: "bad", title: "Aktif tapi Tidak Tayang (Rp0)", hint: "status ACTIVE namun belum ada spend di rentang ini", items: signals.activeZero, fmt: () => "Rp0 spend" },
+    { key: "cpr", tone: "warn", title: `CPR Boros (> ${rp(CPR_LIMIT)})`, hint: "biaya per hasil di atas ambang", items: signals.highCpr, fmt: (c: MetaCampaign) => `CPR ${rp(c.costPerResult)} · ${num(c.results)} hasil` },
+    { key: "fatigue", tone: "warn", title: `Fatigue (Frekuensi ≥ ${FREQ_LIMIT}x)`, hint: "audiens melihat iklan terlalu sering", items: signals.fatigue, fmt: (c: MetaCampaign) => `${c.frequency.toFixed(2)}x · ${rp(c.spend)}` },
+    { key: "ctr", tone: "warn", title: `CTR Rendah (< ${CTR_FLOOR}%)`, hint: "kreatif kurang menarik (tayang cukup)", items: signals.lowCtr, fmt: (c: MetaCampaign) => `CTR ${c.ctr.toFixed(2)}% · ${num(c.impressions)} tayang` },
+  ] as const;
+  const total = groups.reduce((a, g) => a + g.items.length, 0);
+  return (
+    <section className="meta-card">
+      <Head title="Kesehatan & Guardrail Iklan" tag={total ? `${total} sinyal` : "semua sehat ✅"} />
+      {total === 0 ? (
+        <div className="meta-empty">Tidak ada sinyal masalah pada rentang ini. ✅</div>
+      ) : (
+        <div className="meta-health">
+          {groups.filter((g) => g.items.length).map((g) => (
+            <div key={g.key} className={"meta-health-grp " + g.tone}>
+              <div className="meta-health-hd">
+                <span className="meta-health-dot" />
+                <b>{g.title}</b>
+                <span className="meta-health-n">{g.items.length}</span>
+              </div>
+              <div className="meta-health-hint">{g.hint}</div>
+              <div className="meta-health-list">
+                {g.items.slice(0, 6).map((c) => (
+                  <button key={c.id} className="meta-health-row" onClick={onOpen(c.id)} title="Klik untuk detail campaign">
+                    <span className="meta-health-name">{c.name}</span>
+                    <span className="meta-health-val">{g.fmt(c)}</span>
+                  </button>
+                ))}
+                {g.items.length > 6 && <div className="muted" style={{ fontSize: 10 }}>+{g.items.length - 6} lainnya</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ---- creative winner: iklan/copy pemenang (real, dari ad creative) ---- */
+function CreativeWinner({ items }: { items: MetaCreative[] }) {
+  return (
+    <section className="meta-card">
+      <Head title="Creative Winner — Iklan Pemenang" tag={items.length ? `${items.length} creative · urut hasil terbanyak` : "—"} />
+      {items.length === 0 ? (
+        <div className="meta-empty">Belum ada creative dengan hasil di rentang ini.</div>
+      ) : (
+        <div className="meta-cwgrid">
+          {items.map((c, i) => (
+            <div className="meta-cw" key={i}>
+              {c.thumbnail ? (
+                <img className="meta-cw-img" src={c.thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="meta-cw-img meta-cw-noimg">no img</div>
+              )}
+              <div className="meta-cw-bd">
+                <div className="meta-cw-top">
+                  {c.cta && <span className="meta-pill ok">{c.cta.replace(/_/g, " ")}</span>}
+                  {c.ads > 1 && <span className="meta-pill neutral">{c.ads} iklan</span>}
+                </div>
+                <div className="meta-cw-text" title={c.body}>{c.body || c.title || "(tanpa teks)"}</div>
+                <div className="meta-cw-metrics">
+                  <span><b>{num(c.results)}</b> {c.resultLabel || "hasil"}</span>
+                  <span><b>{rp(c.costPerResult)}</b> CPR</span>
+                  <span><b>{rp(c.spend)}</b> spend</span>
+                  <span><b>{c.ctr ? c.ctr.toFixed(2) + "%" : "—"}</b> CTR</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ---- per-campaign drill-down modal ---- */
+function CampaignModal({ id, range, onClose }: { id: string; range: MetaRange; onClose: () => void }) {
+  const { data, err, loading, reload } = useMeta<MetaCampaignDetail>(() => metaApi.adsCampaign(id, range), [id, range]);
+  const c = data?.campaign;
+  const t = data?.totals;
+  const rangeLabel = META_RANGES.find((r) => r.key === range)?.label ?? "";
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="meta-modal-bg" onClick={onClose}>
+      <div className="meta-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="meta-modal-hd">
+          <div>
+            <h3>{c?.name || "Detail Campaign"}</h3>
+            <div className="muted" style={{ fontSize: 11 }}>
+              {[c?.objective, c?.status, rangeLabel].filter(Boolean).join(" · ")}
+            </div>
+          </div>
+          <button className="meta-modal-x" onClick={onClose} aria-label="Tutup">✕</button>
+        </div>
+
+        <div className="meta-modal-bd">
+          {loading ? (
+            <div className="meta-state">Memuat detail campaign…</div>
+          ) : err ? (
+            <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>
+          ) : (
+            <>
+              {t && (
+                <div className="meta-tiles">
+                  <Tile k="Spend" v={rp(t.spend)} />
+                  <Tile k={t.resultLabel || "Hasil"} v={num(t.results)} />
+                  <Tile k="Cost / Hasil" v={rp(t.costPerResult)} />
+                  <Tile k="CTR" v={t.ctr ? t.ctr.toFixed(2) + "%" : "—"} />
+                  <Tile k="CPC" v={rp(t.cpc)} />
+                  <Tile k="CPM" v={rp(t.cpm)} />
+                  <Tile k="Jangkauan" v={num(t.reach)} />
+                  <Tile k="Frekuensi" v={t.frequency ? t.frequency.toFixed(2) + "x" : "—"} />
+                  <Tile k="Impressions" v={num(t.impressions)} />
+                  <Tile k="Clicks" v={num(t.clicks)} />
+                </div>
+              )}
+              {data?.daily && data.daily.length > 0 && (
+                <>
+                  <div className="meta-sub">Tren Harian</div>
+                  <DailyChart rows={data.daily} />
+                </>
+              )}
+
+              <div className="meta-bd-grid" style={{ marginTop: 14 }}>
+                <BreakdownCard title="Adset (Targeting: Broad / Behavior / PNS)" rows={data?.adsets} wide />
+                <BreakdownCard title="Iklan (Creative)" rows={data?.ads} wide />
+                <BreakdownCard title="Demografi (Umur · Gender)" rows={data?.demographics} />
+                <BreakdownCard title="Placement" rows={data?.placements} />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -267,7 +649,128 @@ export function InstagramView() {
             </section>
           ))
         )}
+        {igs.length > 0 && <IGInbox />}
       </Shell>
+    </div>
+  );
+}
+
+/* ---- Instagram DM inbox (read + reply) ---- */
+function igTime(t: string): string {
+  if (!t) return "";
+  const d = new Date(t);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+function IGInbox() {
+  const { data, err, loading, reload } = useMeta(() => metaApi.igConversations());
+  const convs: IGConversation[] = useMemo(() => data?.conversations ?? [], [data]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = convs.find((c) => c.id === openId) ?? null;
+
+  return (
+    <section className="meta-card">
+      <Head
+        title="Inbox Instagram (DM)"
+        tag={data?.limited ? "akses terbatas" : `${convs.length} percakapan${data && data.accounts ? ` · ${data.accounts} akun` : ""}`}
+      />
+
+      {loading ? (
+        <div className="meta-state">Memuat percakapan…</div>
+      ) : err ? (
+        <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>
+      ) : data?.limited ? (
+        <div className="meta-empty" style={{ lineHeight: 1.6 }}>
+          <b>Inbox belum bisa menampilkan DM customer.</b><br />
+          Meta memblokir daftar percakapan sampai izin <code>instagram_manage_messages</code> mendapat
+          <b> Advanced Access</b>. Pesan dari akun yang punya peran di app tetap bisa diuji.
+          <div className="muted" style={{ fontSize: 10, marginTop: 6 }}>Detail Meta: {data.limited}</div>
+        </div>
+      ) : convs.length === 0 ? (
+        <div className="meta-empty">Belum ada percakapan.</div>
+      ) : (
+        <div className="ig-inbox">
+          <div className="ig-list">
+            {convs.map((c) => (
+              <button
+                key={c.id}
+                className={"ig-conv" + (openId === c.id ? " on" : "")}
+                onClick={() => setOpenId(c.id)}
+              >
+                <div className="ig-conv-top">
+                  <b className="ig-conv-name">{c.customer || c.recipientId || "(tanpa nama)"}</b>
+                  {c.unread > 0 && <span className="ig-unread">{c.unread}</span>}
+                </div>
+                <div className="ig-conv-snip">{c.snippet || "—"}</div>
+                <div className="ig-conv-meta">@{c.igUser} · {igTime(c.updatedTime)}</div>
+              </button>
+            ))}
+          </div>
+          <div className="ig-thread-pane">
+            {open ? <IGThread conv={open} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function IGThread({ conv }: { conv: IGConversation }) {
+  const { data, err, loading, reload } = useMeta(() => metaApi.igMessages(conv.id, conv.pageId), [conv.id]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState("");
+  const msgs: IGMessage[] = useMemo(() => data?.messages ?? [], [data]);
+
+  const send = async () => {
+    const body = text.trim();
+    if (!body) return;
+    setSending(true);
+    setSendErr("");
+    try {
+      await metaApi.igSend(conv.pageId, conv.recipientId, body);
+      setText("");
+      reload();
+    } catch (e) {
+      setSendErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="ig-thread">
+      <div className="ig-thread-hd">{conv.customer || conv.recipientId} <span className="muted">· @{conv.igUser}</span></div>
+      <div className="ig-msgs">
+        {loading ? (
+          <div className="meta-state">Memuat pesan…</div>
+        ) : err ? (
+          <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>
+        ) : msgs.length === 0 ? (
+          <div className="meta-empty">Belum ada pesan.</div>
+        ) : (
+          msgs.map((m) => (
+            <div key={m.id} className={"ig-msg" + (m.fromMe ? " me" : "")}>
+              <div className="ig-bubble">{m.text || <i className="muted">(media / non-teks)</i>}</div>
+              <div className="ig-msg-time">{igTime(m.time)}</div>
+            </div>
+          ))
+        )}
+      </div>
+      <div className="ig-reply">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Tulis balasan…"
+          disabled={sending}
+        />
+        <button className="meta-retry" onClick={send} disabled={sending || !text.trim()}>
+          {sending ? "Mengirim…" : "Kirim"}
+        </button>
+      </div>
+      {sendErr && <div className="meta-state error" style={{ marginTop: 6 }}>{sendErr}</div>}
     </div>
   );
 }

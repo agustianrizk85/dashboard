@@ -87,6 +87,11 @@ export default function OrchestratorApp() {
     Object.fromEntries(STAGES.map((s) => [s.key, { status: "idle" }])) as Record<StageKey, StageState>,
   );
   const [decisions, setDecisions] = useState<Decision[] | null>(null);
+  // The division snapshot from the last run, kept so a per-stage revision can
+  // re-ground the model without re-fetching every division.
+  const [divData, setDivData] = useState<Record<string, string>>({});
+  const [ask, setAsk] = useState<Record<string, string>>({});
+  const [revising, setRevising] = useState<StageKey | null>(null);
 
   const run = useCallback(async () => {
     const chosen = DIVS.filter((d) => selected[d.key]);
@@ -108,6 +113,7 @@ export default function OrchestratorApp() {
       }
     }
     setLoaded(ok);
+    setDivData(divisions);
     if (ok.length === 0) {
       setPhase("");
       setBusy(false);
@@ -144,6 +150,43 @@ export default function OrchestratorApp() {
     setBusy(false);
   }, [selected]);
 
+  // Re-run a single stage with a user follow-up / revision request, keeping the
+  // existing output visible until the revised one arrives.
+  const revise = useCallback(
+    async (stage: (typeof STAGES)[number]) => {
+      const q = (ask[stage.key] || "").trim();
+      if (!q || revising) return;
+      const idx = STAGES.findIndex((s) => s.key === stage.key);
+      const prior: Record<string, string> = {};
+      for (let i = 0; i < idx; i++) {
+        const o = states[STAGES[i].key].output;
+        if (o) prior[STAGES[i].key] = o.length > 1200 ? o.slice(0, 1200) : o;
+      }
+      setRevising(stage.key);
+      const token = localStorage.getItem("gp_dashboard_token");
+      try {
+        const res = await fetch(AUTH_API + "/ai/orchestrate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+          body: JSON.stringify({ stage: stage.key, divisions: divData, prior, question: q, current: states[stage.key].output || "" }),
+        });
+        if (res.status === 401) window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+        const body = (await res.json().catch(() => ({}))) as { output?: string; error?: string };
+        if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+        const output = body.output || "(kosong)";
+        setStates((s) => ({ ...s, [stage.key]: { status: "done", output } }));
+        if (stage.key === "overview") setDash(tryParseDashboard(output));
+        if (stage.key === "approval") setDecisions(tryParseDecisions(output));
+        setAsk((a) => ({ ...a, [stage.key]: "" }));
+      } catch (e) {
+        setStates((s) => ({ ...s, [stage.key]: { status: "error", error: e instanceof Error ? e.message : String(e) } }));
+      } finally {
+        setRevising(null);
+      }
+    },
+    [ask, revising, states, divData],
+  );
+
   const setVote = (i: number, vote: "setuju" | "tolak") =>
     setDecisions((d) => (d ? d.map((x, k) => (k === i ? { ...x, vote: x.vote === vote ? undefined : vote } : x)) : d));
 
@@ -177,7 +220,8 @@ export default function OrchestratorApp() {
             <h2>Pipeline Orchestrator</h2>
             <p>
               AI membaca data divisi terpilih lalu menjalankan 5 tahap berurutan: CEO → Solusi → Permasalahan →
-              Overview (dashboard) → Persetujuan. Read-only — tidak mengubah data divisi.
+              Overview (dashboard) → Persetujuan. Tiap tahap bisa Anda tanyai atau minta revisi setelah selesai.
+              Read-only — tidak mengubah data divisi.
             </p>
             <div className="orc-divpick">
               <span className="orc-divpick-l">Divisi:</span>
@@ -208,8 +252,10 @@ export default function OrchestratorApp() {
         <ol className="orc-pipe">
           {STAGES.map((stage, idx) => {
             const st = states[stage.key];
+            const isRevising = revising === stage.key;
+            const visStatus = isRevising ? "running" : st.status;
             return (
-              <li key={stage.key} className={"orc-step " + st.status}>
+              <li key={stage.key} className={"orc-step " + visStatus}>
                 <div className="orc-step-rail">
                   <span className="orc-step-dot">{stage.icon}</span>
                   {idx < STAGES.length - 1 && <span className="orc-step-line" />}
@@ -221,11 +267,16 @@ export default function OrchestratorApp() {
                       <b>{stage.label}</b>
                       <span className="orc-step-hint">{stage.hint}</span>
                     </div>
-                    <span className={"orc-badge " + st.status}>
-                      {st.status === "idle" && "menunggu"}
-                      {st.status === "running" && "memproses…"}
-                      {st.status === "done" && "selesai"}
-                      {st.status === "error" && "gagal"}
+                    <span className={"orc-badge " + visStatus}>
+                      {isRevising
+                        ? "merevisi…"
+                        : st.status === "idle"
+                          ? "menunggu"
+                          : st.status === "running"
+                            ? "memproses…"
+                            : st.status === "done"
+                              ? "selesai"
+                              : "gagal"}
                     </span>
                   </div>
 
@@ -259,6 +310,29 @@ export default function OrchestratorApp() {
                     </div>
                   ) : (
                     st.output && <div className="orc-out">{st.output}</div>
+                  )}
+
+                  {(st.status === "done" || isRevising) && !busy && (
+                    <div className="orc-ask">
+                      <input
+                        type="text"
+                        className="orc-ask-input"
+                        placeholder="Tanya atau minta revisi tahap ini…"
+                        value={ask[stage.key] || ""}
+                        disabled={revising !== null}
+                        onChange={(e) => setAsk((a) => ({ ...a, [stage.key]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") void revise(stage);
+                        }}
+                      />
+                      <button
+                        className="orc-ask-btn"
+                        disabled={revising !== null || !(ask[stage.key] || "").trim()}
+                        onClick={() => void revise(stage)}
+                      >
+                        {isRevising ? "Merevisi…" : "Revisi"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </li>

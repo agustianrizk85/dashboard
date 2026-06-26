@@ -23,6 +23,7 @@ export function divisionLabel(d: Division): string {
     marketing: "Marketing",
     sales: "Sales",
     keuangan: "Keuangan",
+    teknik: "Teknik",
   };
   return map[d];
 }

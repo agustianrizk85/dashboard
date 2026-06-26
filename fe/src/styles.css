@@ -212,6 +212,41 @@ body {
    module's tab bar, styled identically to the Perencanaan tabs so every
    division looks the same. ---- */
 .divtabs { display: flex; align-items: center; gap: 4px; order: -1; margin-right: auto; }
+
+/* Second-tier sub-tab row (DivisionTabBar). Styled as a LIGHT strip the same
+   colour as the active division tab above and the content below, so the active
+   division tab visually MERGES with its sub-tabs and the page ("menyatu"). The
+   sub-tabs themselves are underline-style. Left padding is set inline to align
+   the row right under the active division tab. !important beats each module's
+   own `.tab`/`.navlink` rules regardless of stylesheet order. */
+.tabs.subtabs,
+.topnav.subtabs {
+  background: var(--bg, #eef1f5) !important;
+  box-shadow: none;
+  padding-top: 6px;
+  padding-bottom: 0;
+  gap: 2px;
+}
+.tabs.subtabs .tab,
+.topnav.subtabs .navlink {
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ink-2, #46566e) !important;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1px;
+  font-weight: 600;
+}
+.tabs.subtabs .tab:hover,
+.topnav.subtabs .navlink:hover {
+  color: var(--ink, #14233b) !important;
+  background: transparent !important;
+}
+.tabs.subtabs .tab.on,
+.topnav.subtabs .navlink.active {
+  color: var(--green-700, #0f6b46) !important;
+  border-bottom-color: var(--green-600, #138a59);
+  font-weight: 700;
+}
 .divtab {
   font-family: var(--font-body); font-size: 13px; font-weight: 600;
   color: #a9c7b4; background: transparent; border: none;

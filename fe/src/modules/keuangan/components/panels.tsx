@@ -7,6 +7,7 @@ import type {
   PayMethod,
   PipelineRow,
   ProjectFin,
+  Purchasing,
   SalesRank,
   Summary,
 } from "../types";
@@ -16,7 +17,7 @@ import type { CardInfo } from "./ui";
 import { MonthlyChart } from "./CashflowChart";
 import { ChartLegend, CHART_PALETTE, DonutChart, RadialGauge } from "./Charts";
 
-const num = (n: number) => n.toLocaleString("id-ID");
+const num = (n: number) => (Number(n) || 0).toLocaleString("id-ID");
 
 /* ---- Card tooltips: where each card's data comes from + the business
  *      process it represents (shown via the ⓘ marker on every card). ------ */
@@ -80,6 +81,10 @@ const INFO: Record<string, CardInfo> = {
   achievement: {
     source: "Dihitung backend dari data akad di sheet: jumlah akad vs target tahun fokus, serta porsi akad berskema KPR.",
     process: "Ukuran pencapaian penjualan final (akad) terhadap target & seberapa besar penjualan dibiayai KPR.",
+  },
+  purchasing: {
+    source: "Spreadsheet 'Pembelian (PR)' — tab Pesanan Pembelian (PO), Faktur Pembelian, & Pembayaran Pembelian — ditarik backend keuangan (:8084) saat sync.",
+    process: "Pengadaan material/jasa: PO dipesan → faktur diterima → dibayar. Hutang = sisa terutang faktur yang belum lunas.",
   },
 };
 
@@ -306,6 +311,54 @@ export function AlertPanel({ alerts, onExpand }: { alerts: Alert[]; onExpand?: (
           </div>
         ))}
       </div>
+    </Panel>
+  );
+}
+
+/* ---- Procurement (PR / Pembelian) ------------------------------------- */
+export function PurchasingPanel({ pur, onExpand }: { pur: Purchasing; onExpand?: () => void }) {
+  const s = pur.summary;
+  const empty = !s.poCount && !s.invoiceCount && !s.paymentCount;
+  const suppliers = pur.bySupplier.slice(0, 6);
+  return (
+    <Panel
+      tag="PEMBELIAN (PR)"
+      title="Pengadaan & Hutang Pemasok"
+      sub={empty ? "belum ada data" : `${s.poCount} PO · ${s.supplierCount} pemasok`}
+      accent="var(--navy-600)"
+      info={INFO.purchasing}
+      onExpand={onExpand}
+    >
+      {empty ? (
+        <Empty label="Belum ada data pembelian — sync sheet 'Pembelian (PR)'." />
+      ) : (
+        <>
+          <div className="ach-stats" style={{ marginBottom: 10 }}>
+            <Stat label="Nilai PO" value={rp(s.poValue)} />
+            <Stat label="Faktur" value={rp(s.invoiceValue)} />
+            <Stat label="Dibayar" value={rp(s.paidValue)} tone="ok" />
+            <Stat label="Hutang" value={rp(s.outstanding)} tone={s.outstanding > 0 ? "bad" : "ok"} />
+          </div>
+          {suppliers.length > 0 && (
+            <div className="rows">
+              {suppliers.map((sup, i) => (
+                <div className="row" key={sup.name + i}>
+                  <span className="row-rank">{i + 1}</span>
+                  <span className="row-name">{sup.name}</span>
+                  <span className="row-sub">
+                    {sup.outstanding > 0 ? (
+                      <Pill tone="orange" dot={false}>Hutang {rp(sup.outstanding)}</Pill>
+                    ) : (
+                      <Pill tone="green" dot={false}>Lunas</Pill>
+                    )}
+                  </span>
+                  <span className="row-val">{rp(sup.poValue)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </Panel>
   );
 }

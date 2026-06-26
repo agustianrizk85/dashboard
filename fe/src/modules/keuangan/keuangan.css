@@ -1194,3 +1194,46 @@
   .kc-scope .kpi-row { grid-template-columns: 1fr 1fr; }
   .kc-scope .hdr-titles h1 { font-size: 17px; }
 }
+
+/* ============================================================
+   AR / Piutang sub-tab (scoped under .kc-scope)
+   ============================================================ */
+.kc-scope .ar-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+.kc-scope .ar-syncbtn {
+  border: 1px solid var(--line, #2a3b34); background: var(--accent, #1f6f43); color: #fff;
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.kc-scope .ar-syncbtn:disabled { opacity: .6; cursor: default; }
+.kc-scope .ar-syncmsg { font-size: 11.5px; color: var(--ink-3, #8aa); max-width: 50%; }
+
+.kc-scope .ar-kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 14px;
+}
+.kc-scope .ar-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+.kc-scope .ar-grid .panel:nth-child(5),
+.kc-scope .ar-grid .panel:nth-child(6) { grid-column: 1 / -1; }
+
+.kc-scope .ar-stack { display: flex; flex-direction: column; gap: 12px; }
+.kc-scope .ar-rowbar-top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.kc-scope .ar-rowbar-val { color: var(--ink-3, #8aa); font-variant-numeric: tabular-nums; }
+.kc-scope .ar-none { color: var(--ink-3, #8aa); font-size: 12.5px; padding: 10px 2px; }
+
+.kc-scope .ar-statgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+.kc-scope .ar-tablewrap { overflow-x: auto; }
+.kc-scope .ar-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.kc-scope .ar-table th, .kc-scope .ar-table td {
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line, #223);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.kc-scope .ar-table th { color: var(--ink-3, #8aa); font-weight: 600; }
+.kc-scope .ar-table td.r, .kc-scope .ar-table th.r { text-align: right; }
+.kc-scope .ar-table tbody tr:hover { background: rgba(255,255,255,.03); }
+
+@media (max-width: 900px) {
+  .kc-scope .ar-kpis { grid-template-columns: repeat(2, 1fr); }
+  .kc-scope .ar-grid { grid-template-columns: 1fr; }
+  .kc-scope .ar-grid .panel { grid-column: auto; }
+}

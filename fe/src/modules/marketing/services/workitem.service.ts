@@ -21,4 +21,11 @@ export const workItemService = {
     const { data } = await api.get<WorkItemProgress>(`/work-items/${id}/progress`);
     return data;
   },
+
+  // Destructive: delete ALL work items, steps and documents (keeps accounts).
+  // Kadep only — returns 403 otherwise.
+  async reset(): Promise<{ deleted: { work_items: number; work_steps: number; documents: number }; warning?: string }> {
+    const { data } = await api.post("/work-items/reset");
+    return data;
+  },
 };

@@ -8,9 +8,10 @@ import { AlurKerjaView } from "./views/AlurKerjaView";
 import { TugasSayaView } from "./views/TugasSayaView";
 import { PerformaView } from "../performa/PerformaView";
 import { AdsView, WhatsAppView, InstagramView } from "../meta/MetaViews";
-import { DivisionTabs } from "@/components/DivisionTabs";
+import { AccountsView } from "../meta/AccountsView";
+import { DivisionTabBar } from "@/components/DivisionTabBar";
 
-type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig";
+type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig" | "akun";
 
 const roleLabel: Record<string, string> = {
   kadep: "Kepala Departemen",
@@ -65,8 +66,10 @@ export function DesktopShell({ user }: { user: User }) {
     { key: "ads", label: "Iklan (Ads)" },
     { key: "wa", label: "WhatsApp" },
     { key: "ig", label: "Instagram" },
+    { key: "akun", label: "Akun Meta" },
   ];
-  // Directors get the overview + live Meta tabs, no operational task tabs.
+  // Directors get the overview + live Meta tabs, no operational task tabs and no
+  // "Akun Meta" account-connect tab (managed by the marketing team).
   const visibleTabs = allAccess
     ? TABS.filter((t) => t.key === "ringkasan" || t.key === "ads" || t.key === "wa" || t.key === "ig")
     : TABS;
@@ -98,25 +101,32 @@ export function DesktopShell({ user }: { user: User }) {
           </div>
         </header>
 
-        <nav className="tabs">
+        <DivisionTabBar>
           {visibleTabs.map((t) => (
             <button key={t.key} className={`tab ${tab === t.key ? "on" : ""}`} onClick={() => setTab(t.key)}>
               {t.label}
             </button>
           ))}
-          <DivisionTabs />
-        </nav>
+        </DivisionTabBar>
 
         {/* key={rev} remounts the active view on each realtime push so the
             self-loading "Tugas Saya" board also refetches live. */}
         <main className="content" key={rev}>
           {err && <div className="empty-note error">{err}</div>}
           {tab === "ringkasan" && <PerformaView items={items} warnings={warnings} />}
-          {tab === "alur" && <AlurKerjaView items={items} canEdit={user.role !== "viewer"} onChanged={reload} />}
+          {tab === "alur" && (
+            <AlurKerjaView
+              items={items}
+              canEdit={user.role !== "viewer"}
+              canReset={user.role === "kadep"}
+              onChanged={reload}
+            />
+          )}
           {tab === "tugas" && <TugasSayaView user={user} canEdit={user.role !== "viewer"} onChanged={reload} />}
           {tab === "ads" && <AdsView />}
           {tab === "wa" && <WhatsAppView />}
           {tab === "ig" && <InstagramView />}
+          {tab === "akun" && <AccountsView user={user} />}
         </main>
       </div>
     </div>

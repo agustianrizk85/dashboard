@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/auth/AuthContext";
-import { DivisionTabs } from "@/components/DivisionTabs";
+import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { KeuanganView } from "./KeuanganView";
+import { ARView } from "./ARView";
 import { ImportPanel } from "./components/admin/ImportPanel";
 import "../sales/sales.css"; // shared division shell chrome (stage/header/tabs)
 import "./keuangan.css"; // finance dashboard content, scoped under .kc-scope
 
-type Tab = "dash" | "sync";
+type Tab = "dash" | "ar" | "sync";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -41,7 +42,7 @@ export default function KeuanganApp() {
   const { user, logout } = useAuth();
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [tab, setTab] = useState<Tab>("dash");
-  const active: Tab = tab === "sync" && canManage ? "sync" : "dash";
+  const active: Tab = tab === "sync" && !canManage ? "dash" : tab;
 
   return (
     <div className="sales-stage">
@@ -68,17 +69,19 @@ export default function KeuanganApp() {
           </div>
         </header>
 
-        <nav className="tabs">
+        <DivisionTabBar>
           <button className={`tab ${active === "dash" ? "on" : ""}`} onClick={() => setTab("dash")}>
             Dashboard
+          </button>
+          <button className={`tab ${active === "ar" ? "on" : ""}`} onClick={() => setTab("ar")}>
+            AR / Piutang
           </button>
           {canManage && (
             <button className={`tab ${active === "sync" ? "on" : ""}`} onClick={() => setTab("sync")}>
               Sync / Import
             </button>
           )}
-          <DivisionTabs />
-        </nav>
+        </DivisionTabBar>
 
         <main className="content">
           {active === "sync" ? (
@@ -87,6 +90,8 @@ export default function KeuanganApp() {
                 <ImportPanel reload={() => window.location.reload()} />
               </div>
             </div>
+          ) : active === "ar" ? (
+            <ARView />
           ) : (
             <KeuanganView />
           )}

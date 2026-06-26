@@ -1,6 +1,21 @@
-// Live Meta (Facebook) data via the marketing backend proxy (/api/meta/*).
-// The token stays server-side; the marketing API client attaches the bearer.
-import { api } from "../services/api";
+// Live Meta (Facebook) data via the dedicated metaapi service (/api/meta/*).
+// metaapi shares the marketing backend's JWT secret, so the same login token is
+// accepted (unified auth). Base via VITE_META_API (default http://localhost:8097
+// in dev; https://meta.greenparkgroup.cloud in prod). The bearer is the same
+// marketing session token from tokenStore.
+import axios from "axios";
+import { tokenStore } from "../services/api";
+
+const metaBase = ((import.meta.env.VITE_META_API as string | undefined) ?? "http://localhost:8097").replace(/\/$/, "");
+const api = axios.create({
+  baseURL: `${metaBase}/api`,
+  headers: { "Content-Type": "application/json" },
+});
+api.interceptors.request.use((config) => {
+  const token = tokenStore.get();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 export interface MetaCampaign {
   id: string;
@@ -12,11 +27,17 @@ export interface MetaCampaign {
   spend: number;
   impressions: number;
   clicks: number;
+  reach: number;
+  frequency: number;
   ctr: number;
   cpc: number;
+  cpm: number;
   resultLabel: string;
   results: number;
   costPerResult: number;
+  effectiveStatus: string;
+  issues: number;
+  issueSummary: string;
 }
 export interface MetaAdsTotals {
   spend: number;
@@ -27,8 +48,13 @@ export interface MetaAdsTotals {
   ctr: number;
   cpc: number;
   cpm: number;
+  reach: number;
+  frequency: number;
+  conversionRate: number;
   campaigns: number;
   activeCampaigns: number;
+  deliveringCampaigns: number;
+  issueCampaigns: number;
   accounts: number;
 }
 export interface MetaAds {
@@ -102,12 +128,121 @@ export interface MetaAdsDetail {
   regions?: MetaBreakdownRow[];
   devices?: MetaBreakdownRow[];
   topAds?: MetaBreakdownRow[];
+  hourly?: MetaBreakdownRow[];
+  creatives?: MetaCreative[];
   error?: string;
 }
 
+// One winning ad-copy (aggregated across ads that share the same body text),
+// joined with live performance — works for standard ads (no asset feed needed).
+export interface MetaCreative {
+  body: string;
+  title: string;
+  cta: string;
+  thumbnail: string;
+  resultLabel: string;
+  spend: number;
+  results: number;
+  costPerResult: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  ads: number;
+}
+
+// Date-range options for the Ads tab — "max" pulls Meta's maximum window
+// (lifetime, up to ~37 months) so campaigns across all years show up.
+export type MetaRange = "today" | "7d" | "30d" | "90d" | "this_year" | "last_year" | "max";
+export const META_RANGES: { key: MetaRange; label: string }[] = [
+  { key: "today", label: "Hari Ini" },
+  { key: "7d", label: "7 Hari" },
+  { key: "30d", label: "30 Hari" },
+  { key: "90d", label: "90 Hari" },
+  { key: "this_year", label: "Tahun Ini" },
+  { key: "last_year", label: "Tahun Lalu" },
+  { key: "max", label: "Semua Tahun" },
+];
+
+export interface MetaCampaignInfo {
+  id: string;
+  name: string;
+  status: string;
+  objective: string;
+  dailyBudget: number;
+  lifetimeBudget: number;
+  startTime: string;
+  stopTime: string;
+  accountId: string;
+}
+export interface MetaCampaignTotals {
+  spend: number;
+  impressions: number;
+  reach: number;
+  frequency: number;
+  clicks: number;
+  ctr: number;
+  cpc: number;
+  cpm: number;
+  resultLabel: string;
+  results: number;
+  costPerResult: number;
+}
+export interface MetaCampaignDetail {
+  configured: boolean;
+  range?: string;
+  campaign?: MetaCampaignInfo;
+  totals?: MetaCampaignTotals | null;
+  daily?: MetaDailyRow[];
+  demographics?: MetaBreakdownRow[];
+  placements?: MetaBreakdownRow[];
+  ads?: MetaBreakdownRow[];
+  adsets?: MetaBreakdownRow[];
+  error?: string;
+}
+
+// ---- Instagram DM inbox ----
+export interface IGConversation {
+  id: string;
+  pageId: string;
+  igUser: string;
+  customer: string;
+  recipientId: string;
+  snippet: string;
+  updatedTime: string;
+  unread: number;
+}
+export interface IGConversations {
+  configured: boolean;
+  conversations: IGConversation[];
+  accounts: number;
+  limited?: string; // set when Advanced Access to instagram_manage_messages is needed
+}
+export interface IGMessage {
+  id: string;
+  text: string;
+  time: string;
+  fromMe: boolean;
+  fromId: string;
+}
+
+const rq = (range?: MetaRange) => (range ? `?range=${range}` : "");
+
 export const metaApi = {
-  ads: () => api.get<MetaAds>("/meta/ads").then((r) => r.data),
-  adsDetail: () => api.get<MetaAdsDetail>("/meta/ads/detail").then((r) => r.data),
+  ads: (range?: MetaRange) => api.get<MetaAds>("/meta/ads" + rq(range)).then((r) => r.data),
+  adsDetail: (range?: MetaRange) => api.get<MetaAdsDetail>("/meta/ads/detail" + rq(range)).then((r) => r.data),
+  adsCampaign: (id: string, range?: MetaRange) =>
+    api
+      .get<MetaCampaignDetail>(`/meta/ads/campaign?id=${encodeURIComponent(id)}${range ? `&range=${range}` : ""}`)
+      .then((r) => r.data),
   whatsapp: () => api.get<MetaWa>("/meta/whatsapp").then((r) => r.data),
   instagram: () => api.get<MetaIg>("/meta/instagram").then((r) => r.data),
+  igConversations: () => api.get<IGConversations>("/meta/instagram/conversations").then((r) => r.data),
+  igMessages: (conversationId: string, pageId: string) =>
+    api
+      .get<{ messages: IGMessage[]; igUser: string }>(
+        `/meta/instagram/messages?conversation_id=${encodeURIComponent(conversationId)}&page_id=${encodeURIComponent(pageId)}`,
+      )
+      .then((r) => r.data),
+  igSend: (pageId: string, recipientId: string, text: string) =>
+    api.post<{ ok: boolean }>("/meta/instagram/send", { page_id: pageId, recipient_id: recipientId, text }).then((r) => r.data),
 };
