@@ -1,9 +1,19 @@
-// Meta (Facebook) OAuth — multi-account connection management for the unified
-// dashboard's Marketing module. The Meta App credentials and per-account access
-// tokens live server-side (marketing backend :8086); the browser only ever sees
-// metadata. The active connection drives every /meta/* data endpoint, so the
-// Ads / WhatsApp / Instagram tabs follow whichever account is switched on here.
-import { api, tokenStore } from "../services/api";
+// Meta (Facebook) connection management for the unified dashboard's Marketing
+// module. Accounts (System User tokens / OAuth) live server-side in metaapi —
+// the SAME service that serves Ads / WhatsApp / Instagram data — so managing
+// connections here directly affects what those tabs aggregate. The browser only
+// ever sees metadata; tokens stay on the backend. Base via VITE_META_API (same
+// as metaApi.ts) so connection + data calls hit one backend.
+import axios from "axios";
+import { tokenStore } from "../services/api";
+
+const META_ORIGIN = ((import.meta.env.VITE_META_API as string | undefined) ?? "http://localhost:8097").replace(/\/$/, "");
+const api = axios.create({ baseURL: `${META_ORIGIN}/api`, headers: { "Content-Type": "application/json" } });
+api.interceptors.request.use((config) => {
+  const token = tokenStore.get();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 // OAuth app config. The secret is write-only — set once, never returned.
 export interface MetaOAuthConfig {
@@ -46,14 +56,6 @@ export interface UpdateConnectionInput {
   business_id?: string;
 }
 
-// Absolute marketing-backend origin. The OAuth login is a top-level popup
-// navigation, so it can't ride the axios relative base — it needs the full URL
-// and carries the bearer as ?token= (a popup can't set an Authorization header,
-// same pattern as the realtime /ws endpoint).
-const MARKETING_ORIGIN = (
-  (import.meta.env.VITE_MARKETING_API as string | undefined) ?? "http://localhost:8086"
-).replace(/\/$/, "");
-
 export const metaOAuth = {
   getConfig: () => api.get<MetaOAuthConfig>("/meta/oauth/config").then((r) => r.data),
 
@@ -91,5 +93,5 @@ export const metaOAuth = {
       .then((r) => r.data.connections),
 
   loginUrl: () =>
-    `${MARKETING_ORIGIN}/api/meta/oauth/login?token=${encodeURIComponent(tokenStore.get() ?? "")}`,
+    `${META_ORIGIN}/api/meta/oauth/login?token=${encodeURIComponent(tokenStore.get() ?? "")}`,
 };
