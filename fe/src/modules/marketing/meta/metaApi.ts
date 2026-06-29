@@ -67,6 +67,7 @@ export interface MetaAds {
   error?: string;
 }
 export interface MetaPhone {
+  id?: string; // phone_number_id — recipient of Cloud API sends
   display_phone_number?: string;
   verified_name?: string;
   quality_rating?: string;
@@ -225,6 +226,34 @@ export interface IGMessage {
   fromId: string;
 }
 
+// ---- WhatsApp inbox (Cloud API, webhook-backed) ----
+// WhatsApp has no message-history API, so threads come from messages captured
+// by metaapi's webhook (inbound) + replies we send (outbound), stored server-side.
+export interface WAConversation {
+  id: number;
+  phoneNumberId: string;
+  contactWaId: string; // customer phone (no +) — the reply recipient
+  contactName: string;
+  lastSnippet: string;
+  lastDirection: "in" | "out" | string;
+  lastMessageAt: string;
+  unread: number;
+}
+export interface WAConversations {
+  configured: boolean;
+  conversations: WAConversation[];
+}
+export interface WAMessage {
+  id: number;
+  wamId: string;
+  contactWaId: string;
+  direction: "in" | "out" | string;
+  type: string;
+  text: string;
+  status: string;
+  timestamp: string;
+}
+
 const rq = (range?: MetaRange) => (range ? `?range=${range}` : "");
 
 export const metaApi = {
@@ -245,4 +274,17 @@ export const metaApi = {
       .then((r) => r.data),
   igSend: (pageId: string, recipientId: string, text: string) =>
     api.post<{ ok: boolean }>("/meta/instagram/send", { page_id: pageId, recipient_id: recipientId, text }).then((r) => r.data),
+
+  // WhatsApp inbox
+  waConversations: () => api.get<WAConversations>("/meta/whatsapp/conversations").then((r) => r.data),
+  waMessages: (phoneNumberId: string, contact: string) =>
+    api
+      .get<{ messages: WAMessage[] }>(
+        `/meta/whatsapp/messages?phone_number_id=${encodeURIComponent(phoneNumberId)}&contact=${encodeURIComponent(contact)}`,
+      )
+      .then((r) => r.data),
+  waSend: (phoneNumberId: string, to: string, text: string) =>
+    api
+      .post<{ ok: boolean; wamId: string }>("/meta/whatsapp/send", { phone_number_id: phoneNumberId, to, text })
+      .then((r) => r.data),
 };

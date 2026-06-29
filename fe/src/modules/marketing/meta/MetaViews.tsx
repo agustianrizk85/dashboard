@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { metaApi, META_RANGES } from "./metaApi";
-import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage } from "./metaApi";
+import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage } from "./metaApi";
 import "./meta.css";
 
 /* ---------- helpers ---------- */
@@ -618,7 +618,129 @@ export function WhatsAppView() {
             )}
           </section>
         ))}
+        {wabas.length > 0 && <WAInbox wabas={wabas} />}
       </Shell>
+    </div>
+  );
+}
+
+/* ---- WhatsApp inbox (read + reply) — same pattern as the Instagram DM inbox.
+   WhatsApp has no history API, so threads are captured by metaapi's Cloud API
+   webhook (inbound) + the replies we send (outbound), persisted server-side. ---- */
+function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
+  const { data, err, loading, reload } = useMeta(() => metaApi.waConversations());
+  const convs: WAConversation[] = useMemo(() => data?.conversations ?? [], [data]);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const open = convs.find((c) => `${c.phoneNumberId}:${c.contactWaId}` === openKey) ?? null;
+
+  // Map phone_number_id → display number (from the WABA listing) for headers.
+  const phoneLabel = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const w of wabas ?? []) for (const p of w.phones ?? []) if (p.id) m[p.id] = p.display_phone_number || p.id;
+    return m;
+  }, [wabas]);
+
+  return (
+    <section className="meta-card">
+      <Head
+        title="Inbox WhatsApp"
+        tag={loading ? "memuat…" : `${convs.length} percakapan`}
+      />
+      {loading ? (
+        <div className="meta-state">Memuat percakapan…</div>
+      ) : err ? (
+        <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>
+      ) : convs.length === 0 ? (
+        <div className="meta-empty" style={{ lineHeight: 1.6 }}>
+          Belum ada pesan masuk. Pesan WhatsApp masuk muncul di sini setelah <b>webhook</b> Cloud API
+          terhubung (subscribe field <code>messages</code> di Meta App, arahkan ke
+          <code> /api/meta/whatsapp/webhook</code>).
+        </div>
+      ) : (
+        <div className="ig-inbox">
+          <div className="ig-list">
+            {convs.map((c) => {
+              const key = `${c.phoneNumberId}:${c.contactWaId}`;
+              return (
+                <button key={key} className={"ig-conv" + (openKey === key ? " on" : "")} onClick={() => { setOpenKey(key); reload(); }}>
+                  <div className="ig-conv-top">
+                    <b className="ig-conv-name">{c.contactName || c.contactWaId}</b>
+                    {c.unread > 0 && <span className="ig-unread">{c.unread}</span>}
+                  </div>
+                  <div className="ig-conv-snip">{(c.lastDirection === "out" ? "Anda: " : "") + (c.lastSnippet || "—")}</div>
+                  <div className="ig-conv-meta">{phoneLabel[c.phoneNumberId] || c.contactWaId} · {igTime(c.lastMessageAt)}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="ig-thread-pane">
+            {open ? <WAThread conv={open} phoneLabel={phoneLabel[open.phoneNumberId]} onSent={reload} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function WAThread({ conv, phoneLabel, onSent }: { conv: WAConversation; phoneLabel?: string; onSent: () => void }) {
+  const { data, err, loading, reload } = useMeta(() => metaApi.waMessages(conv.phoneNumberId, conv.contactWaId), [conv.phoneNumberId, conv.contactWaId]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState("");
+  const msgs: WAMessage[] = useMemo(() => data?.messages ?? [], [data]);
+
+  const send = async () => {
+    const body = text.trim();
+    if (!body) return;
+    setSending(true);
+    setSendErr("");
+    try {
+      await metaApi.waSend(conv.phoneNumberId, conv.contactWaId, body);
+      setText("");
+      reload();
+      onSent();
+    } catch (e) {
+      setSendErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="ig-thread">
+      <div className="ig-thread-hd">{conv.contactName || conv.contactWaId} <span className="muted">· {phoneLabel || conv.phoneNumberId}</span></div>
+      <div className="ig-msgs">
+        {loading ? (
+          <div className="meta-state">Memuat pesan…</div>
+        ) : err ? (
+          <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>
+        ) : msgs.length === 0 ? (
+          <div className="meta-empty">Belum ada pesan.</div>
+        ) : (
+          msgs.map((m) => (
+            <div key={m.id} className={"ig-msg" + (m.direction === "out" ? " me" : "")}>
+              <div className="ig-bubble">{m.text || <i className="muted">(media / non-teks)</i>}</div>
+              <div className="ig-msg-time">{igTime(m.timestamp)}{m.direction === "out" && m.status ? ` · ${m.status}` : ""}</div>
+            </div>
+          ))
+        )}
+      </div>
+      <div className="ig-reply">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Tulis balasan…"
+          disabled={sending}
+        />
+        <button className="meta-retry" onClick={send} disabled={sending || !text.trim()}>
+          {sending ? "Mengirim…" : "Kirim"}
+        </button>
+      </div>
+      <div className="muted" style={{ fontSize: 10, marginTop: 6 }}>
+        Balasan teks bebas hanya dalam 24 jam sejak pesan terakhir customer. Di luar itu wajib template approved.
+      </div>
+      {sendErr && <div className="meta-state error" style={{ marginTop: 6 }}>{sendErr}</div>}
     </div>
   );
 }
