@@ -41,8 +41,14 @@ function Shell({ loading, err, reload, notConfigured, children }: { loading: boo
   return <>{children}</>;
 }
 
-function Head({ title, tag }: { title: string; tag: React.ReactNode }) {
-  return <div className="meta-head"><h3>{title}</h3><span className="meta-tag">{tag}</span></div>;
+function Head({ title, tag, right }: { title: string; tag: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="meta-head">
+      <h3>{title}</h3>
+      <span className="meta-tag">{tag}</span>
+      {right && <span style={{ marginLeft: "auto" }}>{right}</span>}
+    </div>
+  );
 }
 
 /* ===================== ADS ===================== */
@@ -780,29 +786,100 @@ export function InstagramView() {
   return (
     <div className="meta-wrap">
       <Shell loading={loading} err={err} reload={reload} notConfigured={data ? !data.configured : false}>
-        {igs.length === 0 ? (
-          <section className="meta-card">
-            <Head title="Instagram Business" tag="Belum tertaut" />
-            <div className="meta-empty">
-              Belum ada akun Instagram Business yang tertaut ke Facebook Page, atau token belum punya izin
-              <code> instagram_basic</code>. Tautkan IG ke Page lewat Meta Business Suite, lalu tambahkan izin Instagram saat generate token.
+        <IGConnect onChanged={reload} hasAccounts={igs.length > 0} />
+        {igs.map((ig) => (
+          <section className="meta-card" key={ig.id}>
+            <Head
+              title={"@" + (ig.username ?? ig.id)}
+              tag={ig.page ? ig.page : "Instagram"}
+              right={ig.connId ? <IGRemove connId={ig.connId} username={ig.username ?? ig.id ?? ""} onDone={reload} /> : undefined}
+            />
+            <div className="meta-tiles">
+              <Tile k="Followers" v={num(ig.followers_count)} />
+              <Tile k="Konten" v={num(ig.media_count)} />
             </div>
           </section>
-        ) : (
-          igs.map((ig) => (
-            <section className="meta-card" key={ig.id}>
-              <Head title={"@" + (ig.username ?? ig.id)} tag={ig.page ? "Page: " + ig.page : "Instagram"} />
-              <div className="meta-tiles">
-                <Tile k="Followers" v={num(ig.followers_count)} />
-                <Tile k="Konten" v={num(ig.media_count)} />
-              </div>
-            </section>
-          ))
-        )}
+        ))}
         {igs.length > 0 && <IGInbox />}
       </Shell>
     </div>
   );
+}
+
+/* ---- Connect an Instagram-login account by pasting its access token ----
+   The "Instagram API with Instagram Login" has no System User token; each account
+   is authorised with its own long-lived token (App Dashboard → Instagram →
+   "Create token"). metaapi stores it and auto-refreshes it so it never expires. */
+function IGConnect({ onChanged, hasAccounts }: { onChanged: () => void; hasAccounts: boolean }) {
+  const [token, setToken] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [errMsg, setErrMsg] = useState("");
+  const [open, setOpen] = useState(!hasAccounts);
+
+  const connect = async () => {
+    const t = token.trim();
+    if (!t) return;
+    setBusy(true);
+    setMsg("");
+    setErrMsg("");
+    try {
+      const r = await metaApi.igConnect(t);
+      setToken("");
+      setMsg(`Akun @${r.account.username} tersambung.`);
+      onChanged();
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="meta-card">
+      <Head
+        title="Tambah Akun Instagram"
+        tag={hasAccounts ? "Instagram Login" : "Belum ada akun"}
+        right={hasAccounts ? <button className="meta-retry" onClick={() => setOpen((o) => !o)}>{open ? "Tutup" : "Tambah akun"}</button> : undefined}
+      />
+      {open && (
+        <div style={{ display: "grid", gap: 8 }}>
+          <div className="meta-empty" style={{ lineHeight: 1.6 }}>
+            Buka <b>Meta App → Instagram → API setup with Instagram business login → "Create token"</b> di akun yang diinginkan,
+            login, salin token, lalu tempel di sini. Token disimpan aman di server &amp; diperpanjang otomatis (tak perlu ulang).
+          </div>
+          <div className="ig-reply">
+            <input
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="Tempel Instagram access token…"
+              disabled={busy}
+            />
+            <button className="meta-retry" onClick={connect} disabled={busy || !token.trim()}>
+              {busy ? "Menyambungkan…" : "Sambungkan"}
+            </button>
+          </div>
+          {msg && <div className="meta-state" style={{ color: "var(--ok, #16a34a)" }}>{msg}</div>}
+          {errMsg && <div className="meta-state error">{errMsg}</div>}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function IGRemove({ connId, username, onDone }: { connId: number; username: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const remove = async () => {
+    if (!window.confirm(`Hapus akun @${username} dari dashboard?`)) return;
+    setBusy(true);
+    try {
+      await metaApi.igDisconnect(connId);
+      onDone();
+    } catch {
+      setBusy(false);
+    }
+  };
+  return <button className="meta-retry" onClick={remove} disabled={busy}>{busy ? "Menghapus…" : "Hapus"}</button>;
 }
 
 /* ---- Instagram DM inbox (read + reply) ---- */
@@ -817,12 +894,12 @@ function IGInbox() {
   const { data, err, loading, reload } = useMeta(() => metaApi.igConversations());
   const convs: IGConversation[] = useMemo(() => data?.conversations ?? [], [data]);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [rev, setRev] = useState(0); // bumped by realtime WS push (server-side poller)
+  const [rev, setRev] = useState(0); // bumped by realtime WS push (IG webhook)
   const open = convs.find((c) => c.id === openId) ?? null;
 
-  // Realtime: metaapi polls IG and pushes a rev bump over WebSocket whenever the
-  // thread list changes → refetch the list (the open thread refetches via its rev
-  // prop). Reconnects with a 10s backoff; the browser itself never polls.
+  // Realtime: metaapi's IG webhook pushes a rev bump over WebSocket whenever a new
+  // DM lands → refetch the list (the open thread refetches via its rev prop).
+  // Reconnects with a 10s backoff; the browser itself never polls.
   useEffect(() => {
     if (rev > 0) reload(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rev]);

@@ -114,6 +114,7 @@ export interface MetaWa {
   error?: string;
 }
 export interface MetaIgAccount {
+  connId?: number; // DB id of the stored IG-login account (for disconnect)
   id?: string;
   username?: string;
   followers_count?: number;
@@ -288,6 +289,10 @@ export const metaApi = {
       .then((r) => r.data),
   whatsapp: () => api.get<MetaWa>("/meta/whatsapp").then((r) => r.data),
   instagram: () => api.get<MetaIg>("/meta/instagram").then((r) => r.data),
+  igConnect: (accessToken: string) =>
+    api.post<{ ok: boolean; account: { id: string; username: string } }>("/meta/instagram/connect", { access_token: accessToken }).then((r) => r.data),
+  igDisconnect: (connId: number) =>
+    api.delete<{ ok: boolean }>(`/meta/instagram/accounts/${connId}`).then((r) => r.data),
   igConversations: () => api.get<IGConversations>("/meta/instagram/conversations").then((r) => r.data),
   igMessages: (conversationId: string, pageId: string) =>
     api
