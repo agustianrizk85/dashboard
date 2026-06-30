@@ -20,6 +20,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// WebSocket URL for the realtime WhatsApp inbox (metaapi pushes a rev bump on
+// each new inbound message). Null when not authenticated. Handles both an
+// absolute dev base and a relative prod base (/be/meta) → ws(s) on same origin.
+export function waRealtimeURL(): string | null {
+  const token = localStorage.getItem("gp_dashboard_token") || tokenStore.get();
+  if (!token) return null;
+  const httpBase = metaBase.startsWith("http") ? metaBase : window.location.origin + metaBase;
+  return httpBase.replace(/^http/, "ws") + "/api/meta/whatsapp/ws?token=" + encodeURIComponent(token);
+}
+
 export interface MetaCampaign {
   id: string;
   name: string;

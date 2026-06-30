@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { metaApi, META_RANGES } from "./metaApi";
+import { metaApi, META_RANGES, waRealtimeURL } from "./metaApi";
 import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage } from "./metaApi";
 import "./meta.css";
 
@@ -631,7 +631,31 @@ function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
   const { data, err, loading, reload } = useMeta(() => metaApi.waConversations());
   const convs: WAConversation[] = useMemo(() => data?.conversations ?? [], [data]);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [rev, setRev] = useState(0); // bumped by realtime WS push
   const open = convs.find((c) => `${c.phoneNumberId}:${c.contactWaId}` === openKey) ?? null;
+
+  // Realtime: metaapi pushes a rev bump over WebSocket whenever a new inbound
+  // message lands → refetch the thread list (and the open thread refetches via
+  // its rev prop). Reconnects with a 10s backoff; no periodic polling, so the
+  // UI only refreshes when something actually arrives.
+  useEffect(() => {
+    if (rev > 0) reload(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+    const connect = () => {
+      const url = waRealtimeURL();
+      if (!url) return;
+      ws = new WebSocket(url);
+      ws.onmessage = () => setRev((r) => r + 1);
+      ws.onclose = () => { if (!stopped) timer = setTimeout(connect, 10000); };
+      ws.onerror = () => { try { ws?.close(); } catch { /* noop */ } };
+    };
+    connect();
+    return () => { stopped = true; if (timer) clearTimeout(timer); ws?.close(); };
+  }, []);
 
   // Map phone_number_id → display number (from the WABA listing) for headers.
   const phoneLabel = useMemo(() => {
@@ -674,7 +698,7 @@ function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
             })}
           </div>
           <div className="ig-thread-pane">
-            {open ? <WAThread conv={open} phoneLabel={phoneLabel[open.phoneNumberId]} onSent={reload} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
+            {open ? <WAThread conv={open} phoneLabel={phoneLabel[open.phoneNumberId]} onSent={reload} rev={rev} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
           </div>
         </div>
       )}
@@ -682,9 +706,13 @@ function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
   );
 }
 
-function WAThread({ conv, phoneLabel, onSent }: { conv: WAConversation; phoneLabel?: string; onSent: () => void }) {
+function WAThread({ conv, phoneLabel, onSent, rev }: { conv: WAConversation; phoneLabel?: string; onSent: () => void; rev: number }) {
   const { data, err, loading, reload } = useMeta(() => metaApi.waMessages(conv.phoneNumberId, conv.contactWaId), [conv.phoneNumberId, conv.contactWaId]);
   const [text, setText] = useState("");
+  // Refetch this thread when a realtime push arrives (new inbound message).
+  useEffect(() => {
+    if (rev > 0) reload(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState("");
   const msgs: WAMessage[] = useMemo(() => data?.messages ?? [], [data]);
