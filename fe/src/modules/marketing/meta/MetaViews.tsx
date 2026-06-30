@@ -829,7 +829,8 @@ function IGConnect({ onChanged, hasAccounts }: { onChanged: () => void; hasAccou
       setMsg(`Akun @${r.account.username} tersambung.`);
       onChanged();
     } catch (e) {
-      setErrMsg(e instanceof Error ? e.message : String(e));
+      const ax = e as { response?: { data?: { error?: string } }; message?: string };
+      setErrMsg(ax?.response?.data?.error || ax?.message || String(e));
     } finally {
       setBusy(false);
     }
