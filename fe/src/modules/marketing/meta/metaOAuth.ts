@@ -10,10 +10,13 @@ import { tokenStore } from "../services/api";
 const META_ORIGIN = ((import.meta.env.VITE_META_API as string | undefined) ?? "http://localhost:8097").replace(/\/$/, "");
 const api = axios.create({ baseURL: `${META_ORIGIN}/api`, headers: { "Content-Type": "application/json" } });
 api.interceptors.request.use((config) => {
-  const token = tokenStore.get();
+  const token = localStorage.getItem("gp_dashboard_token") || tokenStore.get();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// Token for the OAuth popup (top-level nav can't set a header) — SSO token first.
+const popupToken = () => localStorage.getItem("gp_dashboard_token") || tokenStore.get() || "";
 
 // OAuth app config. The secret is write-only — set once, never returned.
 export interface MetaOAuthConfig {
@@ -93,5 +96,5 @@ export const metaOAuth = {
       .then((r) => r.data.connections),
 
   loginUrl: () =>
-    `${META_ORIGIN}/api/meta/oauth/login?token=${encodeURIComponent(tokenStore.get() ?? "")}`,
+    `${META_ORIGIN}/api/meta/oauth/login?token=${encodeURIComponent(popupToken())}`,
 };

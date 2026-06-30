@@ -12,7 +12,10 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 api.interceptors.request.use((config) => {
-  const token = tokenStore.get();
+  // metaapi accepts the unified dashboard SSO login token (Ed25519) directly, so
+  // prefer it — no dependency on a per-backend bridged token. Fall back to the
+  // marketing module token for the standalone app.
+  const token = localStorage.getItem("gp_dashboard_token") || tokenStore.get();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
