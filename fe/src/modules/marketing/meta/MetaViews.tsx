@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { metaApi, META_RANGES, waRealtimeURL } from "./metaApi";
+import { metaApi, META_RANGES, waRealtimeURL, igRealtimeURL } from "./metaApi";
 import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage } from "./metaApi";
 import "./meta.css";
 
@@ -817,7 +817,30 @@ function IGInbox() {
   const { data, err, loading, reload } = useMeta(() => metaApi.igConversations());
   const convs: IGConversation[] = useMemo(() => data?.conversations ?? [], [data]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [rev, setRev] = useState(0); // bumped by realtime WS push (server-side poller)
   const open = convs.find((c) => c.id === openId) ?? null;
+
+  // Realtime: metaapi polls IG and pushes a rev bump over WebSocket whenever the
+  // thread list changes → refetch the list (the open thread refetches via its rev
+  // prop). Reconnects with a 10s backoff; the browser itself never polls.
+  useEffect(() => {
+    if (rev > 0) reload(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+    const connect = () => {
+      const url = igRealtimeURL();
+      if (!url) return;
+      ws = new WebSocket(url);
+      ws.onmessage = () => setRev((r) => r + 1);
+      ws.onclose = () => { if (!stopped) timer = setTimeout(connect, 10000); };
+      ws.onerror = () => { try { ws?.close(); } catch { /* noop */ } };
+    };
+    connect();
+    return () => { stopped = true; if (timer) clearTimeout(timer); ws?.close(); };
+  }, []);
 
   return (
     <section className="meta-card">
@@ -858,7 +881,7 @@ function IGInbox() {
             ))}
           </div>
           <div className="ig-thread-pane">
-            {open ? <IGThread conv={open} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
+            {open ? <IGThread conv={open} rev={rev} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
           </div>
         </div>
       )}
@@ -866,9 +889,13 @@ function IGInbox() {
   );
 }
 
-function IGThread({ conv }: { conv: IGConversation }) {
+function IGThread({ conv, rev }: { conv: IGConversation; rev: number }) {
   const { data, err, loading, reload } = useMeta(() => metaApi.igMessages(conv.id, conv.pageId), [conv.id]);
   const [text, setText] = useState("");
+  // Refetch this thread when a realtime push arrives (new inbound message).
+  useEffect(() => {
+    if (rev > 0) reload(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState("");
   const msgs: IGMessage[] = useMemo(() => data?.messages ?? [], [data]);

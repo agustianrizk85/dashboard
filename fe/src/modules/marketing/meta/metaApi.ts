@@ -24,10 +24,20 @@ api.interceptors.request.use((config) => {
 // each new inbound message). Null when not authenticated. Handles both an
 // absolute dev base and a relative prod base (/be/meta) → ws(s) on same origin.
 export function waRealtimeURL(): string | null {
+  return realtimeURL("/api/meta/whatsapp/ws");
+}
+
+// WebSocket URL for the realtime Instagram DM inbox. metaapi has no IG webhook,
+// so a server-side poller bumps the rev whenever the thread list changes.
+export function igRealtimeURL(): string | null {
+  return realtimeURL("/api/meta/instagram/ws");
+}
+
+function realtimeURL(path: string): string | null {
   const token = localStorage.getItem("gp_dashboard_token") || tokenStore.get();
   if (!token) return null;
   const httpBase = metaBase.startsWith("http") ? metaBase : window.location.origin + metaBase;
-  return httpBase.replace(/^http/, "ws") + "/api/meta/whatsapp/ws?token=" + encodeURIComponent(token);
+  return httpBase.replace(/^http/, "ws") + path + "?token=" + encodeURIComponent(token);
 }
 
 export interface MetaCampaign {
