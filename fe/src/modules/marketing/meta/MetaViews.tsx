@@ -185,22 +185,26 @@ export function AdsView() {
         {t && (
           <section className="meta-card">
             <Head title={`KPI Performa Iklan — ${rangeLabel}`} tag={`${num(t.accounts)} akun · ${num(t.activeCampaigns)}/${num(t.campaigns)} campaign aktif`} />
+            <div style={{ fontSize: 11, lineHeight: 1.7, color: "#6b7280", margin: "0 2px 12px" }}>
+              <div><b>Dari mana:</b> ditarik langsung dari <b>Meta Ads (Graph API — Ads Insights)</b> memakai token akun yang ditempel, digabung semua akun &amp; campaign pada rentang <b>{rangeLabel}</b>.</div>
+              <div><b>Alur bisnis (funnel iklan):</b> Budget (<i>Spend</i>) → iklan tampil (<i>Impressions</i>) → dilihat orang unik (<i>Reach</i>) → diklik (<i>Clicks</i> = daya tarik lewat <i>CTR</i>) → jadi aksi (<i>Hasil</i>: chat WA / lead). Efisiensi = <i>Cost/Hasil</i>, <i>CPC</i>, <i>CPM</i>. Arahkan kursor ke tiap kotak (ⓘ) untuk artinya.</div>
+            </div>
             <div className="meta-tiles">
-              <Tile k="Total Spend" v={rp(t.spend)} />
-              <Tile k="Hasil (WA/Lead)" v={num(t.results)} />
-              <Tile k="Cost / Hasil" v={rp(t.costPerResult)} />
-              <Tile k="Konversi (Hasil/Klik)" v={t.conversionRate ? t.conversionRate.toFixed(2) + "%" : "—"} />
-              <Tile k="CTR" v={t.ctr ? t.ctr.toFixed(2) + "%" : "—"} />
-              <Tile k="CPC" v={rp(t.cpc)} />
-              <Tile k="CPM" v={rp(t.cpm)} />
-              <Tile k="Jangkauan (Reach)" v={num(t.reach)} />
-              <Tile k="Frekuensi" v={t.frequency ? t.frequency.toFixed(2) + "x" : "—"} />
-              <Tile k="Impressions" v={num(t.impressions)} />
-              <Tile k="Clicks" v={num(t.clicks)} />
-              <Tile k="Campaign Aktif" v={`${num(t.activeCampaigns)} / ${num(t.campaigns)}`} />
-              <Tile k="Aktif & Tayang" v={`${num(t.deliveringCampaigns)} / ${num(t.activeCampaigns)}`} />
-              <Tile k="Campaign Bermasalah" v={num(t.issueCampaigns)} />
-              <Tile k="Akun Iklan" v={num(t.accounts)} />
+              <Tile k="Total Spend" v={rp(t.spend)} hint="Total biaya iklan yang keluar pada rentang ini. Sumber: Ads Insights (field 'spend'), dijumlah semua akun & campaign. Makin besar = budget terpakai makin banyak." />
+              <Tile k="Hasil (WA/Lead)" v={num(t.results)} hint="Jumlah hasil/konversi sesuai tujuan campaign (mis. mulai chat WhatsApp atau lead form). Sumber: Ads Insights (actions sesuai objective). Ini 'output' bisnis dari iklan." />
+              <Tile k="Cost / Hasil" v={rp(t.costPerResult)} hint="Biaya rata-rata per satu hasil = Total Spend ÷ Hasil (CPR). Makin kecil makin efisien. Ambang boros internal: > Rp 60 rb." />
+              <Tile k="Konversi (Hasil/Klik)" v={t.conversionRate ? t.conversionRate.toFixed(2) + "%" : "—"} hint="Persentase klik yang berujung jadi hasil = Hasil ÷ Clicks × 100%. Mengukur seberapa nyambung iklan → aksi. Makin tinggi makin bagus." />
+              <Tile k="CTR" v={t.ctr ? t.ctr.toFixed(2) + "%" : "—"} hint="Click-Through Rate = Clicks ÷ Impressions × 100%. Ukur daya tarik materi iklan (thumbnail/copy). Sehat umumnya ± 1–2%+." />
+              <Tile k="CPC" v={rp(t.cpc)} hint="Cost per Click = Spend ÷ Clicks. Biaya rata-rata mendatangkan satu klik. Makin murah makin efisien menarik trafik." />
+              <Tile k="CPM" v={rp(t.cpm)} hint="Cost per Mille = Spend ÷ Impressions × 1000. Biaya per 1.000 tayangan. Ukur mahal/murahnya menjangkau audiens." />
+              <Tile k="Jangkauan (Reach)" v={num(t.reach)} hint="Jumlah ORANG UNIK yang melihat iklan. Sumber: Ads Insights (reach). Beda dari Impressions yang bisa menghitung orang sama berkali-kali." />
+              <Tile k="Frekuensi" v={t.frequency ? t.frequency.toFixed(2) + "x" : "—"} hint="Rata-rata berapa kali satu orang melihat iklan = Impressions ÷ Reach. Terlalu tinggi (≥ 3x) = iklan membosankan (fatigue)." />
+              <Tile k="Impressions" v={num(t.impressions)} hint="Total berapa kali iklan tampil di layar (bisa berulang ke orang sama). Sumber: Ads Insights (impressions)." />
+              <Tile k="Clicks" v={num(t.clicks)} hint="Total klik pada iklan pada rentang ini. Sumber: Ads Insights (clicks)." />
+              <Tile k="Campaign Aktif" v={`${num(t.activeCampaigns)} / ${num(t.campaigns)}`} hint="Campaign berstatus aktif (tidak di-pause) dibanding total campaign. Sumber: status campaign di Meta." />
+              <Tile k="Aktif & Tayang" v={`${num(t.deliveringCampaigns)} / ${num(t.activeCampaigns)}`} hint="Dari campaign aktif, berapa yang benar-benar TAYANG (delivering). Sisanya belum tayang karena budget/jadwal/review Meta." />
+              <Tile k="Campaign Bermasalah" v={num(t.issueCampaigns)} hint="Jumlah campaign dengan isu (ditolak, error, limit) yang perlu ditindak. Sumber: effective_status/issues dari Meta." />
+              <Tile k="Akun Iklan" v={num(t.accounts)} hint="Jumlah Ad Account yang datanya digabung di sini. Sumber: koneksi token yang ditempel di tab Akun Meta." />
             </div>
           </section>
         )}
@@ -511,14 +515,14 @@ function CampaignModal({ id, range, onClose }: { id: string; range: MetaRange; o
             <>
               {t && (
                 <div className="meta-tiles">
-                  <Tile k="Spend" v={rp(t.spend)} />
-                  <Tile k={t.resultLabel || "Hasil"} v={num(t.results)} />
-                  <Tile k="Cost / Hasil" v={rp(t.costPerResult)} />
-                  <Tile k="CTR" v={t.ctr ? t.ctr.toFixed(2) + "%" : "—"} />
-                  <Tile k="CPC" v={rp(t.cpc)} />
-                  <Tile k="CPM" v={rp(t.cpm)} />
-                  <Tile k="Jangkauan" v={num(t.reach)} />
-                  <Tile k="Frekuensi" v={t.frequency ? t.frequency.toFixed(2) + "x" : "—"} />
+                  <Tile k="Spend" v={rp(t.spend)} hint="Total biaya campaign ini pada rentang terpilih. Sumber: Ads Insights (spend)." />
+                  <Tile k={t.resultLabel || "Hasil"} v={num(t.results)} hint="Jumlah hasil sesuai tujuan campaign ini (mis. chat WA / lead). Sumber: Ads Insights (actions)." />
+                  <Tile k="Cost / Hasil" v={rp(t.costPerResult)} hint="Biaya per satu hasil = Spend ÷ Hasil (CPR). Makin kecil makin efisien." />
+                  <Tile k="CTR" v={t.ctr ? t.ctr.toFixed(2) + "%" : "—"} hint="Clicks ÷ Impressions × 100%. Daya tarik materi iklan." />
+                  <Tile k="CPC" v={rp(t.cpc)} hint="Spend ÷ Clicks. Biaya rata-rata per klik." />
+                  <Tile k="CPM" v={rp(t.cpm)} hint="Spend ÷ Impressions × 1000. Biaya per 1.000 tayangan." />
+                  <Tile k="Jangkauan" v={num(t.reach)} hint="Orang unik yang melihat iklan (bukan tayangan)." />
+                  <Tile k="Frekuensi" v={t.frequency ? t.frequency.toFixed(2) + "x" : "—"} hint="Impressions ÷ Reach. ≥ 3x = fatigue (iklan terlalu sering muncul)." />
                   <Tile k="Impressions" v={num(t.impressions)} />
                   <Tile k="Clicks" v={num(t.clicks)} />
                 </div>
@@ -1030,6 +1034,11 @@ function IGThread({ conv, rev }: { conv: IGConversation; rev: number }) {
   );
 }
 
-function Tile({ k, v }: { k: string; v: string }) {
-  return <div className="meta-tile"><b>{v}</b><span>{k}</span></div>;
+function Tile({ k, v, hint }: { k: string; v: string; hint?: string }) {
+  return (
+    <div className="meta-tile" title={hint}>
+      <b>{v}</b>
+      <span>{k}{hint && <i style={{ opacity: 0.4, fontStyle: "normal", marginLeft: 3 }} aria-hidden>ⓘ</i>}</span>
+    </div>
+  );
 }
