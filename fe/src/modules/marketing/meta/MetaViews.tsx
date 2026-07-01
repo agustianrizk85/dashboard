@@ -216,8 +216,18 @@ export function AdsView() {
         {projects.length > 0 && (
           <section className="meta-card">
             <Head title="Performa per Proyek" tag={`${projects.length} proyek · klik untuk saring`} />
+            <CardNote>
+              Dikelompokkan per <b>PROYEK</b> — diambil dari <b>awalan nama campaign</b> (mis. "ZHL 2 - HS 2 Sales…" → proyek <b>ZHL</b>). Menjumlahkan spend &amp; hasil semua campaign proyek pada rentang terpilih. <b>Klik baris</b> untuk menyaring tabel campaign di bawah. CPR = Spend ÷ Hasil (biaya per hasil proyek).
+            </CardNote>
             <table className="meta-table meta-table-click">
-              <thead><tr><th>Proyek</th><th className="r">Campaign</th><th className="r">Aktif</th><th className="r">Spend</th><th className="r">Hasil</th><th className="r">CPR</th></tr></thead>
+              <thead><tr>
+                <th title="Nama proyek (awalan nama campaign)">Proyek</th>
+                <th className="r" title="Jumlah campaign di proyek ini">Campaign</th>
+                <th className="r" title="Campaign yang berstatus aktif">Aktif</th>
+                <th className="r" title="Total biaya iklan proyek ini">Spend</th>
+                <th className="r" title="Total hasil/konversi (chat WA / lead)">Hasil</th>
+                <th className="r" title="Cost per Result = Spend ÷ Hasil. Makin kecil makin efisien">CPR</th>
+              </tr></thead>
               <tbody>
                 {projects.map((p) => {
                   const cpr = p.results > 0 ? p.spend / p.results : 0;
@@ -241,8 +251,18 @@ export function AdsView() {
         {accounts.length > 0 && (
           <section className="meta-card">
             <Head title="Akun Iklan" tag="klik nama → saring campaign di bawah" />
+            <CardNote>
+              Tiap baris = satu <b>Ad Account</b> (sumber data mentahnya). Label kecil <b>Gp1/Gp2/Gp3</b> = nama <b>koneksi token</b> yang menariknya (dari tab Akun Meta); <b>act_…</b> = ID akun iklan di Meta. <b>Klik nama akun</b> untuk menyaring campaign akun itu di tabel bawah.
+            </CardNote>
             <table className="meta-table">
-              <thead><tr><th>Akun</th><th>Status</th><th className="r">Spend</th><th className="r">Impr.</th><th className="r">Klik</th><th className="r">CTR</th></tr></thead>
+              <thead><tr>
+                <th title="Nama akun iklan + koneksi & ID di bawahnya">Akun</th>
+                <th title="Status akun di Meta (Aktif / Dinonaktifkan / dll)">Status</th>
+                <th className="r" title="Total biaya iklan akun ini">Spend</th>
+                <th className="r" title="Total tayangan iklan (impressions)">Impr.</th>
+                <th className="r" title="Total klik">Klik</th>
+                <th className="r" title="Click-Through Rate = Klik ÷ Impr. × 100%">CTR</th>
+              </tr></thead>
               <tbody>
                 {accounts.map((a, i) => {
                   const ai = accIns(a);
@@ -274,6 +294,9 @@ export function AdsView() {
             title="Breakdown per Campaign"
             tag={`${camps.length}${filtersOn ? ` / ${allCamps.length}` : ""} campaign · ${activeCount} aktif`}
           />
+          <CardNote>
+            Rincian tiap campaign (digabung dari semua akun). Sumber: <b>Meta Ads Insights per campaign</b>. Baris kecil di bawah nama = <b>Objektif · Jenis hasil</b> (mis. <i>SALES · Percakapan WA</i>, <i>TRAFFIC · Klik Link</i>). <b>Klik baris</b> → detail campaign (tren harian, demografi, placement, device, top ads). Filter: status, cari nama/objektif, urutkan. Arahkan kursor ke judul kolom untuk artinya.
+          </CardNote>
 
           {/* control bar: status · cari · urutkan */}
           <div className="meta-controls">
@@ -301,7 +324,18 @@ export function AdsView() {
 
           {camps.length ? (
             <table className="meta-table meta-table-click">
-              <thead><tr><th>Campaign</th><th>Akun</th><th>Status</th><th className="r">Spend</th><th className="r">Hasil</th><th className="r">CPR</th><th className="r">CTR</th><th className="r">CPC</th><th className="r">Frek.</th><th className="r">Impr.</th></tr></thead>
+              <thead><tr>
+                <th title="Nama campaign + Objektif · Jenis hasil di bawahnya">Campaign</th>
+                <th title="Ad Account pemilik campaign (klik untuk saring)">Akun</th>
+                <th title="Status tayang efektif dari Meta: ACTIVE / PAUSED / WITH_ISSUES / PENDING_REVIEW / DISAPPROVED">Status</th>
+                <th className="r" title="Biaya iklan campaign ini pada rentang terpilih">Spend</th>
+                <th className="r" title="Jumlah hasil/konversi sesuai objektif (chat WA / lead)">Hasil</th>
+                <th className="r" title="Cost per Result = Spend ÷ Hasil. Makin kecil makin efisien (ambang boros > Rp 60 rb)">CPR</th>
+                <th className="r" title="Click-Through Rate = Clicks ÷ Impressions × 100%. Daya tarik materi iklan">CTR</th>
+                <th className="r" title="Cost per Click = Spend ÷ Clicks. Biaya rata-rata per klik">CPC</th>
+                <th className="r" title="Frekuensi = Impressions ÷ Reach. Rata-rata orang melihat iklan; ≥ 3x = fatigue">Frek.</th>
+                <th className="r" title="Impressions = total tayangan iklan (bisa berulang ke orang sama)">Impr.</th>
+              </tr></thead>
               <tbody>
                 {camps.map((c) => (
                   <tr key={c.id} onClick={() => setOpenId(c.id)} title="Klik untuk lihat detail campaign">
@@ -404,16 +438,19 @@ function HealthPanel({
   onOpen: (id: string) => () => void;
 }) {
   const groups = [
-    { key: "issues", tone: "bad", title: "Bermasalah / Ditolak", hint: "delivery error, ditolak, atau menunggu review", items: signals.issues, fmt: (c: MetaCampaign) => c.issueSummary || c.effectiveStatus },
-    { key: "zero", tone: "bad", title: "Aktif tapi Tidak Tayang (Rp0)", hint: "status ACTIVE namun belum ada spend di rentang ini", items: signals.activeZero, fmt: () => "Rp0 spend" },
-    { key: "cpr", tone: "warn", title: `CPR Boros (> ${rp(CPR_LIMIT)})`, hint: "biaya per hasil di atas ambang", items: signals.highCpr, fmt: (c: MetaCampaign) => `CPR ${rp(c.costPerResult)} · ${num(c.results)} hasil` },
-    { key: "fatigue", tone: "warn", title: `Fatigue (Frekuensi ≥ ${FREQ_LIMIT}x)`, hint: "audiens melihat iklan terlalu sering", items: signals.fatigue, fmt: (c: MetaCampaign) => `${c.frequency.toFixed(2)}x · ${rp(c.spend)}` },
-    { key: "ctr", tone: "warn", title: `CTR Rendah (< ${CTR_FLOOR}%)`, hint: "kreatif kurang menarik (tayang cukup)", items: signals.lowCtr, fmt: (c: MetaCampaign) => `CTR ${c.ctr.toFixed(2)}% · ${num(c.impressions)} tayang` },
+    { key: "issues", tone: "bad", title: "Bermasalah / Ditolak", hint: "delivery error, ditolak, atau menunggu review", action: "Tindakan: buka campaign → perbaiki penyebab (materi melanggar, pembayaran, atau tunggu review Meta).", items: signals.issues, fmt: (c: MetaCampaign) => c.issueSummary || c.effectiveStatus },
+    { key: "zero", tone: "bad", title: "Aktif tapi Tidak Tayang (Rp0)", hint: "status ACTIVE namun belum ada spend di rentang ini", action: "Tindakan: cek budget / jadwal / ukuran audiens — aktif tapi belum membelanjakan apa pun.", items: signals.activeZero, fmt: () => "Rp0 spend" },
+    { key: "cpr", tone: "warn", title: `CPR Boros (> ${rp(CPR_LIMIT)})`, hint: "biaya per hasil di atas ambang", action: "Tindakan: optimalkan audiens/kreatif atau turunkan bid — hasil terlalu mahal.", items: signals.highCpr, fmt: (c: MetaCampaign) => `CPR ${rp(c.costPerResult)} · ${num(c.results)} hasil` },
+    { key: "fatigue", tone: "warn", title: `Fatigue (Frekuensi ≥ ${FREQ_LIMIT}x)`, hint: "audiens melihat iklan terlalu sering", action: "Tindakan: ganti kreatif / perluas audiens — orang sama terlalu sering melihat iklan.", items: signals.fatigue, fmt: (c: MetaCampaign) => `${c.frequency.toFixed(2)}x · ${rp(c.spend)}` },
+    { key: "ctr", tone: "warn", title: `CTR Rendah (< ${CTR_FLOOR}%)`, hint: "kreatif kurang menarik (tayang cukup)", action: "Tindakan: ganti thumbnail/copy — iklan kurang menarik walau sudah cukup tayang.", items: signals.lowCtr, fmt: (c: MetaCampaign) => `CTR ${c.ctr.toFixed(2)}% · ${num(c.impressions)} tayang` },
   ] as const;
   const total = groups.reduce((a, g) => a + g.items.length, 0);
   return (
     <section className="meta-card">
       <Head title="Kesehatan & Guardrail Iklan" tag={total ? `${total} sinyal` : "semua sehat ✅"} />
+      <CardNote>
+        Sinyal otomatis <b>berbasis aturan</b> dari campaign aktif (dihitung dari data Ads Insights). Ambang internal: <b>CPR boros &gt; {rp(CPR_LIMIT)}</b>, <b>Frekuensi ≥ {FREQ_LIMIT}x</b>, <b>CTR &lt; {CTR_FLOOR}%</b>. Setiap kartu menampilkan campaign yang kena + saran tindakan. <b>Klik item</b> untuk buka detail campaign.
+      </CardNote>
       {total === 0 ? (
         <div className="meta-empty">Tidak ada sinyal masalah pada rentang ini. ✅</div>
       ) : (
@@ -425,7 +462,8 @@ function HealthPanel({
                 <b>{g.title}</b>
                 <span className="meta-health-n">{g.items.length}</span>
               </div>
-              <div className="meta-health-hint">{g.hint}</div>
+              <div className="meta-health-hint" title={g.action}>{g.hint}</div>
+              <div style={{ fontSize: 10, color: "#9ca3af", margin: "0 0 6px", lineHeight: 1.5 }}>{g.action}</div>
               <div className="meta-health-list">
                 {g.items.slice(0, 6).map((c) => (
                   <button key={c.id} className="meta-health-row" onClick={onOpen(c.id)} title="Klik untuk detail campaign">
@@ -1041,4 +1079,9 @@ function Tile({ k, v, hint }: { k: string; v: string; hint?: string }) {
       <span>{k}{hint && <i style={{ opacity: 0.4, fontStyle: "normal", marginLeft: 3 }} aria-hidden>ⓘ</i>}</span>
     </div>
   );
+}
+
+// CardNote — muted explanatory legend under a card header (source / meaning / how-to).
+function CardNote({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: 11, lineHeight: 1.7, color: "#6b7280", margin: "0 2px 12px" }}>{children}</div>;
 }
