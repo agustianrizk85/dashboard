@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { metaApi, META_RANGES, waRealtimeURL, igRealtimeURL } from "./metaApi";
 import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage } from "./metaApi";
+import { MetaAiGenerate } from "./MetaGenerate";
 import "./meta.css";
 
 /* ---------- helpers ---------- */
@@ -103,6 +104,7 @@ export function AdsView() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<SortKey>("spend");
   const [openId, setOpenId] = useState<string | null>(null); // campaign drill-down
+  const [aiOn, setAiOn] = useState(false); // ✨ Generate AI overlay (PKPSICOV multi-agent)
 
   const t = data?.totals;
   const accounts = data?.accounts ?? [];
@@ -179,8 +181,21 @@ export function AdsView() {
               {r.label}
             </button>
           ))}
+          <span className="meta-rangebar-gap" />
+          <button
+            className="meta-ai-gen"
+            onClick={() => setAiOn(true)}
+            disabled={!data || loading || (data ? !data.configured : true)}
+            title="Jalankan panel ahli AI (PKPSICOV) untuk merombak dashboard iklan ini"
+          >
+            ✨ Generate AI
+          </button>
         </div>
 
+        {aiOn && data ? (
+          <MetaAiGenerate data={data} rangeLabel={rangeLabel} onClose={() => setAiOn(false)} />
+        ) : (
+        <>
         {/* ===== KPI super-detail (rentang terpilih, semua akun) ===== */}
         {t && (
           <section className="meta-card">
@@ -385,6 +400,8 @@ export function AdsView() {
           </div>
         )}
         {dt && <CreativeWinner items={dt.creatives ?? []} />}
+        </>
+        )}
       </Shell>
 
       {openId && <CampaignModal id={openId} range={range} onClose={() => setOpenId(null)} />}
