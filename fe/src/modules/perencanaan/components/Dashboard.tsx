@@ -10,6 +10,7 @@ import { Icon } from "./Icon";
 import { Tooltip } from "./ui";
 import { Modal } from "./Modal";
 import { SummaryView } from "./views/SummaryView";
+import { CicleBoardView } from "./views/CicleBoardView";
 import { ProjectsView } from "./views/ProjectsView";
 import { MyTasksView } from "./views/MyTasksView";
 import { OutputsView } from "./views/OutputsView";
@@ -17,10 +18,11 @@ import { WorkDrawingsView } from "./views/WorkDrawingsView";
 import { StaffView } from "./views/StaffView";
 import { MasterView } from "./views/MasterView";
 
-type Tab = "summary" | "projects" | "tasks" | "outputs" | "workdrawings" | "staff" | "master";
+type Tab = "summary" | "board" | "projects" | "tasks" | "outputs" | "workdrawings" | "staff" | "master";
 
 const TABS: { key: Tab; label: string; icon: string; tip: string }[] = [
   { key: "summary", label: "Ringkasan", icon: "grid", tip: "PROSES · Snapshot portfolio: progress rata-rata, beban tiap author, kesiapan output divisi, dan ringkasan alert." },
+  { key: "board", label: "Papan Cicle", icon: "grid", tip: "Cermin PENUH papan Kanban cicle Departemen Perencanaan: kolom To Do/Doing per orang, Gambar Kerja, On Review, Done — kartu berisi anggota, label, due date & lampiran." },
   { key: "projects", label: "Proyek", icon: "layers", tip: "PROSES · Pohon deliverable per proyek — ubah status tugas (Belum/Proses/Review/Selesai). Tambah proyek master di sini." },
   { key: "tasks", label: "Tugas Saya", icon: "list", tip: "PROSES · Pembagian tugas berdasarkan akun PIC — semua deliverable yang ditugaskan kepada Anda lintas proyek." },
   { key: "outputs", label: "Output Divisi", icon: "flag", tip: "PROSES · Deliverable yang dialirkan ke Legal, Marketing, Teknik, Konsumen, dan CEO beserta kesiapannya." },
@@ -187,6 +189,7 @@ export function Dashboard() {
             onChanged={reload}
           />
         )}
+        {tab === "board" && <CicleBoardView />}
         {tab === "outputs" && (outputs.length ? <OutputsView outputs={outputs} /> : <Loading />)}
         {tab === "workdrawings" && <WorkDrawingsView projects={projects} />}
         {tab === "staff" && <StaffView />}

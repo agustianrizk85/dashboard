@@ -11,7 +11,7 @@ import {
 import { RagDot } from "../ui";
 import { Modal } from "../Modal";
 
-const AUTHORS = ["agus", "randi", "ananto"];
+const AUTHORS = ["agus", "rio", "randi", "ananto"];
 const CUSTOM_PIC = "__custom__";
 
 const STAGE_LABELS: Record<string, string> = {
@@ -225,6 +225,26 @@ function WorkDrawingCard({
         <span className={`pill ${ragTone(d.sev)}`}>{STAGE_LABELS[d.status]}</span>
       </div>
       <div className="wd-proj">{d.projectName}</div>
+
+      {d.attachments && d.attachments.length > 0 && (
+        <div className="wd-files">
+          <span className="wd-files-label">📎 {d.attachments.length} file</span>
+          {d.attachments.slice(0, 6).map((f, i) => (
+            <a
+              key={i}
+              className="wd-file"
+              href={f.url}
+              target="_blank"
+              rel="noreferrer"
+              title={f.name}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {f.name || `file ${i + 1}`}
+            </a>
+          ))}
+          {d.attachments.length > 6 && <span className="wd-file-more">+{d.attachments.length - 6} lagi</span>}
+        </div>
+      )}
 
       <div className="wd-timeline">
         <Leg

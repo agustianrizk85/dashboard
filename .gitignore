@@ -10,3 +10,11 @@ gen-lang-client-*.json
 *service-account*.json
 *credentials*.json
 secrets/
+
+# runtime logs (dev servers)
+*.log
+dev.out
+dev.err
+
+# local-only VPS / browser-extension tooling (chrome profiles carry session data)
+claude-extension-vps/

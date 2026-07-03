@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import { STATUS_LABELS, STATUS_ORDER, picName, ragTone } from "../../lib/format";
 import { ReviewControls } from "../ReviewControls";
 
-const AUTHORS = ["randi", "ananto", "agus"];
+const AUTHORS = ["randi", "ananto", "agus", "rio"];
 
 /**
  * Tugas Saya view — the "flow membagi tugas": every deliverable assigned to one

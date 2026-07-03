@@ -122,6 +122,8 @@ export interface WorkDrawing {
   kontraktorDaysLeft: number;
   activeLeg: "konsumen" | "kontraktor" | "";
   sev: Rag;
+  /** Files linked to this drawing (e.g. imported from cicle). */
+  attachments?: { name: string; url: string }[];
 }
 
 export interface AlertItem {

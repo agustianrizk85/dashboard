@@ -136,6 +136,53 @@ app.get("/api/sheets/data", async (req, res) => {
   }
 });
 
+/**
+ * ONE-CALL endpoint: every VISIBLE tab WITH its data (headers + rows) in a
+ * single response, via one Sheets `values.batchGet`. Lets the dashboard load
+ * the whole spreadsheet in one request instead of /tabs + one /data per tab.
+ * Hidden tabs stay blocked and are only reported as a count.
+ *   GET /api/sheets/all
+ *   GET /api/sheets/all?tab=Name          (limit to one or more tabs; repeatable)
+ */
+app.get("/api/sheets/all", async (req, res) => {
+  try {
+    const meta = await getTabsMeta();
+    let visible = meta.tabs.filter((t) => !t.hidden);
+    const hidden = meta.tabs.filter((t) => t.hidden);
+
+    // Optional ?tab= filter (single value or repeated) — hidden/unknown ignored.
+    const want = [].concat(req.query.tab ?? []).map(String);
+    if (want.length) visible = visible.filter((t) => want.includes(t.title));
+
+    if (visible.length === 0) {
+      return res.json({ spreadsheet: meta.title, spreadsheetId: SPREADSHEET_ID, tabCount: 0, hiddenCount: hidden.length, tabs: [] });
+    }
+
+    const ranges = visible.map((t) => `'${t.title.replace(/'/g, "''")}'`);
+    const resp = await sheets.spreadsheets.values.batchGet({ spreadsheetId: SPREADSHEET_ID, ranges });
+    const valueRanges = resp.data.valueRanges ?? [];
+
+    const tabs = visible.map((t, i) => {
+      const values = valueRanges[i]?.values ?? [];
+      const [headers = [], ...body] = values;
+      const rows = body
+        .filter((r) => r.some((c) => String(c ?? "").trim() !== ""))
+        .map((r) => Object.fromEntries(headers.map((h, j) => [h || `col${j}`, r[j] ?? ""])));
+      return { title: t.title, sheetId: t.sheetId, index: t.index, count: rows.length, headers, rows };
+    });
+
+    res.json({
+      spreadsheet: meta.title,
+      spreadsheetId: SPREADSHEET_ID,
+      tabCount: tabs.length,
+      hiddenCount: hidden.length,
+      tabs,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 /* ── AI MAPPING ────────────────────────────────────────────────────────────
  * Generic, dynamic sheet → schema mapper. Everything is passed at REQUEST time
  * (no env, no hardcode): the spreadsheet link/ID, the tab, the TARGET SCHEMA,

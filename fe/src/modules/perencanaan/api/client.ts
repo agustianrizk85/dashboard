@@ -137,6 +137,9 @@ export const api = {
   // --- Portfolio overview ---
   summary: () => request<Summary>("GET", "/summary"),
 
+  // --- Full cicle Kanban board mirror ---
+  cicleBoard: () => request<unknown>("GET", "/cicle-board"),
+
   // --- Projects + deliverable tree ---
   projects: () => request<ProjectRollup[]>("GET", "/projects"),
   project: (id: string) => request<ProjectDetail>("GET", `/projects/${id}`),

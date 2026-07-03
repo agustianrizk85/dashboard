@@ -763,6 +763,39 @@ table.heat tr.prow:hover td { background: var(--panel-2); }
 .avatar.pic-randi { background: #2563c9; }
 .avatar.pic-ananto { background: #8a3fc0; }
 .avatar.pic-agus { background: #138a59; }
+.avatar.pic-rio { background: #c9642a; }
+
+/* Work-drawing attachments (files synced from cicle) */
+.wd-files { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 2px; }
+.wd-files-label { font-size: 11px; color: #64748b; font-weight: 600; }
+.wd-file {
+  font-size: 11px; color: #2563c9; text-decoration: none;
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: #eff4ff; border: 1px solid #dbe5ff; border-radius: 5px; padding: 1px 6px;
+}
+.wd-file:hover { background: #dbe5ff; text-decoration: underline; }
+.wd-file-more { font-size: 11px; color: #94a3b8; }
+
+/* ---- Papan Cicle (Kanban mirror) --------------------------------------- */
+.cicle-hd { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.cicle-count { font-size: 12px; color: #64748b; }
+.cicle-board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; align-items: flex-start; }
+.cicle-col { flex: 0 0 260px; background: #f1f5f9; border-radius: 10px; padding: 8px; max-height: 78vh; display: flex; flex-direction: column; }
+.cicle-col-hd { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 8px; font-weight: 700; font-size: 12.5px; color: #334155; }
+.cicle-col-count { background: #e2e8f0; color: #475569; border-radius: 10px; padding: 0 8px; font-size: 11px; }
+.cicle-col-body { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.cicle-card { background: #fff; border: 1px solid #e5e9f0; border-radius: 8px; padding: 8px 10px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+.cicle-labels { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.cicle-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: #166534; background: #dcfce7; border-radius: 4px; padding: 1px 6px; }
+.cicle-card-name { font-size: 12.5px; font-weight: 600; color: #1e293b; line-height: 1.3; }
+.cicle-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: #64748b; }
+.cicle-avatars { display: inline-flex; margin-left: auto; }
+.cicle-av { width: 20px; height: 20px; border-radius: 50%; background: #64748b; color: #fff; font-size: 8.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-left: -6px; border: 1.5px solid #fff; overflow: hidden; }
+.cicle-av img { width: 100%; height: 100%; object-fit: cover; }
+.cicle-att { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.cicle-att-link { font-size: 10.5px; color: #2563c9; text-decoration: none; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #eff4ff; border: 1px solid #dbe5ff; border-radius: 4px; padding: 1px 5px; }
+.cicle-att-link:hover { background: #dbe5ff; }
+.cicle-empty { color: #cbd5e1; text-align: center; padding: 8px; font-size: 12px; }
 
 /* ---- Segmented control ------------------------------------------------ */
 .seg { display: inline-flex; gap: 3px; background: #e7ecf3; padding: 3px; border-radius: 9px; flex-wrap: wrap; }

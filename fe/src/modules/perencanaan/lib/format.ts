@@ -5,9 +5,10 @@ import type { Rag, TaskStatus } from "../types";
 
 /** Display name for each author / PIC username. */
 export const PIC_NAMES: Record<string, string> = {
-  randi: "Randi",
+  randi: "Surandi Yanda Saputra",
   ananto: "Ananto",
-  agus: "Agus",
+  agus: "Agus Priyanta",
+  rio: "Rio Zakaria",
 };
 
 export function picName(pic: string): string {
