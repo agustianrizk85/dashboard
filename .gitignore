@@ -16,5 +16,6 @@ secrets/
 dev.out
 dev.err
 
-# local-only VPS / browser-extension tooling (chrome profiles carry session data)
-claude-extension-vps/
+# VPS / browser-extension tooling: commit scripts, but NEVER the chrome profiles
+# (hundreds of MB of Login Data / Cookies — session credentials).
+claude-extension-vps/chrome-profile-*/

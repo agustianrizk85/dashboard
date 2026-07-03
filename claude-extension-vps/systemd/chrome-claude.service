@@ -1,0 +1,22 @@
+[Unit]
+Description=Google Chrome + ekstensi Claude (profil permanen)
+After=xvfb.service x11vnc.service
+Requires=xvfb.service
+
+[Service]
+# Ganti "user" dengan username VPS Anda
+User=user
+Environment=DISPLAY=:99
+ExecStartPre=/usr/bin/fluxbox -display :99
+ExecStart=/usr/bin/google-chrome \
+  --user-data-dir=/home/user/chrome-profile \
+  --no-first-run \
+  --no-default-browser-check \
+  --disable-gpu \
+  --start-maximized \
+  https://my.cicle.app/companies/68ee398e0d5377ba21c488f3
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
