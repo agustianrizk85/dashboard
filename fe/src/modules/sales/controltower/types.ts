@@ -16,6 +16,9 @@ export interface Exec {
   akad: number;
   proses: number;
   batal: number;
+  bookingNoBatal?: number; // Panel 1: booking 2026 di luar Batal (snapshot donut)
+  prosesCash?: number; // Panel 1: proses belum akad, sumber dana Cash Keras/Bertahap
+  prosesKpr?: number; // Panel 1: proses belum akad, sumber dana KPR
   totalPenjualan: number;
   revenueAkad: number;
   potentialRevenue: number;
@@ -192,6 +195,7 @@ export interface SaleRow {
   revenue: number;
   sumber?: string;
   channel?: string; // cleaned Platform category (matches the Sumber Penjualan panel)
+  funding?: string; // raw Sumber Dana (Cash Keras/Bertahap/KPR)
 }
 
 /** Per-project slice of the dashboard, used by the project filter. */

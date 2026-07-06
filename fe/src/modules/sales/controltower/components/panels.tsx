@@ -24,8 +24,12 @@ type ExecPick = (status: "akad" | "proses" | "batal" | null, bookingOnly?: boole
 
 export function ExecutivePanel({ d, onExpand, onPick }: PanelProps & { onPick?: ExecPick }) {
   const e = d.exec;
-  const ach = (e.akad / e.target2026) * 100;
-  const pipeline = e.akad + e.proses;
+  // Panel 1 snapshot memakai formula "posisi target": booking 2026 di luar Batal.
+  // Fallback ke (booking − batal) bila backend belum di-reingest dgn field baru.
+  const bookingSnap = e.bookingNoBatal ?? Math.max(0, e.booking - e.batal);
+  const ach = (bookingSnap / e.target2026) * 100;
+  const prosesCash = e.prosesCash ?? 0;
+  const prosesKpr = e.prosesKpr ?? 0;
   // Each KPI tile drills into the Booking→Akad→Cash-In detail. Status tiles
   // filter to that status; Total Booking scopes to active bookings (akad+proses,
   // no Batal) so the list count ties to the KPI. Static tile if no handler.
@@ -65,14 +69,14 @@ export function ExecutivePanel({ d, onExpand, onPick }: PanelProps & { onPick?: 
       <div className="exec-top">
         {(() => {
           const ring = (
-            <Ring value={e.akad} max={e.target2026} size={150} stroke={15} color="#1F9D54">
-              <div className="ring-big">{e.akad}</div>
-              <div className="ring-small">/ {e.target2026} akad</div>
+            <Ring value={bookingSnap} max={e.target2026} size={150} stroke={15} color="#1F9D54">
+              <div className="ring-big">{bookingSnap}</div>
+              <div className="ring-small">/ {e.target2026} booking</div>
               <div className="ring-pct">{pct(ach, 1)}</div>
             </Ring>
           );
           return onPick ? (
-            <button type="button" className="ring-btn" onClick={() => onPick("akad")} title={`Lihat ${e.akad} akad`}>
+            <button type="button" className="ring-btn" onClick={() => onPick(null, true)} title={`Lihat ${bookingSnap} booking 2026 (di luar batal)`}>
               {ring}
             </button>
           ) : (
@@ -85,40 +89,40 @@ export function ExecutivePanel({ d, onExpand, onPick }: PanelProps & { onPick?: 
             <button type="button" className="exec-cell cell-btn" onClick={onExpand} title="Lihat posisi target">
               <span className="ec-k">Gap ke Target</span>
               <span className="ec-v" style={{ color: "#D6453A" }}>
-                {e.target2026 - e.akad}
+                {e.target2026 - bookingSnap}
               </span>
-              <span className="ec-s">unit lagi menuju 500</span>
+              <span className="ec-s">booking lagi menuju 500</span>
             </button>
           ) : (
             <div className="exec-cell">
               <span className="ec-k">Gap ke Target</span>
               <span className="ec-v" style={{ color: "#D6453A" }}>
-                {e.target2026 - e.akad}
+                {e.target2026 - bookingSnap}
               </span>
-              <span className="ec-s">unit lagi menuju 500</span>
+              <span className="ec-s">booking lagi menuju 500</span>
             </div>
           )}
-          {/* Pipeline aktif = akad + proses = booking aktif (157). */}
+          {/* Akad 2026 terdata (menggantikan Pipeline Aktif). */}
           {onPick ? (
-            <button type="button" className="exec-cell cell-btn" onClick={() => onPick(null, true)} title={`Lihat ${pipeline} booking aktif`}>
-              <span className="ec-k">Pipeline Aktif</span>
-              <span className="ec-v">{pipeline}</span>
-              <span className="ec-s">akad + {e.proses} proses</span>
+            <button type="button" className="exec-cell cell-btn" onClick={() => onPick("akad")} title={`Lihat ${e.akad} akad 2026`}>
+              <span className="ec-k">Akad 2026</span>
+              <span className="ec-v">{e.akad}</span>
+              <span className="ec-s">akad terdata</span>
             </button>
           ) : (
             <div className="exec-cell">
-              <span className="ec-k">Pipeline Aktif</span>
-              <span className="ec-v">{pipeline}</span>
-              <span className="ec-s">akad + {e.proses} proses</span>
+              <span className="ec-k">Akad 2026</span>
+              <span className="ec-v">{e.akad}</span>
+              <span className="ec-s">akad terdata</span>
             </div>
           )}
         </div>
       </div>
 
       <div className="exec-kpis">
-        {tile(e.booking, "Total Booking", undefined, null, true)}
-        {tile(e.akad, "Akad Selesai", "#1F9D54", "akad")}
-        {tile(e.proses, "Menuju Akad", "#D9930B", "proses")}
+        {tile(e.proses, "Proses Menuju Akad", undefined, "proses")}
+        {tile(prosesCash, "Proses Akad Cash", "#1F9D54", "proses")}
+        {tile(prosesKpr, "Proses Akad KPR", "#D9930B", "proses")}
         {tile(e.batal, "Batal / Gugur", "#D6453A", "batal")}
       </div>
 
