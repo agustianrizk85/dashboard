@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { DashboardData, ProyekMetric, KurvaWeek, Tone } from "./types";
 import { api } from "./api/client";
@@ -147,7 +147,7 @@ export default function TeknikApp() {
                 ) : (
                   <Overview D={state.data} setTab={setTab} onProject={setSel} />
                 )}
-                {sel && <ProjectModal p={sel} onClose={() => setSel(null)} />}
+                {sel && <ProjectModal p={sel} D={state.data} onClose={() => setSel(null)} />}
               </div>
             )}
           </div>
@@ -335,8 +335,10 @@ function KurvaView({ D }: { D: DashboardData }) {
     if (!pu) return null;
     const aktual = Object.entries(pu.stages).reduce((a, [k, v]) => a + (v ? stageW[k] ?? 0 : 0), 0);
     let week = 0;
-    if (pu.tglSpk) {
-      const days = (Date.now() - new Date(pu.tglSpk).getTime()) / 86400000;
+    // SLA start = tgl ACC gambar kerja (acuan mulai vs Kurva S), fallback tgl SPK.
+    const start = pu.tglAccGK || pu.tglSpk;
+    if (start) {
+      const days = (Date.now() - new Date(start).getTime()) / 86400000;
       if (!isNaN(days)) week = Math.min(maxWeek, Math.max(1, Math.floor(days / 7) + 1));
     }
     const target = week > 0 ? weeks.find((w) => w.week === week)?.cumulative ?? 0 : 0;
@@ -688,12 +690,66 @@ function rekomendasi(p: ProyekMetric): { judul: string; aksi: string[] } {
   return { judul: "🟢 Aman — sesuai/di atas rencana", aksi: ["Pertahankan ritme.", "Dorong unit yang belum mulai agar terjadwal."] };
 }
 
-function ProjectModal({ p, onClose }: { p: ProyekMetric; onClose: () => void }) {
+/** Per-unit breakdown row inside the project modal. Aktual = checklist %; Target
+ * = Kurva S cumulative at the unit's elapsed week counted from TGL ACC GAMBAR
+ * KERJA (SLA start, fallback tgl SPK) — the same "ACC gambar vs Kurva S" logic
+ * the project metric uses, but per blok so you see exactly which units lag. */
+interface UnitRow {
+  id: string;
+  blok: string;
+  status: string;
+  start: string;
+  week: number;
+  aktual: number;
+  target: number;
+  doneCount: number;
+  pending: string[];
+}
+
+function ProjectModal({ p, D, onClose }: { p: ProyekMetric; D: DashboardData; onClose: () => void }) {
+  const [openBlok, setOpenBlok] = useState<string>("");
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
+
+  const stagesOrder = useMemo(() => [...D.constructionStages].sort((a, b) => a.no - b.no), [D.constructionStages]);
+  const totalW = useMemo(() => D.constructionStages.reduce((a, s) => a + s.weight, 0) || 100, [D.constructionStages]);
+  const weeks = useMemo(() => [...D.kurvaBaseline].sort((a, b) => a.week - b.week), [D.kurvaBaseline]);
+  const maxWeek = weeks.length ? weeks[weeks.length - 1].week : 20;
+  const targetAt = (start: string): { week: number; target: number } => {
+    if (!start) return { week: 0, target: 0 };
+    const days = (Date.now() - new Date(start).getTime()) / 86400000;
+    if (isNaN(days)) return { week: 0, target: 0 };
+    const week = Math.min(maxWeek, Math.max(1, Math.floor(days / 7) + 1));
+    const target = weeks.find((w) => w.week >= week)?.cumulative ?? weeks[weeks.length - 1]?.cumulative ?? 0;
+    return { week, target };
+  };
+
+  const rows = useMemo<UnitRow[]>(() => {
+    const list = D.progressUnits
+      .filter((u) => u.project === p.nama)
+      .map<UnitRow>((u) => {
+        const done = stagesOrder.filter((s) => u.stages?.[s.name]);
+        const aktual = (done.reduce((a, s) => a + s.weight, 0) / totalW) * 100;
+        const start = u.tglAccGK || u.tglSpk || "";
+        const { week, target } = targetAt(start);
+        return {
+          id: u.id, blok: u.blok, status: u.status, start, week, aktual, target,
+          doneCount: done.length, pending: stagesOrder.filter((s) => !u.stages?.[s.name]).map((s) => s.name),
+        };
+      });
+    // Paling tertinggal dulu (deviasi aktual−target terkecil), lalu blok.
+    list.sort((a, b) => (a.aktual - a.target) - (b.aktual - b.target) || a.blok.localeCompare(b.blok, undefined, { numeric: true }));
+    return list;
+  }, [D.progressUnits, p.nama, stagesOrder, totalW, weeks, maxWeek]);
+
+  const belumMulai = rows.filter((u) => !u.start).length;
+  const nol = rows.filter((u) => u.start && u.aktual <= 0.05).length;
+  const selesai = rows.filter((u) => u.aktual >= 99.95).length;
+  const berjalan = rows.length - belumMulai - nol - selesai;
+
   const r = rekomendasi(p);
   const stat = (label: string, value: ReactNode, tone?: "ok" | "warn" | "bad") => (
     <div className="pm-stat">
@@ -701,6 +757,12 @@ function ProjectModal({ p, onClose }: { p: ProyekMetric; onClose: () => void }) 
       <span className={`pm-stat-v ${tone ?? ""}`}>{value}</span>
     </div>
   );
+  const rowTone = (u: UnitRow): "green" | "yellow" | "red" => {
+    if (u.aktual >= 99.95) return "green";
+    const dev = u.aktual - u.target;
+    if (!u.start) return "yellow";
+    return dev <= -5 ? "red" : dev <= -1 ? "yellow" : "green";
+  };
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -724,6 +786,62 @@ function ProjectModal({ p, onClose }: { p: ProyekMetric; onClose: () => void }) 
           <div className={`pm-reco ${statusTone(p.status)}`}>
             <div className="pm-reco-h">{r.judul}</div>
             <ul>{r.aksi.map((a, i) => <li key={i}>{a}</li>)}</ul>
+          </div>
+
+          {/* Rincian per unit — Aktual vs Target (ACC gambar kerja vs Kurva S) */}
+          <div className="tbl-scroll" style={{ marginTop: 14, maxHeight: 340 }}>
+            <div className="kurva-subhead">
+              Rincian {rows.length} Unit · aktual vs target (acuan TGL ACC GAMBAR KERJA → Kurva S)
+              {" — "}
+              <b>{belumMulai}</b> belum ACC · <b>{nol}</b> mulai 0% · <b>{berjalan}</b> berjalan · <b style={{ color: "var(--ok)" }}>{selesai}</b> selesai
+            </div>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Blok</th><th>Status</th><th className="num">Mgg</th>
+                  <th style={{ width: 170 }}>Aktual</th><th className="num">Target</th><th className="num">Dev</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && <tr><td colSpan={7} className="tbl-empty">Tidak ada unit ter-checklist untuk proyek ini.</td></tr>}
+                {rows.map((u) => {
+                  const dev = u.aktual - u.target;
+                  const open = openBlok === u.id;
+                  return (
+                    <Fragment key={u.id}>
+                      <tr
+                        className={u.pending.length > 0 ? "clickable" : ""}
+                        onClick={u.pending.length > 0 ? () => setOpenBlok(open ? "" : u.id) : undefined}
+                      >
+                        <td><b>{u.blok}</b></td>
+                        <td>{u.status || "—"}</td>
+                        <td className="num">{u.start ? `~${u.week}` : "—"}</td>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ width: 34, fontVariantNumeric: "tabular-nums" }}>{u.aktual.toFixed(0)}%</span>
+                            <Bar value={u.aktual} tick={u.target} tone={rowTone(u)} />
+                          </div>
+                        </td>
+                        <td className="num">{u.start ? `${u.target.toFixed(0)}%` : "—"}</td>
+                        <td className="num" style={{ color: dev < -1 ? "var(--bad)" : dev >= 1 ? "var(--ok)" : undefined }}>
+                          {u.start ? `${dev > 0 ? "+" : ""}${dev.toFixed(0)}` : "—"}
+                        </td>
+                        <td>{u.pending.length === 0 ? "✓" : open ? "▲" : "▼"}</td>
+                      </tr>
+                      {open && u.pending.length > 0 && (
+                        <tr>
+                          <td colSpan={7} style={{ background: "rgba(0,0,0,0.02)" }}>
+                            <div style={{ fontSize: 12, lineHeight: 1.6, padding: "2px 2px" }}>
+                              <b>Belum dikerjakan ({u.pending.length}):</b> {u.pending.join(" · ")}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -25,6 +25,7 @@ export interface ProgressUnit {
   blok: string;
   tglSpk: string;
   tglSpkFinish: string;
+  tglAccGK: string; // TGL ACC GAMBAR KERJA — acuan mulai SLA (vs Kurva S)
   status: string;
   keterangan: string;
   stages: Record<string, boolean>;

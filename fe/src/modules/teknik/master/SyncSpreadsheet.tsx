@@ -37,9 +37,12 @@ function SummaryCards({ s }: { s: ImportSummary }) {
   );
 }
 
-const URL_KEY = "gp_teknik_sheet_url";
+// Bumped to _v2 when the source moved to the group MASTER DATABASE workbook, so
+// existing sessions re-seed to the new default instead of the stale cached URL.
+const URL_KEY = "gp_teknik_sheet_url_v2";
+// MASTER DATABASE · Monitoring Progres Pembangunan Unit Rumah — Greenpark Group.
 const DEFAULT_URL =
-  "https://docs.google.com/spreadsheets/d/1boqtWfBDiy9jcuvT1TzcZgWXRsc0JzYDj-nyu73LCT4/edit";
+  "https://docs.google.com/spreadsheets/d/1oDp4s086K5_I7dDQUTv_0HKiBinabAUWrqBYGJAL8uM/edit";
 
 const INTERVALS: { sec: number; label: string }[] = [
   { sec: 30, label: "30 detik" },
