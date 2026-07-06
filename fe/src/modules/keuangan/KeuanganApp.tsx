@@ -6,6 +6,7 @@ import { ARView } from "./ARView";
 import { ImportPanel } from "./components/admin/ImportPanel";
 import "../sales/sales.css"; // shared division shell chrome (stage/header/tabs)
 import "./keuangan.css"; // finance dashboard content, scoped under .kc-scope
+import { AiGenerateButton } from "@/ai/AiGenerate";
 
 type Tab = "dash" | "ar" | "sync";
 
@@ -57,6 +58,7 @@ export default function KeuanganApp() {
             <div className="tag">AKAD · KPR · CASH-IN · PENDANAAN</div>
           </div>
           <div className="hdr-spacer" />
+          <AiGenerateButton division="keuangan" />
           <div className="hdr-meta">
             <Clock />
             <div className="hdr-user">

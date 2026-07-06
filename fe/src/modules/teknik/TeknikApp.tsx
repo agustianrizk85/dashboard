@@ -13,6 +13,7 @@ import { SyncSpreadsheet } from "./master/SyncSpreadsheet";
 import { AiInsight } from "./components/AiInsight";
 import "../sales/sales.css"; // shared division shell chrome (green header + tabs)
 import "./teknik.css"; // teknik dashboard content, scoped under .tk-scope
+import { AiGenerateButton } from "@/ai/AiGenerate";
 
 interface TabDef {
   id: string;
@@ -94,6 +95,7 @@ export default function TeknikApp() {
             <div className="tag">PROGRES · KURVA S · DEVIASI · SPI</div>
           </div>
           <div className="hdr-spacer" />
+          <AiGenerateButton division="teknik" />
           <div className="hdr-meta">
             <Clock />
             <div className="hdr-user">

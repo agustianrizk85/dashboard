@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { useRev } from "@/lib/realtime";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
+import { AiGenerateButton } from "@/ai/AiGenerate";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -54,6 +55,7 @@ export function Layout() {
           <div className="tag">PRA-AKAD · AKAD · PERMIT · LEGAL</div>
         </div>
         <div className="hdr-spacer" />
+        <AiGenerateButton division="permit" />
         <div className="hdr-meta">
           <Clock />
           <div className="hdr-user">

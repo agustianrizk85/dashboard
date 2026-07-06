@@ -3,6 +3,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { ControlTowerView } from "./controltower/ControlTower";
 import { AdminView } from "./AdminView";
+import { AiGenerateButton } from "@/ai/AiGenerate";
 import "./sales.css";
 
 // Monev bundles xlsx + chart.js — code-split so they only load when its tab opens.
@@ -58,6 +59,7 @@ export default function SalesApp() {
             <div className="tag">LEADS · BOOKING · AKAD · CASH-IN</div>
           </div>
           <div className="hdr-spacer" />
+          <AiGenerateButton division="sales" />
           <div className="hdr-meta">
             <Clock />
             <div className="hdr-user">

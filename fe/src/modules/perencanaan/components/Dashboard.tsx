@@ -17,6 +17,7 @@ import { OutputsView } from "./views/OutputsView";
 import { WorkDrawingsView } from "./views/WorkDrawingsView";
 import { StaffView } from "./views/StaffView";
 import { MasterView } from "./views/MasterView";
+import { AiGenerateButton } from "@/ai/AiGenerate";
 
 type Tab = "summary" | "board" | "projects" | "tasks" | "outputs" | "workdrawings" | "staff" | "master";
 
@@ -110,6 +111,7 @@ export function Dashboard() {
           <div className="tag">DESIGN · DELIVERABLE · GAMBAR KERJA</div>
         </div>
         <div className="hdr-spacer" />
+        <AiGenerateButton division="perencanaan" />
         <div className="hdr-meta">
           {canManage && !allAccess && (
             <div className="admin-actions">

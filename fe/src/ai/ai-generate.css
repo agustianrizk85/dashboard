@@ -1,0 +1,111 @@
+/* "✨ Generate AI" button + full-screen analysis modal. Self-contained. */
+.aig-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: none; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(90deg, #1B5E20, #2E7D32); color: #fff;
+  font-weight: 700; font-size: 13px; font-family: inherit;
+  box-shadow: 0 2px 8px rgba(27, 94, 32, .25); white-space: nowrap;
+}
+.aig-btn:hover { filter: brightness(1.08); }
+
+.aig-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(15, 26, 18, .55); backdrop-filter: blur(3px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 3vh 16px; overflow-y: auto;
+}
+.aig-modal {
+  width: min(1100px, 100%); background: #f4f6f4; border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .4); overflow: hidden;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1f2a22; display: flex; flex-direction: column;
+}
+
+.aig-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 18px; background: linear-gradient(90deg, #1B5E20, #2E7D32); color: #fff;
+}
+.aig-title { display: flex; flex-direction: column; line-height: 1.2; margin-right: auto; }
+.aig-title b { font-size: 15px; }
+.aig-title span { font-size: 11px; opacity: .85; }
+.aig-model { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+.aig-model label { opacity: .85; font-weight: 600; }
+.aig-model input {
+  width: 150px; padding: 5px 8px; border-radius: 7px; border: none; font-size: 12px; font-family: inherit;
+}
+.aig-cfg, .aig-rerun, .aig-close {
+  padding: 6px 12px; border: 1px solid rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .12);
+  color: #fff; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; font-family: inherit;
+}
+.aig-cfg:hover, .aig-rerun:hover, .aig-close:hover { background: rgba(255, 255, 255, .25); }
+.aig-rerun:disabled { opacity: .5; cursor: not-allowed; }
+.aig-close { padding: 6px 10px; }
+
+.aig-keybar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 18px; background: #fff8e1; border-bottom: 1px solid #ffe6a8; font-size: 12px;
+}
+.aig-key-status { color: #7a5b00; font-weight: 600; }
+.aig-keybar input {
+  flex: 1; min-width: 220px; padding: 7px 9px; border: 1px solid #e3e7e3; border-radius: 7px; font-size: 12px; font-family: inherit;
+}
+.aig-keybar button {
+  padding: 7px 12px; border: none; border-radius: 7px; background: #2E7D32; color: #fff;
+  font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit;
+}
+.aig-keybar button:disabled { opacity: .5; cursor: not-allowed; }
+.aig-key-err { color: #c62828; font-size: 11px; }
+
+.aig-body { padding: 16px 18px 22px; }
+.aig-nodata { padding: 18px; background: #fff; border: 1px solid #e3e7e3; border-radius: 12px; color: #6b766c; }
+.aig-link { background: none; border: none; color: #2E7D32; font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; }
+.aig-phase { font-size: 12px; color: #6b766c; margin-bottom: 10px; }
+.aig-plan {
+  padding: 12px 14px; background: #eef7ee; border: 1px dashed #4CAF50; border-radius: 10px;
+  color: #1B5E20; font-weight: 600; font-size: 12.5px; margin-bottom: 14px;
+}
+
+.aig-agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.aig-agent { background: #fff; border: 1px solid #e3e7e3; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+.aig-agent.running { border-color: #4CAF50; box-shadow: 0 0 0 2px rgba(76, 175, 80, .18); }
+.aig-agent.error { border-color: #f8c4bf; }
+.aig-ag-head { display: flex; align-items: center; gap: 10px; }
+.aig-ag-icon { font-size: 20px; }
+.aig-ag-titles { flex: 1; line-height: 1.25; }
+.aig-ag-titles b { font-size: 13px; color: #1B5E20; }
+.aig-ag-titles span { display: block; font-size: 10.5px; color: #6b766c; }
+.aig-ag-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #eef5ee; color: #6b766c; white-space: nowrap; }
+.aig-ag-badge.running { background: #fff3e0; color: #b8860b; }
+.aig-ag-badge.done { background: #e8f5e9; color: #2E7D32; }
+.aig-ag-badge.error { background: #fdecea; color: #c62828; }
+.aig-ag-err { margin-top: 8px; font-size: 11.5px; color: #c62828; }
+.aig-ag-toggle { margin-top: 8px; background: none; border: none; color: #2E7D32; font-weight: 600; font-size: 11.5px; cursor: pointer; padding: 0; }
+.aig-ag-out { margin-top: 8px; font-size: 12px; color: #34433a; white-space: pre-wrap; line-height: 1.5; border-top: 1px dashed #e3e7e3; padding-top: 8px; }
+
+.aig-dash { background: #fff; border: 1px solid #e3e7e3; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+.aig-dash-title { font-size: 16px; font-weight: 800; color: #1B5E20; margin-bottom: 14px; }
+.aig-dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.aig-kpi { border: 1px solid #e3e7e3; border-radius: 10px; padding: 11px 13px; border-top: 3px solid #9e9e9e; }
+.aig-kpi.t-ok { border-top-color: #4CAF50; }
+.aig-kpi.t-warn { border-top-color: #FFC107; }
+.aig-kpi.t-bad { border-top-color: #F44336; }
+.aig-kpi.t-neutral { border-top-color: #1565C0; }
+.aig-kpi-l { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: #6b766c; font-weight: 700; }
+.aig-kpi-v { font-size: 20px; font-weight: 800; margin-top: 3px; }
+.aig-kpi-n { font-size: 10.5px; color: #6b766c; margin-top: 2px; }
+.aig-dash-sec { margin-top: 14px; }
+.aig-dash-sec-h { font-size: 13px; font-weight: 700; color: #1B5E20; margin-bottom: 8px; }
+.aig-dash-sec-items { display: flex; flex-direction: column; gap: 8px; }
+.aig-item { padding: 9px 12px; border: 1px solid #e3e7e3; border-left: 3px solid #9e9e9e; border-radius: 8px; background: #fbfdfb; }
+.aig-item.t-ok { border-left-color: #4CAF50; }
+.aig-item.t-warn { border-left-color: #FFC107; }
+.aig-item.t-bad { border-left-color: #F44336; }
+.aig-item.t-neutral { border-left-color: #1565C0; }
+.aig-item b { font-size: 12.5px; }
+.aig-item span { display: block; font-size: 11.5px; color: #6b766c; margin-top: 2px; }
+
+@media (max-width: 640px) {
+  .aig-bar { padding: 12px; }
+  .aig-title { width: 100%; margin-right: 0; }
+  .aig-model input { width: 110px; }
+}

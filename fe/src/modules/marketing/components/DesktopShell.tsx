@@ -10,6 +10,7 @@ import { PerformaView } from "../performa/PerformaView";
 import { AdsView, WhatsAppView, InstagramView } from "../meta/MetaViews";
 import { AccountsView } from "../meta/AccountsView";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
+import { AiGenerateButton } from "@/ai/AiGenerate";
 
 type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig" | "akun";
 
@@ -85,6 +86,7 @@ export function DesktopShell({ user }: { user: User }) {
             <div className="tag">IKLAN BERBAYAR · KONTEN ORGANIK · LEAD</div>
           </div>
           <div className="hdr-spacer" />
+          <AiGenerateButton division="marketing" />
           <div className="hdr-meta">
             <div className="badge-target">
               {items.length}
