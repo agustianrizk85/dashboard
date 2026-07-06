@@ -1,0 +1,109 @@
+/*
+ * Sales Monev Control — scoped styles.
+ * Ported from the standalone app; every selector is nested under `.monev-root`
+ * and the CSS variables renamed to `--mv-*` so nothing leaks into the rest of
+ * the dashboard (which also uses `.card`, `.tab`, bare `table`/`th`/`td`, etc).
+ */
+.monev-root {
+  --mv-green:#1B5E20; --mv-green2:#2E7D32; --mv-green-l:#4CAF50;
+  --mv-blue:#1565C0; --mv-blue-l:#e3f0fc;
+  --mv-amber:#FFC107; --mv-red:#F44336;
+  --mv-bg:#f4f6f4; --mv-card:#ffffff; --mv-border:#e3e7e3; --mv-text:#1f2a22; --mv-muted:#6b766c;
+  --mv-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  background:var(--mv-bg); color:var(--mv-text);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:13px;
+}
+.monev-mount { height:100%; }
+.monev-root, .monev-root * { box-sizing:border-box; }
+
+.monev-root header.mv-appbar{background:linear-gradient(90deg,var(--mv-green),var(--mv-green2));color:#fff;padding:14px 22px;display:flex;align-items:center;gap:14px;box-shadow:var(--mv-shadow)}
+.monev-root .mv-appbar h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+.monev-root .mv-appbar .sub{font-size:11px;opacity:.85;font-weight:400}
+.monev-root .mv-appbar .spacer{flex:1}
+.monev-root .mv-appbar .target{font-size:12px;background:rgba(255,255,255,.15);padding:5px 12px;border-radius:20px}
+.monev-root .wrap{max-width:1500px;margin:0 auto;padding:18px}
+.monev-root .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.monev-root .tab{padding:9px 16px;background:var(--mv-card);border:1px solid var(--mv-border);border-radius:8px;cursor:pointer;font-weight:600;color:var(--mv-muted);transition:.12s}
+.monev-root .tab:hover{border-color:var(--mv-green-l)}
+.monev-root .tab.active{background:var(--mv-green);color:#fff;border-color:var(--mv-green)}
+.monev-root .card{background:var(--mv-card);border:1px solid var(--mv-border);border-radius:12px;box-shadow:var(--mv-shadow);padding:18px;margin-bottom:16px}
+.monev-root .card h2{margin:0 0 4px;font-size:15px;color:var(--mv-green)}
+.monev-root .card .desc{color:var(--mv-muted);font-size:11.5px;margin-bottom:14px}
+.monev-root .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px}
+.monev-root .kpi{background:var(--mv-card);border:1px solid var(--mv-border);border-radius:10px;padding:13px 15px;box-shadow:var(--mv-shadow)}
+.monev-root .kpi .label{font-size:10.5px;color:var(--mv-muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.monev-root .kpi .val{font-size:23px;font-weight:700;margin-top:3px}
+.monev-root .kpi .rate{font-size:11px;margin-top:2px;color:var(--mv-muted)}
+.monev-root .kpi.blue{border-top:3px solid var(--mv-blue)}
+.monev-root .kpi.green{border-top:3px solid var(--mv-green-l)}
+.monev-root table{border-collapse:collapse;width:100%;font-size:12px}
+.monev-root th,.monev-root td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--mv-border);white-space:nowrap}
+.monev-root th:first-child,.monev-root td:first-child{text-align:left}
+.monev-root th{background:#f0f4f0;color:var(--mv-green);font-weight:700;position:sticky;top:0;cursor:pointer;user-select:none}
+.monev-root thead th{font-size:11px}
+.monev-root tr.total-row td{font-weight:700;background:#eef5ee;border-top:2px solid var(--mv-green)}
+.monev-root td.name{text-align:left;font-weight:600;cursor:pointer;color:var(--mv-green2)}
+.monev-root td.name:hover{text-decoration:underline}
+.monev-root .blue-col{background:var(--mv-blue-l);color:var(--mv-blue);font-weight:600}
+.monev-root th.blue-col{background:#cfe2f7}
+.monev-root .gap-neg{color:var(--mv-red);font-weight:700}
+.monev-root .gap-pos{color:var(--mv-green-l);font-weight:700}
+.monev-root .light{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.monev-root .l-g{background:var(--mv-green-l)} .monev-root .l-y{background:var(--mv-amber)} .monev-root .l-r{background:var(--mv-red)}
+.monev-root .cell-g{background:rgba(76,175,80,.13)} .monev-root .cell-y{background:rgba(255,193,7,.16)} .monev-root .cell-r{background:rgba(244,67,54,.13)}
+.monev-root .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.monev-root .controls label{font-size:11px;color:var(--mv-muted);font-weight:600}
+.monev-root input[type=date],.monev-root select,.monev-root input[type=text]{padding:7px 9px;border:1px solid var(--mv-border);border-radius:7px;font-size:12px;font-family:inherit}
+.monev-root .preset{padding:6px 11px;border:1px solid var(--mv-border);background:var(--mv-card);border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;color:var(--mv-muted)}
+.monev-root .preset:hover{border-color:var(--mv-green-l)}
+.monev-root .preset.active{background:var(--mv-green2);color:#fff;border-color:var(--mv-green2)}
+.monev-root .tbl-scroll{overflow:auto;max-height:560px;border:1px solid var(--mv-border);border-radius:8px}
+.monev-root .dropzone{border:2px dashed var(--mv-green-l);border-radius:12px;padding:34px;text-align:center;background:#fbfdfb;cursor:pointer;transition:.15s}
+.monev-root .dropzone.drag{background:#eef7ee;border-color:var(--mv-green)}
+.monev-root .dropzone .big{font-size:15px;font-weight:700;color:var(--mv-green)}
+.monev-root .dropzone .small{font-size:11.5px;color:var(--mv-muted);margin-top:6px}
+.monev-root .status-line{font-size:12px;margin-top:10px;padding:9px 12px;border-radius:8px;display:none}
+.monev-root .status-line.ok{display:block;background:#e8f5e9;color:var(--mv-green);border:1px solid #c8e6c9}
+.monev-root .status-line.err{display:block;background:#fdecea;color:var(--mv-red);border:1px solid #f8c4bf}
+.monev-root .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.monev-root .chart-box{background:var(--mv-card);border:1px solid var(--mv-border);border-radius:10px;padding:12px;box-shadow:var(--mv-shadow)}
+.monev-root .chart-box h3{font-size:12.5px;margin:0 0 8px;color:var(--mv-green)}
+.monev-root .chart-box canvas{max-height:240px}
+.monev-root .legend-row{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--mv-muted);margin-top:10px}
+.monev-root .legend-row span{display:inline-flex;align-items:center;gap:5px}
+.monev-root .pill{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.monev-root .muted{color:var(--mv-muted)}
+.monev-root .note{font-size:11px;color:var(--mv-muted);margin-top:8px}
+@media(max-width:900px){.monev-root .chart-grid{grid-template-columns:1fr}}
+.monev-root .tab-data{margin-left:auto;background:#eef5ee}
+.monev-root .funnel-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:center}
+@media(max-width:880px){.monev-root .funnel-wrap{grid-template-columns:1fr}}
+.monev-root .funnel-stage{cursor:pointer;transition:.12s}
+.monev-root .funnel-stage:hover{opacity:.88}
+.monev-root .conv-list{display:flex;flex-direction:column;gap:10px}
+.monev-root .conv{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--mv-border);border-radius:10px;background:#fbfdfb}
+.monev-root .conv .arrow{font-size:18px;color:var(--mv-muted)}
+.monev-root .conv .ctxt{flex:1}
+.monev-root .conv .ctxt b{font-size:13px}
+.monev-root .conv .ctxt .sub{font-size:10.5px;color:var(--mv-muted)}
+.monev-root .conv .cval{font-size:18px;font-weight:700}
+.monev-root .conv .ctgt{font-size:10px;color:var(--mv-muted)}
+.monev-root .empty{text-align:center;padding:60px 20px;color:var(--mv-muted)}
+.monev-root .empty .big{font-size:18px;font-weight:700;color:var(--mv-green);margin-bottom:8px}
+.monev-root .btn{padding:9px 18px;background:var(--mv-green);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit}
+.monev-root .btn:hover{background:var(--mv-green2)}
+.monev-root .btn.blue{background:var(--mv-blue)}
+.monev-root .btn.ghost{background:#fff;color:var(--mv-green);border:1px solid var(--mv-green)}
+.monev-root .sync-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.monev-root .sync-row input[type=text]{flex:1;min-width:280px}
+.monev-root .switch{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--mv-muted)}
+.monev-root tr.week-row{cursor:pointer}
+.monev-root tr.week-row:hover td{background:#eef7ee}
+.monev-root tr.week-row.sel td{background:#dcefdc;font-weight:600}
+.monev-root .pekan-blk{margin-bottom:14px}
+.monev-root .pekan-title{text-align:center;font-weight:700;border:1px solid var(--mv-border);padding:7px;background:#fff;border-radius:7px 7px 0 0;color:var(--mv-green)}
+.monev-root .pekan-tbl{border:1px solid var(--mv-border);border-top:none}
+.monev-root .pekan-tbl th,.monev-root .pekan-tbl td{text-align:center}
+.monev-root .pekan-hd th{background:#fbe6c2;color:#7a5b00;position:static}
+.monev-root .pekan-total .pekan-hd th{background:#dcefdc;color:var(--mv-green)}
+.monev-root .pekan-total td{font-weight:700;background:#eef5ee}

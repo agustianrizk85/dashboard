@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { ControlTowerView } from "./controltower/ControlTower";
 import { AdminView } from "./AdminView";
 import "./sales.css";
 
-type Tab = "tower" | "master";
+// Monev bundles xlsx + chart.js — code-split so they only load when its tab opens.
+const MonevView = lazy(() => import("./monev/MonevView"));
+
+type Tab = "tower" | "monev" | "master";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -41,7 +44,7 @@ export default function SalesApp() {
   // (and the Dirops director) also get Master Data / sync.
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [tab, setTab] = useState<Tab>("tower");
-  const active: Tab = tab === "master" && canManage ? "master" : "tower";
+  const active: Tab = tab === "master" && canManage ? "master" : tab;
   return (
     <div className="sales-stage">
       <div className="sales-canvas">
@@ -71,6 +74,9 @@ export default function SalesApp() {
           <button className={`tab ${active === "tower" ? "on" : ""}`} onClick={() => setTab("tower")}>
             Control Tower
           </button>
+          <button className={`tab ${active === "monev" ? "on" : ""}`} onClick={() => setTab("monev")}>
+            Sales Monev
+          </button>
           {canManage && (
             <button className={`tab ${active === "master" ? "on" : ""}`} onClick={() => setTab("master")}>
               Master Data
@@ -79,7 +85,15 @@ export default function SalesApp() {
         </DivisionTabBar>
 
         <main className="content">
-          {active === "master" ? <AdminView /> : <ControlTowerView />}
+          {active === "master" ? (
+            <AdminView />
+          ) : active === "monev" ? (
+            <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Sales Monev…</div>}>
+              <MonevView />
+            </Suspense>
+          ) : (
+            <ControlTowerView />
+          )}
         </main>
       </div>
     </div>
