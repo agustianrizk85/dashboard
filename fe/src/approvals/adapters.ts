@@ -112,6 +112,10 @@ export interface DivisionLoad {
   items: ApprovalItem[];
   /** Set when this division's backend could not be reached / errored. */
   error?: string;
+  /** True when the failure means the module simply isn't deployed yet (404 /
+   *  backend down), so the UI shows a calm "belum aktif" note instead of a red
+   *  error. Real errors (401/403/500) keep `inactive` false. */
+  inactive?: boolean;
 }
 
 /* ── Division adapters ─────────────────────────────────────────────────── */
@@ -263,8 +267,11 @@ export async function loadAllApprovals(): Promise<DivisionLoad[]> {
   const settled = await Promise.allSettled(divs.map((d) => LOADERS[d]()));
   return divs.map((division, i) => {
     const r = settled[i];
-    return r.status === "fulfilled"
-      ? { division, label: DIV_LABEL[division], items: r.value }
-      : { division, label: DIV_LABEL[division], items: [], error: r.reason instanceof Error ? r.reason.message : String(r.reason) };
+    if (r.status === "fulfilled") return { division, label: DIV_LABEL[division], items: r.value };
+    const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+    // A 404 (endpoint not on the live backend) or a network failure means the
+    // module just isn't deployed yet — surface it calmly, not as a red error.
+    const inactive = /HTTP 404/.test(msg) || /failed to fetch/i.test(msg) || /networkerror/i.test(msg) || /load failed/i.test(msg);
+    return { division, label: DIV_LABEL[division], items: [], error: msg, inactive };
   });
 }

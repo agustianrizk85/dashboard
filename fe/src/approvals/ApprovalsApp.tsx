@@ -42,7 +42,8 @@ export default function ApprovalsApp() {
   useRealtimeSocket(wsUrls.marketing, refresh);
 
   const allItems = useMemo(() => loads.flatMap((l) => l.items), [loads]);
-  const errors = useMemo(() => loads.filter((l) => l.error), [loads]);
+  const errors = useMemo(() => loads.filter((l) => l.error && !l.inactive), [loads]);
+  const inactive = useMemo(() => loads.filter((l) => l.inactive), [loads]);
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: allItems.length };
     for (const l of loads) c[l.division] = l.items.length;
@@ -111,6 +112,12 @@ export default function ApprovalsApp() {
         {errors.map((e) => (
           <div key={e.division} className="apr-error">
             <b>{e.label}</b> — gagal memuat: {e.error}
+          </div>
+        ))}
+
+        {inactive.map((e) => (
+          <div key={e.division} className="apr-inactive">
+            <b>{e.label}</b> — modul belum aktif di server (backend belum di-deploy). Datanya menyusul saat backend online.
           </div>
         ))}
 
