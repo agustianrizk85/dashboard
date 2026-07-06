@@ -47,14 +47,25 @@ export function DesktopShell({ user }: { user: User }) {
   const [items, setItems] = useState<WorkItem[]>([]);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [err, setErr] = useState("");
+  // The work-items / warnings endpoints live only on the full marketing backend
+  // (greenparkmarketingbee). The live backend returns 404 → treat that as "module
+  // belum aktif" (calm note on the workflow tabs) rather than a red error that
+  // would also cover the Meta tabs (which work via metaapi).
+  const [inactive, setInactive] = useState(false);
 
   const reload = useCallback(() => {
+    setErr("");
+    setInactive(false);
     Promise.all([workItemService.list(), dashboardService.warnings()])
       .then(([list, w]) => {
         setItems(list);
         setWarnings(w.warnings);
       })
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (/404/.test(msg) || /failed to fetch/i.test(msg) || /network/i.test(msg)) setInactive(true);
+        else setErr(msg);
+      });
   }, []);
 
   // Re-fetch whenever the realtime revision bumps (any marketing backend write).
@@ -115,6 +126,11 @@ export function DesktopShell({ user }: { user: User }) {
             self-loading "Tugas Saya" board also refetches live. */}
         <main className="content" key={rev}>
           {err && <div className="empty-note error">{err}</div>}
+          {inactive && (tab === "ringkasan" || tab === "alur" || tab === "tugas") && (
+            <div className="empty-note">
+              📭 Modul <b>Alur Kerja</b> marketing belum aktif di server (backend work-items belum di-deploy). Tab <b>Iklan / WhatsApp / Instagram</b> tetap jalan. Datanya menyusul saat backend online.
+            </div>
+          )}
           {tab === "ringkasan" && <PerformaView items={items} warnings={warnings} />}
           {tab === "alur" && (
             <AlurKerjaView
