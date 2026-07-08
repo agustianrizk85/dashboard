@@ -161,6 +161,15 @@ const MODULE_BACKENDS: Record<Division, ModuleBackend> = {
 
 const ALL_MODULE_TOKEN_KEYS = Object.values(MODULE_BACKENDS).map((m) => m.tokenKey);
 
+/** Divisions whose Go backend verifies the auth Ed25519 SSO token directly
+ *  (authmw + JWKS) — so no per-backend bridge login is needed; each reuses the
+ *  ONE dashboard token. Move a division here once its backend accepts SSO. */
+const SSO_DIVISIONS: Division[] = ["sales", "keuangan", "teknik", "perencanaan"];
+/** Divisions whose backend still needs a bridged NATIVE token (not SSO yet):
+ *  marketing (still the one-e backend) + permit. These are the only remaining
+ *  per-backend logins; empty this list once they accept SSO too → one login. */
+const NON_SSO_DIVISIONS: Division[] = ["marketing", "permit"];
+
 /** Dashboard usernames whose module backend expects a different identifier. */
 const API_ID_OVERRIDE: Record<string, string> = {
   // Marketing's Kadep is `marketing@greenpark.id` here (to avoid colliding with
@@ -225,13 +234,6 @@ function allAccessCreds(approver: boolean): Record<Division, { id: string; pass:
   };
 }
 
-/** Bridge tokens for every division so an all-access user can switch freely. */
-async function bridgeAllDivisions(approver: boolean): Promise<void> {
-  const creds = allAccessCreds(approver);
-  await Promise.all(
-    (Object.keys(creds) as Division[]).map((div) => bridgeModuleToken(div, creds[div].id, creds[div].pass)),
-  );
-}
 
 /** Marketing per-person job positions (the auth user model carries no position;
  *  the Marketing module needs it, so we map it from the login identifier). */
@@ -353,22 +355,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (identifier: string, password: string) => {
     const { token, user: u } = await authenticate(identifier, password);
-    // The auth service (SSO) is the identity source, but each department backend
-    // still verifies its OWN token — so obtain a native data token per backend
-    // BEFORE the module mounts (otherwise the first calls 401 → redirect loop).
-    // Auth passwords are seeded to match the backends, so the typed credentials
-    // bridge the user's own division AS THAT SAME PERSON (preserving "tugas saya"
-    // etc.); all-access users additionally borrow service accounts for the rest.
-    const bridged = await bridgeModuleToken(u.division, identifier, password);
-    if (!bridged) {
-      // Per-person bridge failed — typically the backend rotated that user's
-      // password away from the auth seed (e.g. Marketing team), or the backend
-      // has no matching account (Sales/Keuangan self-serve). Fall back to the
-      // division's service account so the dashboard still loads its data.
-      const svc = allAccessCreds(!!u.canApprove)[u.division];
-      await bridgeModuleToken(u.division, svc.id, svc.pass);
+    // ── ONE LOGIN ──
+    // Backends that verify the auth Ed25519 SSO token directly (via authmw+JWKS)
+    // need NO per-backend login — every division client just reuses THIS token.
+    // We point their token slots at it. Only the not-yet-migrated backends
+    // (marketing one-e + permit) still need a bridged native token, so those are
+    // the sole remaining per-backend logins (removed once they accept SSO too).
+    for (const div of SSO_DIVISIONS) {
+      localStorage.setItem(MODULE_BACKENDS[div].tokenKey, token);
     }
-    if (u.allAccess) await bridgeAllDivisions(!!u.canApprove);
+    if (u.allAccess) {
+      // All-access director: bridge only the divisions that don't accept SSO yet.
+      const creds = allAccessCreds(!!u.canApprove);
+      await Promise.all(NON_SSO_DIVISIONS.map((div) => bridgeModuleToken(div, creds[div].id, creds[div].pass)));
+    } else if (NON_SSO_DIVISIONS.includes(u.division)) {
+      // Single-division user on a not-yet-migrated backend → bridge as that person,
+      // falling back to the division's service account.
+      const bridged = await bridgeModuleToken(u.division, identifier, password);
+      if (!bridged) {
+        const svc = allAccessCreds(!!u.canApprove)[u.division];
+        await bridgeModuleToken(u.division, svc.id, svc.pass);
+      }
+    }
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(SESSION_KEY, JSON.stringify(u));
     setUser(u);
