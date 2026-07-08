@@ -405,9 +405,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const exp = token ? tokenExp(token) : null;
     if (exp !== null) {
       const ms = exp * 1000 - Date.now();
+      // setTimeout's delay is a 32-bit signed int: anything over ~24.8 days
+      // (2^31-1 ms) overflows and fires IMMEDIATELY — which, with a long-lived
+      // token (e.g. 30-day AUTH_ACCESS_TTL), would log the user out the instant
+      // they log in. So only schedule when the expiry is within range; a far
+      // expiry needs no timer (AUTH_EXPIRED_EVENT still ends a revoked session).
+      const MAX_TIMEOUT = 2147483647;
       if (ms <= 0) {
         logout();
-      } else {
+      } else if (ms + 500 <= MAX_TIMEOUT) {
         timer = setTimeout(logout, ms + 500); // small buffer past expiry
       }
     }
