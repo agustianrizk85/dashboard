@@ -80,12 +80,9 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
   const [error, setError] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Runtime API-key configuration (set from this UI, no server restart).
+  // AI key is set centrally in the Admin panel now — this only reads whether it's
+  // configured to show a pointer when it isn't.
   const [config, setConfig] = useState<{ configured: boolean; model: string } | null>(null);
-  const [showKeyForm, setShowKeyForm] = useState(false);
-  const [keyInput, setKeyInput] = useState("");
-  const [modelInput, setModelInput] = useState("");
-  const [savingKey, setSavingKey] = useState(false);
 
   const loadConfig = useCallback(async () => {
     try {
@@ -101,30 +98,6 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
   useEffect(() => {
     if (open && config === null) void loadConfig();
   }, [open, config, loadConfig]);
-
-  const saveKey = useCallback(async () => {
-    if (!keyInput.trim() || savingKey) return;
-    setSavingKey(true);
-    setError("");
-    try {
-      const token = localStorage.getItem(TOKEN_KEY);
-      const res = await fetch(AUTH_API + "/ai/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
-        body: JSON.stringify({ key: keyInput.trim(), model: modelInput.trim() }),
-      });
-      check401(res);
-      const body = (await res.json().catch(() => ({}))) as { configured?: boolean; model?: string; error?: string };
-      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
-      setConfig({ configured: !!body.configured, model: body.model || "" });
-      setShowKeyForm(false);
-      setKeyInput("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSavingKey(false);
-    }
-  }, [keyInput, modelInput, savingKey]);
 
   // Division derived from the URL — used when the page hasn't published richer
   // grounding, so the assistant still knows where the user is.
@@ -172,7 +145,7 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
 
   const grounded = grounding?.data != null;
   const where = grounding?.page ? `${grounding.division} · ${grounding.page}` : grounding?.division || routeDivision;
-  const needKey = showKeyForm || (config !== null && !config.configured);
+  const needKey = config !== null && !config.configured;
 
   return (
     <>
@@ -199,16 +172,6 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
               </div>
             </div>
             <div className="ai-head-act">
-              <button
-                className="ai-clear"
-                onClick={() => {
-                  setModelInput(config?.model || "");
-                  setShowKeyForm((v) => !v);
-                }}
-                title="Atur API key"
-              >
-                ⚙
-              </button>
               <button className="ai-clear" onClick={() => setTurns([])} title="Bersihkan percakapan">
                 ⟲
               </button>
@@ -218,36 +181,8 @@ function AiChatWidget({ grounding }: { grounding: Grounding | null }) {
           {needKey ? (
             <div className="ai-body">
               <div className="ai-keyform">
-                <b>Atur OpenRouter API Key</b>
-                <p>Asisten AI butuh API key OpenRouter. Key disimpan di server (auth), bukan di browser.</p>
-                <label>API Key</label>
-                <input
-                  type="password"
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="sk-or-v1-…"
-                  autoComplete="off"
-                />
-                <label>Model (opsional)</label>
-                <input
-                  value={modelInput}
-                  onChange={(e) => setModelInput(e.target.value)}
-                  placeholder="openai/gpt-oss-120b:free"
-                />
-                {error && <div className="ai-err">{error}</div>}
-                <div className="ai-keyform-act">
-                  <button className="save" onClick={() => void saveKey()} disabled={savingKey || !keyInput.trim()}>
-                    {savingKey ? "Menyimpan…" : "Simpan & Aktifkan"}
-                  </button>
-                  {config?.configured && (
-                    <button className="cancel" onClick={() => setShowKeyForm(false)}>
-                      Batal
-                    </button>
-                  )}
-                </div>
-                <a className="ai-keyform-link" href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">
-                  Dapatkan API key →
-                </a>
+                <b>AI belum dikonfigurasi</b>
+                <p>Kunci AI diatur terpusat oleh admin. Minta administrator menyetel kunci di <b>Panel Admin → 🔑 Kunci AI</b>. Setelah itu asisten langsung aktif untuk semua orang.</p>
               </div>
             </div>
           ) : (

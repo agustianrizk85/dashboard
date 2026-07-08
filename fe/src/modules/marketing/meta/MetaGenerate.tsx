@@ -96,14 +96,11 @@ export function MetaAiGenerate({ data, rangeLabel, onClose }: { data: MetaAds; r
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const started = useRef(false);
 
-  // ── Dynamic AI config: API key + model, all set at runtime (no restart) ──
+  // ── AI config: key is set centrally in the Admin panel. Here we only read
+  //    whether it's configured, and let the user pick a model per-run. ──
   const [configured, setConfigured] = useState<boolean | null>(null); // null = unknown/loading
   const [model, setModel] = useState(""); // selected model for this run ("" = backend default)
   const [models, setModels] = useState<string[]>([]); // fetched from Ollama
-  const [keyInput, setKeyInput] = useState("");
-  const [savingKey, setSavingKey] = useState(false);
-  const [cfgErr, setCfgErr] = useState("");
-  const [showCfg, setShowCfg] = useState(false);
 
   const authBase = AUTH_API.replace(/\/$/, "");
   const authHeaders = () => {
@@ -130,40 +127,12 @@ export function MetaAiGenerate({ data, rangeLabel, onClose }: { data: MetaAds; r
       setConfigured(!!b.configured);
       setModel((m) => m || b.model || "");
       if (b.configured) void loadModels();
-      else setShowCfg(true);
       return !!b.configured;
     } catch {
       setConfigured(false);
-      setShowCfg(true);
       return false;
     }
   }, [authBase, loadModels]);
-
-  const saveKey = useCallback(async () => {
-    if (!keyInput.trim() || savingKey) return;
-    setSavingKey(true);
-    setCfgErr("");
-    try {
-      const res = await fetch(authBase + "/ai/config", {
-        method: "PUT",
-        headers: authHeaders(),
-        body: JSON.stringify({ key: keyInput.trim(), model: model.trim() }),
-      });
-      const b = (await res.json().catch(() => ({}))) as { configured?: boolean; model?: string; error?: string };
-      if (!res.ok) throw new Error(b.error || `HTTP ${res.status}`);
-      setConfigured(!!b.configured);
-      setModel((m) => b.model || m);
-      setKeyInput("");
-      if (b.configured) {
-        void loadModels();
-        setShowCfg(false);
-      }
-    } catch (e) {
-      setCfgErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSavingKey(false);
-    }
-  }, [keyInput, model, savingKey, authBase, loadModels]);
 
   const run = useCallback(async () => {
     setBusy(true);
@@ -261,32 +230,15 @@ export function MetaAiGenerate({ data, rangeLabel, onClose }: { data: MetaAds; r
             ))}
           </datalist>
         </div>
-        <button className="meta-ai-cfg" onClick={() => setShowCfg((v) => !v)} title="Atur API key Ollama">
-          🔑 Key
-        </button>
         <button className="meta-ai-rerun" onClick={() => void run()} disabled={busy || configured === false}>
           {busy ? "Menjalankan…" : "⟳ Jalankan ulang"}
         </button>
       </div>
 
-      {/* Dynamic API-key config (Ollama Cloud) */}
-      {(showCfg || configured === false) && (
+      {/* AI key is set centrally in the Admin panel now. */}
+      {configured === false && (
         <div className="meta-ai-keybar">
-          <span className="mai-key-status">
-            {configured === false ? "⚠ API key Ollama belum diset." : configured ? "✓ Key terpasang." : "Memeriksa…"} Set/ubah key (runtime, tanpa restart):
-          </span>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="Tempel Ollama Cloud API key…"
-            onKeyDown={(e) => { if (e.key === "Enter") void saveKey(); }}
-            disabled={savingKey}
-          />
-          <button onClick={() => void saveKey()} disabled={savingKey || !keyInput.trim()}>
-            {savingKey ? "Menyimpan…" : "Simpan & muat model"}
-          </button>
-          {cfgErr && <span className="mai-key-err">{cfgErr}</span>}
+          <span className="mai-key-status">⚠ AI belum dikonfigurasi. Minta admin menyetel kunci di <b>Panel Admin → 🔑 Kunci AI</b>.</span>
         </div>
       )}
 

@@ -264,6 +264,10 @@ body {
 .divtab-approvals:hover { color: #cdf57e; background: rgba(179, 236, 85, .12); }
 .divtab-approvals.on { background: var(--bg); color: var(--green-700); }
 
+.divtab-admin { color: #ffd27a; font-weight: 700; margin-left: auto; }
+.divtab-admin:hover { color: #ffe0a3; background: rgba(255, 210, 122, .12); }
+.divtab-admin.on { background: var(--bg); color: #b8860b; }
+
 /* Cross-division finance ringkasan strip on the director's landing. */
 .fin-strip {
   display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;

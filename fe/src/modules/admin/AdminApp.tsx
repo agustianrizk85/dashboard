@@ -4,7 +4,6 @@ import { useAuth } from "@/auth/AuthContext";
 import "./admin.css";
 
 const AUTH = ((import.meta.env.VITE_AUTH_API as string) ?? "http://localhost:8090/api").replace(/\/$/, "");
-const SHEETS = ((import.meta.env.VITE_SHEETS_API as string) ?? "http://localhost:8091").replace(/\/$/, "");
 const TOKEN_KEY = "gp_dashboard_token";
 
 const DEPTS = [
@@ -46,8 +45,12 @@ export default function AdminApp() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
-  const [keyStatus, setKeyStatus] = useState<{ configured: boolean; masked: string }>({ configured: false, masked: "" });
+  // Central AI key = the ONE Ollama key used by every AI feature (Generate AI,
+  // Asisten AI, WhatsApp auto-reply). Set here → auth persists it (data/ollama.key)
+  // → all services read it. Set once, no per-user pasting.
+  const [aiCfg, setAiCfg] = useState<{ configured: boolean; model: string }>({ configured: false, model: "" });
   const [newKey, setNewKey] = useState("");
+  const [newModel, setNewModel] = useState("");
   const [keyMsg, setKeyMsg] = useState("");
 
   const loadUsers = useCallback(async () => {
@@ -62,19 +65,23 @@ export default function AdminApp() {
     }
   }, []);
 
-  const loadKey = useCallback(async () => {
+  const loadAiCfg = useCallback(async () => {
     try {
-      const r = await fetch(`${SHEETS}/api/ai/key`);
-      if (r.ok) setKeyStatus(await r.json());
+      const r = await fetch(`${AUTH}/ai/config`, { headers: authHeaders() });
+      if (r.ok) {
+        const j = await r.json();
+        setAiCfg({ configured: !!j.configured, model: j.model ?? "" });
+        setNewModel((m) => m || j.model || "");
+      }
     } catch {
-      /* sheets-api offline — ignore */
+      /* auth offline — ignore */
     }
   }, []);
 
   useEffect(() => {
     void loadUsers();
-    void loadKey();
-  }, [loadUsers, loadKey]);
+    void loadAiCfg();
+  }, [loadUsers, loadAiCfg]);
 
   const setRole = (code: string, role: string) =>
     setRoles((r) => {
@@ -117,19 +124,19 @@ export default function AdminApp() {
     }
   };
 
-  const saveKey = async () => {
+  const saveAiKey = async () => {
     setKeyMsg("");
     try {
-      const r = await fetch(`${SHEETS}/api/ai/key`, {
+      const r = await fetch(`${AUTH}/ai/config`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: newKey.trim() }),
+        headers: authHeaders(),
+        body: JSON.stringify({ key: newKey.trim(), model: newModel.trim() }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-      setKeyStatus(j);
+      setAiCfg({ configured: !!j.configured, model: j.model ?? "" });
       setNewKey("");
-      setKeyMsg(j.configured ? "✓ Key tersimpan terpusat" : "✓ Key dihapus");
+      setKeyMsg(j.configured ? "✓ Key AI tersimpan terpusat" : "✓ Key diperbarui");
     } catch (e) {
       setKeyMsg("⚠ " + (e instanceof Error ? e.message : String(e)));
     }
@@ -209,20 +216,22 @@ export default function AdminApp() {
       {tab === "ai" && (
         <div className="adm-grid one">
           <section className="adm-card">
-            <h2>🔑 OpenRouter API Key (terpusat)</h2>
+            <h2>🔑 Kunci AI (Ollama) — terpusat</h2>
             <p className="adm-note">
-              Disetel <b>sekali</b> di sini, disimpan di server, dipakai semua user untuk fitur <b>AI Import</b> — tak perlu lagi tiap orang tempel key di browser.
+              Disetel <b>sekali</b> di sini, disimpan di server, dipakai <b>SEMUA</b> fitur AI: ✨ Generate AI di tiap dashboard, Asisten AI, dan Auto-reply WhatsApp. Tak perlu lagi tiap orang menempel key di browser.
             </p>
             <div className="adm-keystat">
-              Status: {keyStatus.configured ? <span className="adm-ok inline">✓ aktif ({keyStatus.masked})</span> : <span className="adm-err inline">belum diset</span>}
+              Status: {aiCfg.configured
+                ? <span className="adm-ok inline">✓ aktif{aiCfg.model ? ` · model ${aiCfg.model}` : ""}</span>
+                : <span className="adm-err inline">belum diset</span>}
             </div>
-            <div className="adm-f"><span>API Key baru</span><input type="password" value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="sk-or-v1-…" /></div>
+            <div className="adm-f"><span>API Key Ollama</span><input type="password" value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="tempel Ollama Cloud API key…" /></div>
+            <div className="adm-f"><span>Model <small>(opsional)</small></span><input value={newModel} onChange={(e) => setNewModel(e.target.value)} placeholder="glm-5.2:cloud" /></div>
             <div className="adm-keyrow">
-              <button className="adm-btn" disabled={!newKey.trim()} onClick={saveKey}>Simpan Key</button>
-              <button className="adm-btn ghost" onClick={() => { setNewKey(""); void fetch(`${SHEETS}/api/ai/key`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: "" }) }).then(() => loadKey()); }}>Hapus Key</button>
+              <button className="adm-btn" disabled={!newKey.trim()} onClick={saveAiKey}>Simpan Key</button>
             </div>
             {keyMsg && <div className={keyMsg.startsWith("✓") ? "adm-ok" : "adm-err"}>{keyMsg}</div>}
-            <p className="adm-note small">Buat gratis di <b>openrouter.ai → Keys</b>. Model default: <code>openai/gpt-oss-120b:free</code>.</p>
+            <p className="adm-note small">Dapatkan key di <b>ollama.com</b>. Satu key ini berlaku untuk seluruh dashboard + auto-reply WhatsApp.</p>
           </section>
         </div>
       )}

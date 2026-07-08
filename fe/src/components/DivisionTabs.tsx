@@ -12,6 +12,8 @@ const TABS: { path: string; label: string }[] = [
   { path: "/orchestrator", label: "Orchestrator AI" },
   // Cross-division approval inbox (directors only). Set apart visually.
   { path: "/approvals", label: "Persetujuan" },
+  // Admin panel: user management + the ONE central AI key. Set apart visually.
+  { path: "/admin", label: "⚙ Admin" },
 ];
 
 /**
@@ -28,7 +30,7 @@ export function DivisionTabs() {
     <div className="divtabs">
       {TABS.map((t) => {
         const active = location.pathname.startsWith(t.path);
-        const accent = t.path === "/approvals" ? "divtab-approvals" : t.path === "/orchestrator" ? "divtab-orchestrator" : "";
+        const accent = t.path === "/approvals" ? "divtab-approvals" : t.path === "/orchestrator" ? "divtab-orchestrator" : t.path === "/admin" ? "divtab-admin" : "";
         return (
           <button
             key={t.path}

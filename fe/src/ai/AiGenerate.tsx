@@ -77,13 +77,10 @@ function AiGeneratePanel({ division, onClose }: { division: DivKey; onClose: () 
   const [noData, setNoData] = useState(false);
   const started = useRef(false);
 
+  // AI key is set centrally in the Admin panel; we only read configured + model.
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [model, setModel] = useState("");
   const [models, setModels] = useState<string[]>([]);
-  const [keyInput, setKeyInput] = useState("");
-  const [savingKey, setSavingKey] = useState(false);
-  const [cfgErr, setCfgErr] = useState("");
-  const [showCfg, setShowCfg] = useState(false);
 
   const authBase = AUTH_API.replace(/\/$/, "");
   const authHeaders = useCallback((): HeadersInit => {
@@ -116,32 +113,6 @@ function AiGeneratePanel({ division, onClose }: { division: DivKey; onClose: () 
       return false;
     }
   }, [authBase, authHeaders, loadModels]);
-
-  const saveKey = useCallback(async () => {
-    if (!keyInput.trim() || savingKey) return;
-    setSavingKey(true);
-    setCfgErr("");
-    try {
-      const res = await fetch(authBase + "/ai/config", {
-        method: "PUT",
-        headers: authHeaders(),
-        body: JSON.stringify({ key: keyInput.trim(), model: model.trim() }),
-      });
-      const b = (await res.json().catch(() => ({}))) as { configured?: boolean; model?: string; error?: string };
-      if (!res.ok) throw new Error(b.error || `HTTP ${res.status}`);
-      setConfigured(!!b.configured);
-      setModel((m) => b.model || m);
-      setKeyInput("");
-      if (b.configured) {
-        void loadModels();
-        setShowCfg(false);
-      }
-    } catch (e) {
-      setCfgErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSavingKey(false);
-    }
-  }, [keyInput, model, savingKey, authBase, authHeaders, loadModels]);
 
   const run = useCallback(async () => {
     setBusy(true);
@@ -259,9 +230,6 @@ function AiGeneratePanel({ division, onClose }: { division: DivKey; onClose: () 
               ))}
             </datalist>
           </div>
-          <button className="aig-cfg" onClick={() => setShowCfg((v) => !v)} title="Atur API key Ollama">
-            🔑
-          </button>
           <button className="aig-rerun" onClick={() => void run()} disabled={busy || configured === false}>
             {busy ? "Menjalankan…" : "⟳ Jalankan"}
           </button>
@@ -270,23 +238,9 @@ function AiGeneratePanel({ division, onClose }: { division: DivKey; onClose: () 
           </button>
         </div>
 
-        {(showCfg || configured === false) && (
+        {configured === false && (
           <div className="aig-keybar">
-            <span className="aig-key-status">
-              {configured === false ? "⚠ API key Ollama belum diset." : configured ? "✓ Key terpasang." : "Memeriksa…"} Set/ubah key (runtime):
-            </span>
-            <input
-              type="password"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="Tempel Ollama Cloud API key…"
-              onKeyDown={(e) => { if (e.key === "Enter") void saveKey(); }}
-              disabled={savingKey}
-            />
-            <button onClick={() => void saveKey()} disabled={savingKey || !keyInput.trim()}>
-              {savingKey ? "Menyimpan…" : "Simpan & muat model"}
-            </button>
-            {cfgErr && <span className="aig-key-err">{cfgErr}</span>}
+            <span className="aig-key-status">⚠ AI belum dikonfigurasi. Minta admin menyetel kunci di <b>Panel Admin → 🔑 Kunci AI</b>.</span>
           </div>
         )}
 
