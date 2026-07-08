@@ -315,4 +315,18 @@ export const metaApi = {
     api
       .post<{ ok: boolean; wamId: string }>("/meta/whatsapp/send", { phone_number_id: phoneNumberId, to, text })
       .then((r) => r.data),
+
+  // WhatsApp AI auto-reply config (toggle/model/prompt). `configured` = the one
+  // shared Ollama key is set in the dashboard AI config.
+  waAIConfig: () => api.get<WAAIConfig>("/meta/whatsapp/ai-config").then((r) => r.data),
+  waSaveAIConfig: (body: { autoReply?: boolean; model?: string; prompt?: string }) =>
+    api.put<WAAIConfig>("/meta/whatsapp/ai-config", body).then((r) => r.data),
 };
+
+export interface WAAIConfig {
+  /** true = the shared Ollama key is set (AI can actually run). */
+  configured: boolean;
+  autoReply: boolean;
+  model: string;
+  prompt: string;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { metaApi, META_RANGES, waRealtimeURL, igRealtimeURL } from "./metaApi";
-import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage } from "./metaApi";
+import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage, WAAIConfig } from "./metaApi";
 import { MetaAiGenerate } from "./MetaGenerate";
 import "./meta.css";
 
@@ -651,12 +651,105 @@ function DailyChart({ rows }: { rows: MetaDailyRow[] }) {
 
 /* ===================== WHATSAPP ===================== */
 const QUALITY: Record<string, string> = { GREEN: "ok", YELLOW: "warn", RED: "bad" };
+/* ---- Auto-reply AI panel: on/off toggle + model, no restart. The single
+   shared Ollama key is set in the dashboard Admin (AI); here we only flip the
+   per-WhatsApp toggle + model/prompt persisted by metaapi. ---- */
+function AutoReplyPanel() {
+  const [cfg, setCfg] = useState<WAAIConfig | null>(null);
+  const [model, setModel] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    metaApi
+      .waAIConfig()
+      .then((c) => {
+        setCfg(c);
+        setModel(c.model);
+        setPrompt(c.prompt);
+      })
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+  }, []);
+
+  const save = async (patch: { autoReply?: boolean; model?: string; prompt?: string }) => {
+    setSaving(true);
+    setErr("");
+    try {
+      const c = await metaApi.waSaveAIConfig(patch);
+      setCfg(c);
+      setModel(c.model);
+      setPrompt(c.prompt);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!cfg) return null;
+  const on = cfg.autoReply;
+  return (
+    <section className="meta-card meta-wa-ai">
+      <div className="meta-wa-ai-top">
+        <div>
+          <div className="meta-wa-ai-title">🤖 Auto-reply AI (WhatsApp)</div>
+          <div className="meta-wa-ai-sub">
+            {cfg.configured
+              ? `Balas pesan masuk otomatis pakai AI · model ${cfg.model || "glm-5.2:cloud"}`
+              : "⚠️ Kunci AI belum diset — buka Admin → AI untuk menyetel kunci Ollama."}
+          </div>
+        </div>
+        <button
+          type="button"
+          className={"meta-switch " + (on ? "on" : "")}
+          disabled={saving || !cfg.configured}
+          onClick={() => save({ autoReply: !on })}
+          title={on ? "Matikan auto-reply" : "Nyalakan auto-reply"}
+        >
+          <span className="meta-switch-knob" />
+          <span className="meta-switch-label">{on ? "AKTIF" : "MATI"}</span>
+        </button>
+      </div>
+      <button type="button" className="meta-wa-ai-adv" onClick={() => setOpen((v) => !v)}>
+        {open ? "▾ Sembunyikan pengaturan" : "▸ Model & instruksi (opsional)"}
+      </button>
+      {open && (
+        <div className="meta-wa-ai-fields">
+          <label>
+            Model
+            <input
+              value={model}
+              placeholder="glm-5.2:cloud"
+              onChange={(e) => setModel(e.target.value)}
+              onBlur={() => model !== cfg.model && save({ model })}
+            />
+          </label>
+          <label>
+            Instruksi (system prompt)
+            <textarea
+              rows={4}
+              value={prompt}
+              placeholder="Kosongkan untuk pakai prompt CS properti bawaan."
+              onChange={(e) => setPrompt(e.target.value)}
+              onBlur={() => prompt !== cfg.prompt && save({ prompt })}
+            />
+          </label>
+        </div>
+      )}
+      {err && <div className="meta-wa-ai-err">{err}</div>}
+    </section>
+  );
+}
+
 export function WhatsAppView() {
   const { data, err, loading, reload } = useMeta<MetaWa>(metaApi.whatsapp);
   const wabas = data?.wabas ?? [];
   return (
     <div className="meta-wrap">
       <Shell loading={loading} err={err} reload={reload} notConfigured={data ? !data.configured : false}>
+        <AutoReplyPanel />
         {wabas.length === 0 && <div className="meta-empty">Belum ada WhatsApp Business Account.</div>}
         {wabas.map((w) => (
           <section className="meta-card" key={w.id}>
