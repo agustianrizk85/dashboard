@@ -81,21 +81,24 @@ export function Login() {
           {busy ? "Memproses…" : "Masuk"}
         </button>
 
-        <div className="login-hint">
-          <b>Direktur — semua divisi</b>: ceo@greenpark.id / ceo123 (overview) · dirops@greenpark.id / dirops123 (bisa approve)
-          <br />
-          <b>Perencanaan</b>: kadep / kadep123 · randi / randi123
-          <br />
-          <b>Legal &amp; Perizinan</b>: dirops@greenpark.id / dirops123 · legal@greenpark.id / legal123
-          <br />
-          <b>Marketing</b>: marketing@greenpark.id / kadep123 · akun tim per-orang (mis. ichsan@greenpark.id) — password dibagikan terpisah
-          <br />
-          <b>Sales</b>: sales@greenpark.id / sales123 (Control Tower)
-          <br />
-          <b>Keuangan</b>: keuangan@greenpark.id / keuangan123 (Akad & KPR)
-          <br />
-          <b>Teknik</b>: teknik@greenpark.id / teknik123 (Progres Pembangunan)
-        </div>
+        <details className="login-hint">
+          <summary>Akun demo per divisi</summary>
+          <div className="login-hint-body">
+            <b>Direktur — semua divisi</b>: ceo@greenpark.id / ceo123 (overview) · dirops@greenpark.id / dirops123 (bisa approve)
+            <br />
+            <b>Perencanaan</b>: kadep / kadep123 · randi / randi123
+            <br />
+            <b>Legal &amp; Perizinan</b>: dirops@greenpark.id / dirops123 · legal@greenpark.id / legal123
+            <br />
+            <b>Marketing</b>: marketing@greenpark.id / kadep123 · akun tim per-orang (mis. ichsan@greenpark.id) — password dibagikan terpisah
+            <br />
+            <b>Sales</b>: sales@greenpark.id / sales123 (Control Tower)
+            <br />
+            <b>Keuangan</b>: keuangan@greenpark.id / keuangan123 (Akad & KPR)
+            <br />
+            <b>Teknik</b>: teknik@greenpark.id / teknik123 (Progres Pembangunan)
+          </div>
+        </details>
       </form>
     </div>
   );

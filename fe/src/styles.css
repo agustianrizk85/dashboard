@@ -207,6 +207,12 @@ body {
 .login-btn:disabled { opacity: .55; cursor: not-allowed; }
 .login-hint { font-size: 11px; color: var(--ink-3); text-align: center; line-height: 1.7; }
 .login-hint b { color: var(--ink-2); }
+/* Collapsible demo-account hint (closed by default). */
+.login-hint > summary { cursor: pointer; font-weight: 600; color: var(--ink-2); list-style: none; padding: 4px 0; user-select: none; }
+.login-hint > summary::-webkit-details-marker { display: none; }
+.login-hint > summary::before { content: "▸ "; }
+.login-hint[open] > summary::before { content: "▾ "; }
+.login-hint-body { margin-top: 6px; }
 
 /* ---- All-access director's "3 dashboards" switch — rendered inside each
    module's tab bar, styled identically to the Perencanaan tabs so every
