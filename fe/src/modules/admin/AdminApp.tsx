@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import "./admin.css";
 
-const AUTH = ((import.meta.env.VITE_AUTH_API as string) ?? "http://localhost:8090/api").replace(/\/$/, "");
+// Match every other module's auth base: prod serves auth at "/api" (Apache
+// proxies it to auth-be). A localhost fallback here would "Failed to fetch" in
+// prod, so use "/api" like AiAssistant/AiGenerate/AuthContext.
+const AUTH = ((import.meta.env.VITE_AUTH_API as string) ?? "/api").replace(/\/$/, "");
 const TOKEN_KEY = "gp_dashboard_token";
 
 const DEPTS = [
