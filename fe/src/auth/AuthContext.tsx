@@ -164,11 +164,10 @@ const ALL_MODULE_TOKEN_KEYS = Object.values(MODULE_BACKENDS).map((m) => m.tokenK
 /** Divisions whose Go backend verifies the auth Ed25519 SSO token directly
  *  (authmw + JWKS) — so no per-backend bridge login is needed; each reuses the
  *  ONE dashboard token. Move a division here once its backend accepts SSO. */
-const SSO_DIVISIONS: Division[] = ["sales", "keuangan", "teknik", "perencanaan"];
+const SSO_DIVISIONS: Division[] = ["sales", "keuangan", "teknik", "perencanaan", "marketing"];
 /** Divisions whose backend still needs a bridged NATIVE token (not SSO yet):
- *  marketing (still the one-e backend) + permit. These are the only remaining
- *  per-backend logins; empty this list once they accept SSO too → one login. */
-const NON_SSO_DIVISIONS: Division[] = ["marketing", "permit"];
+ *  permit only. Empty this list once permit accepts SSO too → full one login. */
+const NON_SSO_DIVISIONS: Division[] = ["permit"];
 
 /** Dashboard usernames whose module backend expects a different identifier. */
 const API_ID_OVERRIDE: Record<string, string> = {
