@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
+import { ProjectsPanel } from "./ProjectsPanel";
 import "./admin.css";
 
 // Match every other module's auth base: prod serves auth at "/api" (Apache
@@ -39,7 +40,7 @@ const emptyNew = { username: "", name: "", email: "", password: "", super: false
 export default function AdminApp() {
   const nav = useNavigate();
   const { user } = useAuth();
-  const [tab, setTab] = useState<"users" | "ai">("users");
+  const [tab, setTab] = useState<"users" | "projects" | "ai">("users");
 
   const [users, setUsers] = useState<User[]>([]);
   const [uErr, setUErr] = useState("");
@@ -157,9 +158,12 @@ export default function AdminApp() {
         </div>
         <nav className="adm-tabs">
           <button className={tab === "users" ? "on" : ""} onClick={() => setTab("users")}>👤 Kelola User</button>
+          <button className={tab === "projects" ? "on" : ""} onClick={() => setTab("projects")}>🏗️ Proyek</button>
           <button className={tab === "ai" ? "on" : ""} onClick={() => setTab("ai")}>🔑 AI Key</button>
         </nav>
       </header>
+
+      {tab === "projects" && <ProjectsPanel />}
 
       {tab === "users" && (
         <div className="adm-grid">

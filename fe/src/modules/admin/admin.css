@@ -82,3 +82,28 @@
   .adm-top { gap: 10px; }
   .adm-title { min-width: 0; }
 }
+
+/* ---- Proyek panel ---- */
+.adm-projects { display: flex; flex-direction: column; gap: 12px; }
+.adm-proj-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .adm-proj-grid { grid-template-columns: 1fr; } }
+.adm-field { display: flex; flex-direction: column; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .05em; opacity: .8; margin-bottom: 12px; }
+.adm-field input[type="text"], .adm-field > input { background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 9px 11px; color: inherit; font: inherit; font-weight: 400; letter-spacing: normal; }
+.adm-check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 400; letter-spacing: normal; opacity: .95; cursor: pointer; padding: 3px 0; }
+.adm-check em { opacity: .55; font-style: normal; font-size: 12px; }
+.adm-check input { accent-color: #16a34a; }
+.adm-hint { font-size: 12px; font-weight: 400; letter-spacing: normal; opacity: .55; }
+.adm-proj-actions { display: flex; gap: 10px; margin-top: 6px; }
+.adm-proj-list { display: flex; flex-direction: column; gap: 10px; }
+.adm-proj-item { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 12px 14px; background: rgba(255,255,255,.03); }
+.adm-proj-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.adm-proj-btns { display: flex; gap: 10px; }
+.adm-link { background: none; border: none; color: #60a5fa; cursor: pointer; font-size: 12.5px; padding: 0; }
+.adm-link.danger { color: #f87171; }
+.adm-proj-note { font-size: 12.5px; opacity: .6; margin-top: 2px; }
+.adm-proj-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.adm-tag { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); }
+.adm-tag.wa { background: rgba(22,163,74,.15); border-color: rgba(22,163,74,.4); }
+.adm-tag.ig { background: rgba(217,70,160,.15); border-color: rgba(217,70,160,.4); }
+.adm-tag.sales { background: rgba(96,165,250,.12); border-color: rgba(96,165,250,.35); }
+.adm-btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,.2); }
