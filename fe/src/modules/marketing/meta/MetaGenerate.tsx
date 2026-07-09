@@ -43,10 +43,10 @@ type AgentState = { status: "idle" | "running" | "done" | "error"; output?: stri
 type Tone = "ok" | "warn" | "bad" | "neutral";
 type DashKpi = { label: string; value: string; note?: string; tone?: Tone };
 type DashSection = { heading: string; items: { title: string; detail?: string; tone?: Tone }[] };
-type Dash = { title?: string; kpis?: DashKpi[]; sections?: DashSection[] };
+export type Dash = { title?: string; kpis?: DashKpi[]; sections?: DashSection[] };
 
 /** Extract the first JSON object from model output (tolerating prose/fences). */
-function tryParseDash(output: string): Dash | null {
+export function tryParseDash(output: string): Dash | null {
   const i = output.indexOf("{");
   const j = output.lastIndexOf("}");
   if (i < 0 || j <= i) return null;
@@ -59,7 +59,7 @@ function tryParseDash(output: string): Dash | null {
 }
 
 /** Build a compact, token-bounded snapshot of the current Ads data for grounding. */
-function buildSnapshot(data: MetaAds, rangeLabel: string): string {
+export function buildSnapshot(data: MetaAds, rangeLabel: string): string {
   const t = data.totals;
   const camps = (data.campaigns ?? [])
     .slice()
@@ -318,7 +318,7 @@ function toBullets(text: string): string[] {
 /** Renders the immersive executive Meta Ads dashboard: real-data KPI hero +
  *  funnel + per-campaign bars, then the AI's synthesized insights (or, if the
  *  synthesis JSON is missing, insights derived from each expert's analysis). */
-function DashboardOutput({
+export function DashboardOutput({
   dash,
   data,
   rangeLabel,

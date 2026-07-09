@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { metaApi, META_RANGES, waRealtimeURL, igRealtimeURL } from "./metaApi";
 import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage, WAAIConfig } from "./metaApi";
 import { MetaAiGenerate } from "./MetaGenerate";
+import { DeepAnalysis } from "./DeepAnalysis";
 import { useProjects, ProjectBadge, ProjectFilter } from "./useProjects";
 import "./meta.css";
 
@@ -114,6 +115,7 @@ export function AdsView() {
   const [sort, setSort] = useState<SortKey>("spend");
   const [openId, setOpenId] = useState<string | null>(null); // campaign drill-down
   const [aiOn, setAiOn] = useState(false); // ✨ Generate AI overlay (PKPSICOV multi-agent)
+  const [deepOn, setDeepOn] = useState(false); // 🔬 Deep Analysis overlay (riset internet, maks 10 agent)
 
   const t = data?.totals;
   const accounts = data?.accounts ?? [];
@@ -194,15 +196,25 @@ export function AdsView() {
           <span className="meta-rangebar-gap" />
           <button
             className="meta-ai-gen"
-            onClick={() => setAiOn(true)}
+            onClick={() => { setDeepOn(false); setAiOn(true); }}
             disabled={!data || loading || (data ? !data.configured : true)}
             title="Jalankan panel ahli AI (PKPSICOV) untuk merombak dashboard iklan ini"
           >
             ✨ Generate AI
           </button>
+          <button
+            className="meta-ai-gen deep"
+            onClick={() => { setAiOn(false); setDeepOn(true); }}
+            disabled={!data || loading || (data ? !data.configured : true)}
+            title="Riset mendalam: maks 10 agent AI yang mencari sumber kredibel di internet (benchmark, pasar) lalu menyintesis solusi"
+          >
+            🔬 Deep Analysis
+          </button>
         </div>
 
-        {aiOn && data ? (
+        {deepOn && data ? (
+          <DeepAnalysis data={data} rangeLabel={rangeLabel} onClose={() => setDeepOn(false)} />
+        ) : aiOn && data ? (
           <MetaAiGenerate data={data} rangeLabel={rangeLabel} onClose={() => setAiOn(false)} />
         ) : (
         <>

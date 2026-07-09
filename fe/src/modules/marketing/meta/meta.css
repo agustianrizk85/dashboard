@@ -448,3 +448,38 @@
 .meta-proj-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(96,165,250,.14); border: 1px solid rgba(96,165,250,.35); color: #cfe0ff; }
 .meta-proj-badge em { font-style: normal; opacity: .7; }
 .ig-conv-proj { margin-top: 5px; }
+
+/* ---- Deep Analysis (riset internet multi-agent, maks 10 agent) ---- */
+.meta-ai-gen.deep {
+  border-color: #7c3aed;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+}
+.mai-deep-focus {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 16px; box-shadow: var(--shadow);
+}
+.mai-deep-focus label { font-size: 12px; font-weight: 700; white-space: nowrap; opacity: .8; }
+.mai-deep-focus input {
+  flex: 1; min-width: 200px; background: rgba(0,0,0,0.04); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; color: inherit; font: inherit; font-size: 13px;
+}
+.mai-steps { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+.mai-step {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(124,58,237,0.10); border: 1px solid rgba(124,58,237,0.30);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mai-step.fail { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); opacity: .8; }
+.mai-src-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.mai-src-chip {
+  font-size: 11px; padding: 2px 9px; border-radius: 999px; text-decoration: none;
+  color: inherit; background: rgba(37,99,235,0.10); border: 1px solid rgba(37,99,235,0.30);
+  max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mai-src-chip:hover { filter: brightness(1.1); text-decoration: underline; }
+.mai-src-list {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px 8px; box-shadow: var(--shadow);
+}
+.mai-src-list .mai-src-row { padding: 10px 0 4px; }
