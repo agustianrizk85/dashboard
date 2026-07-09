@@ -61,7 +61,16 @@ export function ProjectsPanel() {
         fetch(`${META}/meta/projects`, { headers: authHeaders() }).then((r) => r.json()),
         fetch(`${META}/meta/whatsapp`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
         fetch(`${META}/meta/instagram/accounts`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
-        fetch(`${AUTH}/admin/users`, { headers: authHeaders() }).then((r) => r.json()).catch(() => []),
+        // Sales pool = users of the sales/marketing depts. Uses the per-dept
+        // endpoint (any authed director can read it) — not the super-only
+        // /admin/users — so the picker isn't empty for a non-super director.
+        Promise.all(
+          ["sales", "marketing", "digitalmarketing"].map((d) =>
+            fetch(`${AUTH}/dept/${d}/users`, { headers: authHeaders() })
+              .then((r) => (r.ok ? r.json() : []))
+              .catch(() => []),
+          ),
+        ).then((lists) => lists.flatMap((x) => (Array.isArray(x) ? x : x.users ?? []))),
       ]);
       setProjects(pj.projects ?? []);
       // WA numbers: wabas[].phones[] → {id=phone_number_id, display_phone_number}
@@ -75,17 +84,17 @@ export function ProjectsPanel() {
       // IG accounts: {accounts:[{id=ig user id, username}]} (defensive on shape)
       const igArr = ig.accounts ?? ig.igAccounts ?? [];
       setIgOpts(igArr.filter((a: { id?: string }) => a.id).map((a: { id: string; username?: string }) => ({ ref: String(a.id), label: a.username ? "@" + a.username : String(a.id) })));
-      // Sales: unified-auth users with a marketing or sales role.
-      const arr: Array<{ email?: string; name?: string; username?: string; roles?: Record<string, string> }> = Array.isArray(us) ? us : us.users ?? [];
-      setUsers(
-        arr
-          .filter((u) => {
-            const r = u.roles ?? {};
-            return r.marketing || r.sales || r.digitalmarketing;
-          })
-          .map((u) => ({ email: (u.email || u.username || "").toLowerCase(), name: u.name || u.username || u.email || "" }))
-          .filter((u) => u.email),
-      );
+      // Sales pool: dedupe the merged dept users by e-mail.
+      const arr: Array<{ email?: string; name?: string; username?: string }> = Array.isArray(us) ? us : [];
+      const seen = new Set<string>();
+      const salesUsers: UserOpt[] = [];
+      for (const u of arr) {
+        const email = (u.email || u.username || "").toLowerCase();
+        if (!email || seen.has(email)) continue;
+        seen.add(email);
+        salesUsers.push({ email, name: u.name || u.username || email });
+      }
+      setUsers(salesUsers);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }

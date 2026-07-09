@@ -321,6 +321,9 @@ export const metaApi = {
   waAIConfig: () => api.get<WAAIConfig>("/meta/whatsapp/ai-config").then((r) => r.data),
   waSaveAIConfig: (body: { autoReply?: boolean; model?: string; prompt?: string }) =>
     api.put<WAAIConfig>("/meta/whatsapp/ai-config", body).then((r) => r.data),
+
+  // Projects (Proyek) — read-only here; managed from Admin.
+  projects: () => api.get<{ projects: MetaProject[] }>("/meta/projects").then((r) => r.data.projects ?? []),
 };
 
 export interface WAAIConfig {
@@ -329,4 +332,13 @@ export interface WAAIConfig {
   autoReply: boolean;
   model: string;
   prompt: string;
+}
+
+/** A project (Proyek) maps to the WA/IG accounts serving it + its sales team. */
+export interface MetaProject {
+  id: number;
+  name: string;
+  note: string;
+  accounts: { kind: "wa" | "ig"; ref: string; label: string }[] | null;
+  sales: { email: string; name: string }[] | null;
 }

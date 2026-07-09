@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { metaApi, META_RANGES, waRealtimeURL, igRealtimeURL } from "./metaApi";
 import type { MetaAds, MetaWa, MetaIg, MetaAdsDetail, MetaBreakdownRow, MetaDailyRow, MetaRange, MetaCampaign, MetaCampaignDetail, MetaCreative, IGConversation, IGMessage, WAConversation, WAMessage, WAAIConfig } from "./metaApi";
 import { MetaAiGenerate } from "./MetaGenerate";
+import { useProjects, ProjectBadge, ProjectFilter } from "./useProjects";
 import "./meta.css";
 
 /* ---------- helpers ---------- */
@@ -789,6 +790,12 @@ function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
   const { data, err, loading, reload } = useMeta(() => metaApi.waConversations());
   const convs: WAConversation[] = useMemo(() => data?.conversations ?? [], [data]);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const { projects, waMap } = useProjects();
+  const [projFilter, setProjFilter] = useState("");
+  const shownConvs = useMemo(
+    () => (projFilter ? convs.filter((c) => String(waMap[c.phoneNumberId]?.id ?? "") === projFilter) : convs),
+    [convs, projFilter, waMap],
+  );
   const [rev, setRev] = useState(0); // bumped by realtime WS push
   const open = convs.find((c) => `${c.phoneNumberId}:${c.contactWaId}` === openKey) ?? null;
 
@@ -826,23 +833,35 @@ function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
     <section className="meta-card">
       <Head
         title="Inbox WhatsApp"
-        tag={loading ? "memuat…" : `${convs.length} percakapan`}
+        tag={loading ? "memuat…" : `${shownConvs.length} percakapan`}
       />
+      {projects.length > 0 && (
+        <div className="meta-proj-bar">
+          <ProjectFilter projects={projects} kind="wa" value={projFilter} onChange={setProjFilter} />
+        </div>
+      )}
       {loading ? (
         <div className="meta-state">Memuat percakapan…</div>
       ) : err ? (
         <div className="meta-state error">{err}<button className="meta-retry" onClick={reload}>Coba lagi</button></div>
-      ) : convs.length === 0 ? (
+      ) : shownConvs.length === 0 ? (
         <div className="meta-empty" style={{ lineHeight: 1.6 }}>
-          Belum ada pesan masuk. Pesan WhatsApp masuk muncul di sini setelah <b>webhook</b> Cloud API
-          terhubung (subscribe field <code>messages</code> di Meta App, arahkan ke
-          <code> /api/meta/whatsapp/webhook</code>).
+          {projFilter ? (
+            "Tidak ada percakapan untuk proyek ini."
+          ) : (
+            <>
+              Belum ada pesan masuk. Pesan WhatsApp masuk muncul di sini setelah <b>webhook</b> Cloud API
+              terhubung (subscribe field <code>messages</code> di Meta App, arahkan ke
+              <code> /api/meta/whatsapp/webhook</code>).
+            </>
+          )}
         </div>
       ) : (
         <div className="ig-inbox">
           <div className="ig-list">
-            {convs.map((c) => {
+            {shownConvs.map((c) => {
               const key = `${c.phoneNumberId}:${c.contactWaId}`;
+              const proj = waMap[c.phoneNumberId];
               return (
                 <button key={key} className={"ig-conv" + (openKey === key ? " on" : "")} onClick={() => { setOpenKey(key); reload(); }}>
                   <div className="ig-conv-top">
@@ -851,6 +870,7 @@ function WAInbox({ wabas }: { wabas: MetaWa["wabas"] }) {
                   </div>
                   <div className="ig-conv-snip">{(c.lastDirection === "out" ? "Anda: " : "") + (c.lastSnippet || "—")}</div>
                   <div className="ig-conv-meta">{phoneLabel[c.phoneNumberId] || c.contactWaId} · {igTime(c.lastMessageAt)}</div>
+                  {proj && <div className="ig-conv-proj"><ProjectBadge project={proj} /></div>}
                 </button>
               );
             })}
