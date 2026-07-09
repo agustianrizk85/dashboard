@@ -17,13 +17,20 @@ export function useProjects() {
   return useMemo(() => {
     const waMap: Record<string, MetaProject> = {};
     const igMap: Record<string, MetaProject> = {};
+    // IG conversations expose the @username, not the ig_user_id — so also index
+    // by the account label's username so the inbox can match by that.
+    const igUserMap: Record<string, MetaProject> = {};
     for (const p of projects) {
       for (const a of p.accounts ?? []) {
         if (a.kind === "wa") waMap[a.ref] = p;
-        else if (a.kind === "ig") igMap[a.ref] = p;
+        else if (a.kind === "ig") {
+          igMap[a.ref] = p;
+          const uname = a.label.replace(/^@/, "").toLowerCase().trim();
+          if (uname) igUserMap[uname] = p;
+        }
       }
     }
-    return { projects, waMap, igMap };
+    return { projects, waMap, igMap, igUserMap };
   }, [projects]);
 }
 

@@ -1069,6 +1069,12 @@ function IGInbox() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [rev, setRev] = useState(0); // bumped by realtime WS push (IG webhook)
   const open = convs.find((c) => c.id === openId) ?? null;
+  const { projects, igUserMap } = useProjects();
+  const [projFilter, setProjFilter] = useState("");
+  const shownConvs = useMemo(
+    () => (projFilter ? convs.filter((c) => String(igUserMap[(c.igUser || "").toLowerCase()]?.id ?? "") === projFilter) : convs),
+    [convs, projFilter, igUserMap],
+  );
 
   // Realtime: metaapi's IG webhook pushes a rev bump over WebSocket whenever a new
   // DM lands → refetch the list (the open thread refetches via its rev prop).
@@ -1096,8 +1102,13 @@ function IGInbox() {
     <section className="meta-card">
       <Head
         title="Inbox Instagram (DM)"
-        tag={data?.limited ? "akses terbatas" : `${convs.length} percakapan${data && data.accounts ? ` · ${data.accounts} akun` : ""}`}
+        tag={data?.limited ? "akses terbatas" : `${shownConvs.length} percakapan${data && data.accounts ? ` · ${data.accounts} akun` : ""}`}
       />
+      {projects.length > 0 && (
+        <div className="meta-proj-bar">
+          <ProjectFilter projects={projects} kind="ig" value={projFilter} onChange={setProjFilter} />
+        </div>
+      )}
 
       {loading ? (
         <div className="meta-state">Memuat percakapan…</div>
@@ -1110,12 +1121,14 @@ function IGInbox() {
           <b> Advanced Access</b>. Pesan dari akun yang punya peran di app tetap bisa diuji.
           <div className="muted" style={{ fontSize: 10, marginTop: 6 }}>Detail Meta: {data.limited}</div>
         </div>
-      ) : convs.length === 0 ? (
-        <div className="meta-empty">Belum ada percakapan.</div>
+      ) : shownConvs.length === 0 ? (
+        <div className="meta-empty">{projFilter ? "Tidak ada percakapan untuk proyek ini." : "Belum ada percakapan."}</div>
       ) : (
         <div className="ig-inbox">
           <div className="ig-list">
-            {convs.map((c) => (
+            {shownConvs.map((c) => {
+              const proj = igUserMap[(c.igUser || "").toLowerCase()];
+              return (
               <button
                 key={c.id}
                 className={"ig-conv" + (openId === c.id ? " on" : "")}
@@ -1127,8 +1140,10 @@ function IGInbox() {
                 </div>
                 <div className="ig-conv-snip">{c.snippet || "—"}</div>
                 <div className="ig-conv-meta">@{c.igUser} · {igTime(c.updatedTime)}</div>
+                {proj && <div className="ig-conv-proj"><ProjectBadge project={proj} /></div>}
               </button>
-            ))}
+              );
+            })}
           </div>
           <div className="ig-thread-pane">
             {open ? <IGThread conv={open} rev={rev} /> : <div className="meta-empty">Pilih percakapan di kiri.</div>}
