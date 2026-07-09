@@ -17,7 +17,7 @@ function authHeaders(): Record<string, string> {
 }
 
 interface Acct {
-  kind: "wa" | "ig";
+  kind: "wa" | "ig" | "ad";
   ref: string;
   label: string;
 }
@@ -41,13 +41,14 @@ interface UserOpt {
   name: string;
 }
 
-const emptyDraft = { id: 0, name: "", note: "", wa: new Set<string>(), ig: new Set<string>(), sales: new Set<string>() };
-type Draft = { id: number; name: string; note: string; wa: Set<string>; ig: Set<string>; sales: Set<string> };
+const emptyDraft = { id: 0, name: "", note: "", wa: new Set<string>(), ig: new Set<string>(), ad: new Set<string>(), sales: new Set<string>() };
+type Draft = { id: number; name: string; note: string; wa: Set<string>; ig: Set<string>; ad: Set<string>; sales: Set<string> };
 
 export function ProjectsPanel() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [waOpts, setWaOpts] = useState<Opt[]>([]);
   const [igOpts, setIgOpts] = useState<Opt[]>([]);
+  const [adOpts, setAdOpts] = useState<Opt[]>([]);
   const [users, setUsers] = useState<UserOpt[]>([]);
   const [draft, setDraft] = useState<Draft>({ ...emptyDraft });
   const [err, setErr] = useState("");
@@ -57,10 +58,11 @@ export function ProjectsPanel() {
   const load = useCallback(async () => {
     setErr("");
     try {
-      const [pj, wa, ig, us] = await Promise.all([
+      const [pj, wa, ig, conns, us] = await Promise.all([
         fetch(`${META}/meta/projects`, { headers: authHeaders() }).then((r) => r.json()),
         fetch(`${META}/meta/whatsapp`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
         fetch(`${META}/meta/instagram/accounts`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
+        fetch(`${META}/meta/connections`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
         // Sales pool = users of the sales/marketing depts. Uses the per-dept
         // endpoint (any authed director can read it) — not the super-only
         // /admin/users — so the picker isn't empty for a non-super director.
@@ -84,6 +86,17 @@ export function ProjectsPanel() {
       // IG accounts: {accounts:[{id=ig user id, username}]} (defensive on shape)
       const igArr = ig.accounts ?? ig.igAccounts ?? [];
       setIgOpts(igArr.filter((a: { id?: string }) => a.id).map((a: { id: string; username?: string }) => ({ ref: String(a.id), label: a.username ? "@" + a.username : String(a.id) })));
+      // Ad accounts: one per connection (its pinned ad_account_id).
+      const connArr = conns.connections ?? [];
+      const adSeen = new Set<string>();
+      const adList: Opt[] = [];
+      for (const cn of connArr as Array<{ label?: string; ad_account_id?: string; meta_user_name?: string }>) {
+        const ref = (cn.ad_account_id || "").replace(/^act_/, "");
+        if (!ref || adSeen.has(ref)) continue;
+        adSeen.add(ref);
+        adList.push({ ref, label: `${cn.label || cn.meta_user_name || "Akun"} · act_${ref}` });
+      }
+      setAdOpts(adList);
       // Sales pool: dedupe the merged dept users by e-mail.
       const arr: Array<{ email?: string; name?: string; username?: string }> = Array.isArray(us) ? us : [];
       const seen = new Set<string>();
@@ -112,11 +125,12 @@ export function ProjectsPanel() {
       note: p.note ?? "",
       wa: new Set((p.accounts ?? []).filter((a) => a.kind === "wa").map((a) => a.ref)),
       ig: new Set((p.accounts ?? []).filter((a) => a.kind === "ig").map((a) => a.ref)),
+      ad: new Set((p.accounts ?? []).filter((a) => a.kind === "ad").map((a) => a.ref)),
       sales: new Set((p.sales ?? []).map((s) => s.email)),
     });
   };
 
-  const toggle = (set: "wa" | "ig" | "sales", key: string) =>
+  const toggle = (set: "wa" | "ig" | "ad" | "sales", key: string) =>
     setDraft((d) => {
       const next = new Set(d[set]);
       next.has(key) ? next.delete(key) : next.add(key);
@@ -134,6 +148,7 @@ export function ProjectsPanel() {
     const accounts: Acct[] = [
       ...[...draft.wa].map((ref) => ({ kind: "wa" as const, ref, label: waOpts.find((o) => o.ref === ref)?.label ?? ref })),
       ...[...draft.ig].map((ref) => ({ kind: "ig" as const, ref, label: igOpts.find((o) => o.ref === ref)?.label ?? ref })),
+      ...[...draft.ad].map((ref) => ({ kind: "ad" as const, ref, label: adOpts.find((o) => o.ref === ref)?.label ?? ref })),
     ];
     const sales: Sales[] = [...draft.sales].map((email) => ({ email, name: users.find((u) => u.email === email)?.name ?? email }));
     try {
@@ -204,6 +219,16 @@ export function ProjectsPanel() {
           </div>
 
           <div className="adm-field">
+            AKUN IKLAN (untuk filter Ads)
+            {adOpts.length === 0 && <span className="adm-hint">Belum ada akun iklan terhubung.</span>}
+            {adOpts.map((o) => (
+              <label key={o.ref} className="adm-check">
+                <input type="checkbox" checked={draft.ad.has(o.ref)} onChange={() => toggle("ad", o.ref)} /> {o.label}
+              </label>
+            ))}
+          </div>
+
+          <div className="adm-field">
             TIM SALES
             {users.length === 0 && <span className="adm-hint">Belum ada user marketing/sales.</span>}
             {users.map((u) => (
@@ -243,7 +268,7 @@ export function ProjectsPanel() {
                 <div className="adm-proj-tags">
                   {(p.accounts ?? []).map((a, i) => (
                     <span key={i} className={"adm-tag " + a.kind}>
-                      {a.kind === "wa" ? "📱" : "📷"} {a.label}
+                      {a.kind === "wa" ? "📱" : a.kind === "ig" ? "📷" : "💰"} {a.label}
                     </span>
                   ))}
                   {(p.sales ?? []).map((s, i) => (

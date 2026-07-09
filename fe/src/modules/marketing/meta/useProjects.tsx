@@ -55,7 +55,7 @@ export function ProjectFilter({
   onChange,
 }: {
   projects: MetaProject[];
-  kind: "wa" | "ig";
+  kind: "wa" | "ig" | "ad";
   value: string;
   onChange: (v: string) => void;
 }) {

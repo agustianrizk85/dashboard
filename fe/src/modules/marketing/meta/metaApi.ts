@@ -278,11 +278,17 @@ export interface WAMessage {
   timestamp: string;
 }
 
-const rq = (range?: MetaRange) => (range ? `?range=${range}` : "");
+/** Build "?k=v&…" from the defined string values only. */
+const qs = (o: Record<string, string | undefined>) => {
+  const p = Object.entries(o)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v as string)}`);
+  return p.length ? "?" + p.join("&") : "";
+};
 
 export const metaApi = {
-  ads: (range?: MetaRange) => api.get<MetaAds>("/meta/ads" + rq(range)).then((r) => r.data),
-  adsDetail: (range?: MetaRange) => api.get<MetaAdsDetail>("/meta/ads/detail" + rq(range)).then((r) => r.data),
+  ads: (range?: MetaRange, account?: string) => api.get<MetaAds>("/meta/ads" + qs({ range, account })).then((r) => r.data),
+  adsDetail: (range?: MetaRange, account?: string) => api.get<MetaAdsDetail>("/meta/ads/detail" + qs({ range, account })).then((r) => r.data),
   adsCampaign: (id: string, range?: MetaRange) =>
     api
       .get<MetaCampaignDetail>(`/meta/ads/campaign?id=${encodeURIComponent(id)}${range ? `&range=${range}` : ""}`)
@@ -339,6 +345,6 @@ export interface MetaProject {
   id: number;
   name: string;
   note: string;
-  accounts: { kind: "wa" | "ig"; ref: string; label: string }[] | null;
+  accounts: { kind: "wa" | "ig" | "ad"; ref: string; label: string }[] | null;
   sales: { email: string; name: string }[] | null;
 }

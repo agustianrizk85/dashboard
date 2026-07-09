@@ -95,8 +95,16 @@ function projectOf(name: string): string {
 export function AdsView() {
   const [range, setRange] = useState<MetaRange>("30d");
   const rangeLabel = META_RANGES.find((r) => r.key === range)?.label ?? "";
-  const { data, err, loading, reload } = useMeta<MetaAds>(() => metaApi.ads(range), [range]);
-  const detail = useMeta<MetaAdsDetail>(() => metaApi.adsDetail(range), [range]);
+  // Registered-project scope: filters the whole Ads view to the ad-account(s)
+  // linked to the chosen project (Admin → Proyek). Empty = all accounts.
+  const { projects: regProjects } = useProjects();
+  const [regProj, setRegProj] = useState("");
+  const account = useMemo(() => {
+    const p = regProjects.find((x) => String(x.id) === regProj);
+    return p ? (p.accounts ?? []).filter((a) => a.kind === "ad").map((a) => a.ref).join(",") : "";
+  }, [regProjects, regProj]);
+  const { data, err, loading, reload } = useMeta<MetaAds>(() => metaApi.ads(range, account || undefined), [range, account]);
+  const detail = useMeta<MetaAdsDetail>(() => metaApi.adsDetail(range, account || undefined), [range, account]);
   const dt = detail.data;
 
   const [acctFilter, setAcctFilter] = useState<string | null>(null);
@@ -182,6 +190,7 @@ export function AdsView() {
               {r.label}
             </button>
           ))}
+          <ProjectFilter projects={regProjects} kind="ad" value={regProj} onChange={setRegProj} />
           <span className="meta-rangebar-gap" />
           <button
             className="meta-ai-gen"
