@@ -32,5 +32,9 @@ Dipakai bersama SKILL Deep Analysis saat agent mencari data di internet.
 - Inline singkat: `(sumber: businesshelp.meta.com, 2026)` atau `(sumber: BI, Feb 2026)`.
 - Bila dua sumber bertentangan, tampilkan keduanya dan jelaskan mana yang lebih
   dipercaya dan mengapa.
-- Bila TIDAK menemukan sumber yang layak: tulis eksplisit "benchmark eksternal
-  tidak ditemukan — memakai baseline internal" — itu jawaban yang benar, bukan kegagalan.
+- Bila sumber spesifik tidak ditemukan: JANGAN langsung jatuh ke baseline
+  internal — jalankan dulu seluruh tangga eskalasi di SKILL Deep Analysis
+  (variasi istilah → bahasa Inggris → perluas cakupan → pivot sudut data).
+  Baseline internal tanpa satu pun sumber terbuka hanya boleh SETELAH semua
+  eskalasi habis, dan wajib mencantumkan strategi pencarian yang sudah dicoba
+  + sumber relevan terdekat yang berhasil dibuka.

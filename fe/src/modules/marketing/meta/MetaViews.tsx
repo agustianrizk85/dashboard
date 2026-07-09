@@ -206,7 +206,7 @@ export function AdsView() {
             className="meta-ai-gen deep"
             onClick={() => { setAiOn(false); setDeepOn(true); }}
             disabled={!data || loading || (data ? !data.configured : true)}
-            title="Riset mendalam: maks 10 agent AI yang mencari sumber kredibel di internet (benchmark, pasar) lalu menyintesis solusi"
+            title="Riset mendalam: maks 20 agent AI yang gigih mencari sumber kredibel di internet (benchmark, pasar) lalu menyintesis solusi"
           >
             🔬 Deep Analysis
           </button>

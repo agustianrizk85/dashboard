@@ -22,16 +22,36 @@ bukan dari panjang jawaban.
 
 ## 2. Disiplin penggunaan tools (search & open)
 
-- **Cari secukupnya, bukan sebanyaknya.** Maksimal langkah tool terbatas —
-  rencanakan query sebelum memakai. Query yang baik: spesifik, ada tahun,
+- **Rencanakan query sebelum memakai.** Query yang baik: spesifik, ada tahun,
   ada konteks Indonesia. Contoh: `benchmark CPM Meta Ads real estate Indonesia 2026`,
   `suku bunga KPR BI rate 2026`, `tren pencarian rumah subsidi jabodetabek`.
-- **Buka (open) hanya halaman yang paling menjanjikan** dari hasil search —
-  jangan buka semua. Prioritaskan sumber kredibel (lihat SKILL: Sumber Kredibel).
+- **Buka (open) halaman yang paling menjanjikan** dari hasil search —
+  prioritaskan sumber kredibel (lihat SKILL: Sumber Kredibel). Bila satu URL
+  gagal dibuka, buka hasil lain — jangan menyerah pada satu halaman.
 - **Ekstrak angka + tanggal publikasi** dari halaman yang dibuka. Data tanpa
   tahun hampir tak berguna untuk benchmark.
-- Jika search/open gagal atau hasil tidak relevan, JANGAN mengarang isi sumber.
-  Lanjutkan analisis dari data internal dan tandai bagian yang tak terverifikasi.
+- Jika hasil tidak relevan, JANGAN mengarang isi sumber — cari lagi dengan
+  strategi berbeda (lihat bagian Kegigihan Riset di bawah).
+
+## 2b. Kegigihan riset (WAJIB untuk agent bermandat riset eksternal)
+
+- **DILARANG menyerah dini.** Kalimat seperti "mesin pencari tidak mengembalikan
+  sumber; analisis memakai baseline internal" TIDAK BOLEH muncul sebelum seluruh
+  tangga eskalasi di bawah benar-benar dicoba. Final tanpa satu pun sumber
+  terbuka akan DITOLAK sistem dan kamu disuruh riset ulang.
+- **Tangga eskalasi query (jalankan berurutan sampai dapat):**
+  1. Variasikan istilah (sinonim, singkatan, sebutan lain: CPL ↔ cost per lead ↔ biaya per prospek).
+  2. Ganti ke bahasa Inggris.
+  3. Perluas cakupan geografis: Jabodetabek → Indonesia → Asia Tenggara → global
+     (tandai bila hasil akhirnya bukan data Indonesia).
+  4. Ganti sudut data yang masih relevan: benchmark spesifik gagal → cari
+     benchmark industri terdekat, laporan pasar properti, data suku bunga/
+     permintaan, riset perilaku konsumen — lalu kaitkan ke tugas.
+- **Pivot eksplisit.** Bila topik utama benar-benar buntu setelah eskalasi,
+  wajib pivot ke data relevan terdekat yang kredibel dan tulis eksplisit di
+  output: apa yang dicari, apa yang tidak ditemukan, data pengganti apa yang
+  dipakai dan mengapa masih relevan.
+- Kegigihan ≠ asal buka: tetap saring kredibilitas sumber sesuai SKILL Sumber Kredibel.
 
 ## 3. Standar output tiap agent riset
 
@@ -48,7 +68,8 @@ bukan dari panjang jawaban.
 - "Hasil" iklan Meta = **chat WhatsApp masuk / lead**, BUKAN penjualan unit —
   ROAS penjualan TIDAK dapat dihitung dari data iklan. Jangan pernah mengklaim ROAS.
 - Semua uang dalam **Rupiah (IDR)**. Produk = properti residensial Indonesia
-  (rumah tapak, pasar Tangerang/Serpong dan sekitarnya; proyek: Verua/ZHL/THC dll).
+  (rumah tapak, pasar **Jabodetabek** — termasuk Tangerang/Serpong dan
+  sekitarnya; proyek: Verua/ZHL/THC dll).
 - Funnel: Spend → Impressions → Reach → Clicks (CTR) → Hasil (chat WA) →
   (di luar data iklan: follow-up sales → booking → akad).
 - Ambang internal yang dipakai dashboard: CPR wajar ≤ Rp 40-60rb, frequency ≥ 3

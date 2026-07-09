@@ -1,6 +1,6 @@
 // Deep Analysis — riset mendalam multi-agent untuk Meta Ads. Berbeda dari
 // ✨ Generate AI (analisis data internal saja): di sini AI merancang panel
-// hingga 9 agent riset (+ 1 sintesis = maksimal 10 agent) dan tiap agent bisa
+// hingga 19 agent riset (+ 1 sintesis = maksimal 20 agent) dan tiap agent bisa
 // MERISET INTERNET (search + buka halaman kredibel) lewat tool loop di backend
 // (/api/ai/deep-agent). Semua agent tunduk pada skill markdown di
 // dashboard/skillmd (metodologi deep analysis + sumber kredibel). Hasil akhir:
@@ -13,7 +13,10 @@ import { buildSnapshot, tryParseDash, DashboardOutput, type Dash } from "./MetaG
 const AUTH_API = (import.meta.env.VITE_AUTH_API as string) ?? "/api";
 
 // Jalankan agent riset paralel secukupnya: cukup cepat tanpa membanjiri backend.
-const CONCURRENCY = 3;
+const CONCURRENCY = 4;
+
+// Batas panel riset dari planner (+1 sintesis = maksimal 20 agent total).
+const MAX_RESEARCH_AGENTS = 19;
 
 type DeepAgent = {
   key: string;
@@ -119,7 +122,7 @@ export function DeepAnalysis({ data, rangeLabel, onClose }: { data: MetaAds; ran
     const snapshot = buildSnapshot(data, rangeLabel);
     const fokus = focus.trim();
 
-    // Tahap 1 — planner merancang panel agent riset (3–9, maks 10 dgn sintesis).
+    // Tahap 1 — planner merancang panel agent riset (3–19, maks 20 dgn sintesis).
     setPlanning(true);
     let panel: DeepAgent[] = FALLBACK_AGENTS;
     try {
@@ -130,7 +133,7 @@ export function DeepAnalysis({ data, rangeLabel, onClose }: { data: MetaAds; ran
       });
       if (res.status === 401) window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
       const body = (await res.json().catch(() => ({}))) as { agents?: DeepAgent[]; skills?: string[] };
-      if (res.ok && body.agents?.length) panel = body.agents.slice(0, 9);
+      if (res.ok && body.agents?.length) panel = body.agents.slice(0, MAX_RESEARCH_AGENTS);
       if (body.skills?.length) setSkills(body.skills);
     } catch {
       /* planner tak terjangkau — pakai panel fallback */
@@ -236,7 +239,7 @@ export function DeepAnalysis({ data, rangeLabel, onClose }: { data: MetaAds; ran
         <div className="meta-ai-title">
           <b>🔬 Deep Analysis — Riset Mendalam Iklan</b>
           <span>
-            Maks 10 agent AI (riset internet + data {rangeLabel})
+            Maks 20 agent AI (riset internet gigih + data {rangeLabel})
             {skills.length > 0 && <> · skill: {skills.join(", ")}</>}
           </span>
         </div>
@@ -277,7 +280,7 @@ export function DeepAnalysis({ data, rangeLabel, onClose }: { data: MetaAds; ran
         </div>
       )}
 
-      {planning && <div className="meta-ai-plan">🧭 AI sedang merancang panel agent riset (maks 10) untuk data & fokus ini…</div>}
+      {planning && <div className="meta-ai-plan">🧭 AI sedang merancang panel agent riset (maks 20) untuk data & fokus ini…</div>}
 
       {agents.length > 0 && (
         <div className="meta-ai-agents">
