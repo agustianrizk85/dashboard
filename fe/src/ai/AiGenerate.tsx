@@ -20,7 +20,7 @@ const AUTH_API = (import.meta.env.VITE_AUTH_API as string) ?? "/api";
 type Tone = "ok" | "warn" | "bad" | "neutral";
 type DashKpi = { label: string; value: string; note?: string; tone?: Tone };
 type DashSection = { heading: string; items: { title: string; detail?: string; tone?: Tone }[] };
-type Dash = { title?: string; kpis?: DashKpi[]; sections?: DashSection[] };
+export type Dash = { title?: string; kpis?: DashKpi[]; sections?: DashSection[] };
 type PlannedAgent = { key: string; title: string; icon?: string; peranan?: string; kompetensi?: string; instruksi?: string; output?: string; hint?: string };
 type AgentState = { status: "idle" | "running" | "done" | "error"; output?: string; error?: string };
 
@@ -31,7 +31,7 @@ const FALLBACK_AGENTS: PlannedAgent[] = [
   { key: "rekomendasi", title: "Strategist Aksi", icon: "🎯", hint: "Aksi prioritas" },
 ];
 
-function tryParseDash(output: string): Dash | null {
+export function tryParseDash(output: string): Dash | null {
   const i = output.indexOf("{");
   const j = output.lastIndexOf("}");
   if (i < 0 || j <= i) return null;
@@ -291,7 +291,7 @@ function AiGeneratePanel({ division, onClose }: { division: DivKey; onClose: () 
   );
 }
 
-function DashboardOutput({ dash, label, analysts }: { dash: Dash | null; label: string; analysts: { title: string; icon: string; output: string }[] }) {
+export function DashboardOutput({ dash, label, analysts }: { dash: Dash | null; label: string; analysts: { title: string; icon: string; output: string }[] }) {
   const sections: DashSection[] = dash?.sections?.length
     ? dash.sections
     : analysts.map((a) => ({ heading: a.icon + " " + a.title, items: toBullets(a.output).map((b) => ({ title: b })) }));

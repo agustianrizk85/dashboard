@@ -104,8 +104,36 @@
 .aig-item b { font-size: 12.5px; }
 .aig-item span { display: block; font-size: 11.5px; color: #6b766c; margin-top: 2px; }
 
+/* ---- "🔬 Deep Analysis" additions (DeepAnalysis.tsx) ---- */
+.aig-btn-deep { background: linear-gradient(90deg, #4527A0, #5E35B1); box-shadow: 0 2px 8px rgba(69, 39, 160, .25); }
+
+.aig-deep-focus { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.aig-deep-focus label { font-size: 11.5px; font-weight: 700; color: #4527A0; white-space: nowrap; }
+.aig-deep-focus input {
+  flex: 1; padding: 8px 11px; border: 1px solid #d9d2ee; border-radius: 9px;
+  font-size: 12.5px; font-family: inherit; background: #fff;
+}
+.aig-deep-focus input:focus { outline: none; border-color: #5E35B1; box-shadow: 0 0 0 2px rgba(94, 53, 177, .15); }
+
+.aig-steps { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.aig-step {
+  font-size: 10px; padding: 2px 7px; border-radius: 8px;
+  background: #eef1f8; color: #40507a; border: 1px solid #dde3f0; white-space: nowrap;
+}
+.aig-step.fail { background: #fdecea; color: #c62828; border-color: #f8c4bf; text-decoration: line-through; }
+
+.aig-src-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.aig-src-chip {
+  font-size: 10.5px; padding: 3px 9px; border-radius: 10px; text-decoration: none;
+  background: #e8f0fe; color: #1a56b0; border: 1px solid #cadcf8; max-width: 260px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.aig-src-chip:hover { background: #d7e6fd; }
+.aig-src-list { margin-top: 14px; background: #fff; border: 1px solid #e3e7e3; border-radius: 12px; padding: 14px 16px; }
+
 @media (max-width: 640px) {
   .aig-bar { padding: 12px; }
   .aig-title { width: 100%; margin-right: 0; }
   .aig-model input { width: 110px; }
+  .aig-deep-focus { flex-direction: column; align-items: stretch; gap: 5px; }
 }

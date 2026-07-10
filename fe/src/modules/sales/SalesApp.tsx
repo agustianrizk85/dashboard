@@ -4,6 +4,7 @@ import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { ControlTowerView } from "./controltower/ControlTower";
 import { AdminView } from "./AdminView";
 import { AiGenerateButton } from "@/ai/AiGenerate";
+import { DeepAnalysisButton } from "@/ai/DeepAnalysis";
 import "./sales.css";
 
 // Monev bundles xlsx + chart.js — code-split so they only load when its tab opens.
@@ -60,6 +61,7 @@ export default function SalesApp() {
           </div>
           <div className="hdr-spacer" />
           <AiGenerateButton division="sales" />
+          <DeepAnalysisButton division="sales" />
           <div className="hdr-meta">
             <Clock />
             <div className="hdr-user">
