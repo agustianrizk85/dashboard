@@ -97,6 +97,8 @@ export function Login() {
             <b>Keuangan</b>: keuangan@greenpark.id / keuangan123 (Akad & KPR)
             <br />
             <b>Teknik</b>: teknik@greenpark.id / teknik123 (Progres Pembangunan)
+            <br />
+            <b>CSO</b>: cso@greenpark.id / cso123 (Customer Complaint)
           </div>
         </details>
       </form>
