@@ -13,6 +13,12 @@ export function ProjectDetailPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Guard: an invalid/missing route param yields NaN — don't fire GET /projects/NaN.
+    if (!Number.isFinite(projectId)) {
+      setError("Proyek tidak ditemukan (id tidak valid).");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     projectService
       .get(projectId)
