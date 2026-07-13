@@ -5,7 +5,8 @@ import { useAuth } from "@/auth/AuthContext";
 
 export function SettingsPage() {
   const { user } = useAuth();
-  const canEdit = user?.role === "kadep" || user?.role === "dirops";
+  // Editable for the legal department + directors (CEO/Dirops were read-only before).
+  const canEdit = ["ceo", "dirops", "kadep", "legal_permit"].includes(user?.role ?? "");
   const [daci, setDaci] = useState<DACIConfig | null>(null);
   const [notif, setNotif] = useState<NotificationConfig | null>(null);
   const [msg, setMsg] = useState("");
