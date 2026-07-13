@@ -8,6 +8,7 @@ const TABS: { path: string; label: string }[] = [
   { path: "/sales", label: "Sales" },
   { path: "/keuangan", label: "Keuangan" },
   { path: "/teknik", label: "Teknik" },
+  { path: "/cso", label: "CSO" },
   // Cross-division AI orchestrator (directors only). Set apart visually.
   { path: "/orchestrator", label: "Orchestrator AI" },
   // Cross-division approval inbox (directors only). Set apart visually.

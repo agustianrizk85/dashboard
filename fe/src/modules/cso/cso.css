@@ -1,0 +1,164 @@
+/* CSO dashboard content styles — scoped under .cso-scope so they never leak into
+ * the shared chrome (sales.css) or other divisions. Palette matches Greenpark's
+ * green identity; neutral light theme. */
+.cso-scope {
+  --ink: #1c2733;
+  --ink-2: #55636f;
+  --line: #e2e7ec;
+  --card: #ffffff;
+  --bg: #f5f7f9;
+  --ok: #1f9d55;
+  --warn: #b7791f;
+  --bad: #c0392b;
+  --brand: #157347;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.cso-scope .body { padding: 4px 2px 40px; }
+
+.cso-scope .splash {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 60px 20px; color: var(--ink-2);
+}
+.cso-scope .splash.error { color: var(--bad); }
+.cso-scope .splash-title { font-weight: 700; font-size: 16px; }
+.cso-scope .splash-msg { font-size: 13px; }
+.cso-scope .spinner {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--brand);
+  animation: cso-spin 0.8s linear infinite;
+}
+@keyframes cso-spin { to { transform: rotate(360deg); } }
+
+/* ---- KPI row ---- */
+.cso-scope .kpi-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0 6px; }
+.cso-scope .kpi {
+  flex: 1 1 150px; min-width: 140px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 4px; position: relative;
+  box-shadow: 0 1px 2px rgba(16,24,32,0.04);
+}
+.cso-scope .kpi.clickable { cursor: pointer; }
+.cso-scope .kpi.clickable:hover { border-color: var(--brand); }
+.cso-scope .kpi .label { font-size: 11.5px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.02em; }
+.cso-scope .kpi .val { font-size: 26px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.cso-scope .kpi .val .u { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.cso-scope .kpi .delta { font-size: 11px; color: var(--ink-2); }
+.cso-scope .kpi .kpi-hint { font-size: 10.5px; color: var(--ink-2); }
+.cso-scope .kpi.ok .val { color: var(--ok); }
+.cso-scope .kpi.warn .val { color: var(--warn); }
+.cso-scope .kpi.bad .val { color: var(--bad); }
+
+/* ---- Panels + grid ---- */
+.cso-scope .grid { display: grid; gap: 14px; margin-top: 14px; }
+.cso-scope .grid-2 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px) { .cso-scope .grid-2 { grid-template-columns: 1fr; } }
+.cso-scope .panel {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  margin-top: 14px; overflow: hidden;
+}
+.cso-scope .panel-hd {
+  display: flex; align-items: center; gap: 8px; padding: 11px 14px;
+  border-bottom: 1px solid var(--line); background: #fafbfc;
+}
+.cso-scope .ptag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: #fff;
+  background: var(--brand); padding: 2px 7px; border-radius: 5px;
+}
+.cso-scope .ptitle { font-weight: 700; font-size: 14px; }
+.cso-scope .psub { font-size: 12px; color: var(--ink-2); }
+.cso-scope .pspacer { flex: 1; }
+.cso-scope .expand { border: 1px solid var(--line); background: #fff; border-radius: 6px; cursor: pointer; padding: 2px 7px; }
+.cso-scope .panel-bd { padding: 12px 14px; }
+
+/* ---- Tables ---- */
+.cso-scope .tbl-scroll { overflow: auto; }
+.cso-scope .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cso-scope .tbl th, .cso-scope .tbl td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.cso-scope .tbl th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink-2); background: #fafbfc; position: sticky; top: 0; }
+.cso-scope .tbl td.num, .cso-scope .tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.cso-scope .tbl .nowrap { white-space: nowrap; }
+.cso-scope .tbl-empty { text-align: center; color: var(--ink-2); padding: 18px; }
+
+/* ---- Pills ---- */
+.cso-scope .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.cso-scope .pill .pdot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.cso-scope .pill.ok { color: var(--ok); background: rgba(31,157,85,0.08); }
+.cso-scope .pill.warn { color: var(--warn); background: rgba(183,121,31,0.09); }
+.cso-scope .pill.bad { color: var(--bad); background: rgba(192,57,43,0.08); }
+.cso-scope .pill.neutral { color: var(--ink-2); }
+
+/* ---- Bars ---- */
+.cso-scope .bar { position: relative; height: 9px; border-radius: 5px; background: #eef1f4; overflow: hidden; min-width: 60px; }
+.cso-scope .bar i { display: block; height: 100%; border-radius: 5px; }
+.cso-scope .bar.green i { background: var(--ok); }
+.cso-scope .bar.yellow i { background: var(--warn); }
+.cso-scope .bar.red i { background: var(--bad); }
+.cso-scope .bar .tick { position: absolute; top: -2px; width: 2px; height: 13px; background: #33404d; }
+
+/* ---- Alert banner ---- */
+.cso-scope .alert-banner {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 12px;
+  font-size: 13.5px; margin: 6px 0 4px; border: 1px solid var(--line);
+}
+.cso-scope .alert-banner .ab-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.cso-scope .alert-banner.bad { background: rgba(192,57,43,0.06); border-color: rgba(192,57,43,0.3); }
+.cso-scope .alert-banner.bad .ab-dot { background: var(--bad); }
+.cso-scope .alert-banner.ok { background: rgba(31,157,85,0.06); border-color: rgba(31,157,85,0.3); }
+.cso-scope .alert-banner.ok .ab-dot { background: var(--ok); }
+
+/* ---- Donut ---- */
+.cso-scope .donut-row { display: flex; gap: 18px; flex-wrap: wrap; }
+.cso-scope .donut { display: flex; align-items: center; gap: 12px; flex: 1 1 200px; }
+.cso-scope .donut-svg { width: 96px; height: 96px; flex: none; }
+.cso-scope .donut-track { fill: none; stroke: #eef1f4; stroke-width: 11; }
+.cso-scope .donut-val { fill: none; stroke: var(--ok); stroke-width: 11; stroke-linecap: round; transition: stroke-dasharray 0.5s; }
+.cso-scope .donut-pct { font-size: 20px; font-weight: 700; fill: var(--ink); }
+.cso-scope .donut-lbl { font-size: 9px; fill: var(--ink-2); text-transform: uppercase; }
+.cso-scope .dc-title { font-weight: 700; font-size: 15px; }
+.cso-scope .dc-sub { font-size: 12px; color: var(--ink-2); }
+.cso-scope .dc-sub .ok { color: var(--ok); font-weight: 600; }
+.cso-scope .dc-sub .bad { color: var(--bad); font-weight: 600; }
+
+/* ---- Kurva ---- */
+.cso-scope .kurva-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.cso-scope .kurva-toolbar select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 13px; }
+.cso-scope .kurva-selinfo { font-size: 12.5px; color: var(--ink-2); }
+.cso-scope .kurva-svg { width: 100%; height: auto; background: #fafbfc; border: 1px solid var(--line); border-radius: 10px; }
+.cso-scope .kurva-grid { stroke: var(--line); stroke-width: 1; }
+.cso-scope .kurva-axis { font-size: 9px; fill: var(--ink-2); }
+.cso-scope .kurva-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+.cso-scope .kurva-legend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.cso-scope .kurva-legend i.dash { background-image: none; opacity: 0.7; }
+
+/* ---- Misc lines ---- */
+.cso-scope .hintline { font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+.cso-scope .srcline { font-size: 11.5px; color: var(--ink-2); margin-top: 16px; text-align: right; }
+.cso-scope .okline { color: var(--ok); font-size: 13px; margin: 8px 0; }
+
+/* ---- Tickets form ---- */
+.cso-scope .tk-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.cso-scope .tk-form input, .cso-scope .tk-form select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; flex: 1 1 160px; min-width: 120px; }
+.cso-scope .tk-form input.wide { flex: 1 1 320px; }
+
+/* ---- Sync / master panel ---- */
+.cso-scope .md-panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 6px; }
+.cso-scope .md-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.cso-scope .md-head h2 { margin: 0 0 2px; font-size: 17px; }
+.cso-scope .md-count { font-size: 12px; color: var(--ink-2); }
+.cso-scope .md-btn { padding: 8px 12px; border: 1px solid var(--line); background: #fff; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.cso-scope .md-btn:hover:not(:disabled) { border-color: var(--brand); }
+.cso-scope .md-btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.cso-scope .md-btn:disabled { opacity: 0.55; cursor: default; }
+.cso-scope .md-error { color: var(--bad); font-size: 13px; margin: 8px 0; background: rgba(192,57,43,0.06); border-radius: 8px; padding: 8px 10px; }
+.cso-scope .sync-input { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }
+.cso-scope .sync-input input { flex: 1 1 420px; min-width: 260px; padding: 9px 12px; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; font-family: monospace; }
+.cso-scope .autosync { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); }
+.cso-scope .autosync.on { background: rgba(31,157,85,0.06); }
+.cso-scope .as-info { display: flex; flex-direction: column; min-width: 240px; flex: 1; }
+.cso-scope .as-info strong { font-size: 13px; }
+.cso-scope .as-pick { display: flex; align-items: center; gap: 6px; }
+.cso-scope .as-pick select { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 13px; }
+.cso-scope .prev-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cso-scope .issue-list { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ink-2); }

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
  * The two departments ("divisi") the unified dashboard serves. The logged-in
  * user's division decides which module is rendered after login.
  */
-export type Division = "perencanaan" | "permit" | "marketing" | "sales" | "keuangan" | "teknik";
+export type Division = "perencanaan" | "permit" | "marketing" | "sales" | "keuangan" | "teknik" | "cso";
 
 /** A unified session identity, independent of which backend authenticated it. */
 export interface SessionUser {
@@ -88,6 +88,8 @@ const MOCK_ACCOUNTS: MockAccount[] = [
   { username: "keuangan@greenpark.id", password: "keuangan123", name: "Kepala Dept. Keuangan", role: "kadep", division: "keuangan", email: "keuangan@greenpark.id" },
   // ── Departemen Teknik ── (kendali progres pembangunan; reads the teknik backend :8083)
   { username: "teknik@greenpark.id", password: "teknik123", name: "Kepala Dept. Teknik", role: "kadep", division: "teknik", email: "teknik@greenpark.id" },
+  // ── Departemen CSO (Customer Complaint) ── (reads the CSO backend :8088)
+  { username: "cso@greenpark.id", password: "cso123", name: "Kepala Dept. CSO", role: "kadep", division: "cso", email: "cso@greenpark.id" },
 ];
 
 function stripPassword({ password: _pw, ...user }: MockAccount): SessionUser {
@@ -157,6 +159,13 @@ const MODULE_BACKENDS: Record<Division, ModuleBackend> = {
     tokenKey: "gp_teknik_token",
     idField: "username",
   },
+  // CSO (Customer Complaint) control dashboard backend (:8088). Self-authenticates
+  // via its service account (admin/admin123) if the shared token isn't accepted.
+  cso: {
+    base: ((env.VITE_CSO_API as string) ?? "http://localhost:8088").replace(/\/$/, "") + "/api",
+    tokenKey: "gp_cso_token",
+    idField: "username",
+  },
 };
 
 const ALL_MODULE_TOKEN_KEYS = Object.values(MODULE_BACKENDS).map((m) => m.tokenKey);
@@ -164,7 +173,7 @@ const ALL_MODULE_TOKEN_KEYS = Object.values(MODULE_BACKENDS).map((m) => m.tokenK
 /** Divisions whose Go backend verifies the auth Ed25519 SSO token directly
  *  (authmw + JWKS) — so no per-backend bridge login is needed; each reuses the
  *  ONE dashboard token. Move a division here once its backend accepts SSO. */
-const SSO_DIVISIONS: Division[] = ["sales", "keuangan", "teknik", "perencanaan", "marketing", "permit"];
+const SSO_DIVISIONS: Division[] = ["sales", "keuangan", "teknik", "perencanaan", "marketing", "permit", "cso"];
 /** Divisions whose backend still needs a bridged NATIVE token (not SSO yet).
  *  Now EMPTY — every backend verifies the auth Ed25519 SSO token directly, so the
  *  whole dashboard runs on ONE login with no per-backend bridge. */
@@ -231,6 +240,8 @@ function allAccessCreds(approver: boolean): Record<Division, { id: string; pass:
     keuangan: { id: "admin", pass: "admin123" },
     // Teknik module signs in as admin so the Sync Spreadsheet / Master tabs work.
     teknik: { id: "admin", pass: "admin123" },
+    // CSO module signs in as admin so the Sync Spreadsheet tab works.
+    cso: { id: "admin", pass: "admin123" },
   };
 }
 
@@ -284,6 +295,7 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
       sales: "sales",
       perencanaan: "perencanaan",
       teknik: "teknik",
+      cso: "cso",
     };
     const ownDept = deptCodes.find((d) => DEPT2DIV[d]);
     const division: Division = (ownDept && DEPT2DIV[ownDept]) || "keuangan";

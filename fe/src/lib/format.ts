@@ -24,6 +24,7 @@ export function divisionLabel(d: Division): string {
     sales: "Sales",
     keuangan: "Keuangan",
     teknik: "Teknik",
+    cso: "CSO",
   };
   return map[d];
 }

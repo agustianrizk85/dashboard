@@ -15,6 +15,7 @@ const MarketingApp = lazy(() => import("@/modules/marketing/MarketingApp"));
 const SalesApp = lazy(() => import("@/modules/sales/SalesApp"));
 const KeuanganApp = lazy(() => import("@/modules/keuangan/KeuanganApp"));
 const TeknikApp = lazy(() => import("@/modules/teknik/TeknikApp"));
+const CsoApp = lazy(() => import("@/modules/cso/CsoApp"));
 const ApprovalsApp = lazy(() => import("@/approvals/ApprovalsApp"));
 const RekapApp = lazy(() => import("@/modules/rekap/RekapApp"));
 const OrchestratorApp = lazy(() => import("@/modules/orchestrator/OrchestratorApp"));
@@ -117,6 +118,14 @@ export function App() {
           element={
             <RequireDivision division="teknik">
               <TeknikApp />
+            </RequireDivision>
+          }
+        />
+        <Route
+          path="/cso/*"
+          element={
+            <RequireDivision division="cso">
+              <CsoApp />
             </RequireDivision>
           }
         />
