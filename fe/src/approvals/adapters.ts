@@ -83,6 +83,18 @@ async function req<T>(div: ApprovalDivision, method: Method, path: string, body?
   return (await res.json()) as T;
 }
 
+/** Fetch a binary document from a division backend (with auth) and return an
+ *  object URL for inline preview. The caller revokes it when done. */
+async function reqBlob(div: ApprovalDivision, path: string): Promise<string> {
+  const { base, tokenKey } = CFG[div];
+  const token = localStorage.getItem(tokenKey) ?? "";
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = "Bearer " + token;
+  const res = await fetch(base + path, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return URL.createObjectURL(await res.blob());
+}
+
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 
@@ -104,6 +116,15 @@ export interface ApprovalItem {
   acceptsNote: boolean;
   approve: (note: string) => Promise<void>;
   reject: (note: string) => Promise<void>;
+  /** Optional third decision: send the item back to the submitter for revision
+   *  WITH a required instruction note (distinct from a plain reject). Only set
+   *  for divisions whose flow supports it (perencanaan gambar kerja today). */
+  revise?: (instruction: string) => Promise<void>;
+  /** Optional attached document (e.g. perencanaan "gambar kerja"). `open()`
+   *  fetches it WITH auth and returns an object URL for inline preview (the
+   *  caller revokes it). `ext` is the lowercased file extension (pdf / dwg / …)
+   *  used to decide whether the browser can render it inline. */
+  doc?: { name: string; ext: string; open: () => Promise<string> };
 }
 
 export interface DivisionLoad {
@@ -232,6 +253,7 @@ async function loadPerencanaan(): Promise<ApprovalItem[]> {
   for (const d of details) {
     for (const t of d.tasks ?? []) {
       if (t.status !== "review") continue;
+      const ext = (t.doc?.name.split(".").pop() ?? "").toLowerCase();
       out.push({
         uid: `perencanaan:${d.id}:${t.id}`,
         division: "perencanaan" as Division,
@@ -247,7 +269,12 @@ async function loadPerencanaan(): Promise<ApprovalItem[]> {
         ],
         acceptsNote: false,
         approve: () => req("perencanaan", "POST", `/projects/${d.id}/tasks/${t.id}/approve`),
-        reject: () => req("perencanaan", "POST", `/projects/${d.id}/tasks/${t.id}/reject`),
+        reject: () => req("perencanaan", "POST", `/projects/${d.id}/tasks/${t.id}/reject`, { instruction: "" }),
+        revise: (instruction: string) =>
+          req("perencanaan", "POST", `/projects/${d.id}/tasks/${t.id}/reject`, { instruction }),
+        doc: t.doc
+          ? { name: t.doc.name, ext, open: () => reqBlob("perencanaan", `/projects/${d.id}/tasks/${t.id}/doc`) }
+          : undefined,
       });
     }
   }

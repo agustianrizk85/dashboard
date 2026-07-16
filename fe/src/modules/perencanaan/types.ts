@@ -37,6 +37,8 @@ export interface Task {
   doc?: TaskDoc;
   approvedBy?: string;
   approvedAt?: string;
+  /** Revision instruction recorded when a reviewer sends the task back (Revisi). */
+  revisiNote?: string;
 }
 
 export interface GroupRollup {

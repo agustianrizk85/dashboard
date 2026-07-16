@@ -37,7 +37,7 @@
 .meta-linkbtn:hover { color: var(--green-600); text-decoration: underline; }
 .meta-row-on td { background: #e4f3e9 !important; box-shadow: inset 2px 0 0 var(--green-600); }
 .meta-table tr:hover td { background: #f1f8f1; }
-.meta-table .muted, .muted { color: var(--ink-3); }
+.meta-table .muted, .mk-scope .muted { color: var(--ink-3); }
 
 .meta-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
 .meta-pill.ok { background: var(--ok-bg); color: var(--green-700); }

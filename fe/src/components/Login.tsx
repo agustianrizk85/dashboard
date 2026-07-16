@@ -39,8 +39,8 @@ export function Login() {
         <h2 className="login-hero-title">Greenpark Group</h2>
         <p className="login-hero-tagline">Live Smart&nbsp;·&nbsp;Live Green&nbsp;·&nbsp;Live Better</p>
         <p className="login-hero-sub">
-          Portal terpadu Departemen — Perencanaan, Legal&nbsp;&amp;&nbsp;Perizinan,
-          dan Marketing dalam satu dashboard.
+          Satu portal untuk seluruh departemen — Perencanaan, Legal&nbsp;&amp;&nbsp;Perizinan,
+          Marketing, Sales, Keuangan, Teknik&nbsp;&amp;&nbsp;CSO dalam satu dashboard.
         </p>
       </aside>
 
@@ -84,6 +84,8 @@ export function Login() {
         <details className="login-hint">
           <summary>Akun demo per divisi</summary>
           <div className="login-hint-body">
+            <b>Admin — kelola user &amp; AI key</b>: superadmin / superadmin123
+            <br />
             <b>Direktur — semua divisi</b>: ceo@greenpark.id / ceo123 (overview) · dirops@greenpark.id / dirops123 (bisa approve)
             <br />
             <b>Perencanaan</b>: kadep / kadep123 · randi / randi123

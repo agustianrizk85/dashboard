@@ -44,6 +44,13 @@
   background: var(--navy-900);
 }
 
+/* ---- Panel header (shown when hosted inside the director Console shell) ---- */
+.apr-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.apr-panel-head h2 { font-family: var(--font-display); font-size: 20px; font-weight: 800; margin: 0; color: var(--ink); }
+.apr-panel-head p { font-size: 12.5px; color: var(--ink-2); margin: 3px 0 0; }
+.apr-panel-total { display: flex; flex-direction: column; align-items: center; font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1; color: var(--green-700); }
+.apr-panel-total small { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-top: 3px; }
+
 /* ---- Content ---- */
 .apr-content { padding: clamp(16px, 3vw, 28px) clamp(16px, 4vw, 40px); flex: 1; }
 .apr-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -138,9 +145,52 @@
 .apr-btn.approve:hover:not(:disabled) { filter: brightness(1.06); }
 .apr-btn.reject { background: #fff; color: #b22a30; border-color: #e6b3b5; }
 .apr-btn.reject:hover:not(:disabled) { background: var(--bad-bg); }
+.apr-btn.revise { background: #fff; color: #9a6a00; border-color: #e6ce9a; }
+.apr-btn.revise:hover:not(:disabled) { background: #fdf5e3; }
+.apr-btn.revise.on { background: var(--warn); color: #fff; border-color: var(--warn); }
+.apr-btn.sm { padding: 7px 12px; font-size: 12.5px; }
 .apr-btn.ghost { margin-left: auto; background: none; color: var(--ink-2); border-color: var(--line-strong); }
 .apr-btn.ghost:hover { border-color: var(--green-600); color: var(--green-700); }
+.apr-btn.ghost.sm { margin-left: 0; }
 .apr-readonly { font-size: 12px; font-weight: 600; color: var(--ink-3); font-style: italic; }
+
+/* Revisi instruction panel (opens under the actions) */
+.apr-revise { margin-top: 4px; display: flex; flex-direction: column; gap: 8px; }
+.apr-revise-input {
+  font-family: var(--font-body); font-size: 13px; line-height: 1.45; resize: vertical;
+  padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--panel-2); color: var(--ink); outline: none;
+}
+.apr-revise-input:focus { border-color: var(--warn); background: #fff; box-shadow: 0 0 0 3px rgba(217,144,8,.14); }
+.apr-revise-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ---- Document viewer modal (perencanaan gambar kerja PDF / DWG) ---- */
+.apr-doc-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(11, 22, 16, .58);
+  display: grid; place-items: center; padding: clamp(10px, 3vw, 34px);
+}
+.apr-doc-modal {
+  width: min(1000px, 96vw); height: min(88vh, 100%);
+  background: var(--panel); border-radius: 14px; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.35);
+}
+.apr-doc-hd { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.apr-doc-ic {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .06em; color: #fff;
+  background: var(--green-700); border-radius: 6px; padding: 4px 8px;
+}
+.apr-doc-name { font-size: 13.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apr-doc-sp { flex: 1; }
+.apr-doc-link {
+  font-size: 12.5px; font-weight: 600; color: var(--green-700); text-decoration: none;
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 11px;
+}
+.apr-doc-link:hover { border-color: var(--green-600); }
+.apr-doc-close { border: none; background: none; cursor: pointer; font-size: 22px; line-height: 1; color: var(--ink-3); padding: 0 6px; }
+.apr-doc-close:hover { color: var(--ink); }
+.apr-doc-frame { flex: 1; width: 100%; border: none; background: #525659; }
+.apr-doc-msg { flex: 1; display: grid; place-items: center; text-align: center; padding: 30px; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
 
 /* ---- Mobile / phone responsiveness (Approvals) ---- */
 @media (max-width: 600px) {

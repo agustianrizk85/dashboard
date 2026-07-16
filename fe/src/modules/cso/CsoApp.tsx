@@ -7,6 +7,9 @@ import { useAuth } from "@/auth/AuthContext";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { SyncSpreadsheet } from "./master/SyncSpreadsheet";
 import { TicketsView } from "./TicketsView";
+import { WmsShell } from "@/components/wms/WmsShell";
+import type { WmsNavGroup } from "@/components/wms/WmsShell";
+import { CsoOverviewWms } from "./CsoOverviewWms";
 import "../sales/sales.css"; // shared division chrome (green header + tabs)
 import "./cso.css"; // CSO dashboard content, scoped under .cso-scope
 
@@ -29,13 +32,97 @@ const roleLabel: Record<string, string> = {
 const pct = (v: number) => `${v.toFixed(1)}%`;
 const slaTone = (v: number): "ok" | "warn" | "bad" => (v >= 90 ? "ok" : v >= 75 ? "warn" : "bad");
 
+const WMS_SECTIONS = [
+  { key: "overview", label: "Overview" },
+  { key: "kurva", label: "Kurva-S" },
+  { key: "ranking", label: "Ranking" },
+  { key: "tiket", label: "Tiket WA" },
+  { key: "sync", label: "Sync Spreadsheet" },
+];
+
+/**
+ * CSO division entry. All-access directors (CEO / Dirops) keep the existing
+ * dashboard UI unchanged; staff & kadep get the new WMS "Ops Console" redesign.
+ */
+export default function CsoApp() {
+  const { user } = useAuth();
+  const wms = !user?.allAccess;
+  return wms ? <CsoWms /> : <CsoClassic />;
+}
+
+/**
+ * WMS "Ops Console" chrome for CSO staff/kadep — the shared shell with the CSO
+ * sections in the sidebar. The Overview section is the new WMS-style dashboard;
+ * every other section reuses the existing views, scoped under `.cso-scope`. All
+ * tabs/functionality are preserved.
+ */
+function CsoWms() {
+  const { user } = useAuth();
+  const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
+  const [state] = useDashboard();
+  const [rawTab, setRawTab] = useState<string>(() => localStorage.getItem("gp_cso_tab") ?? "overview");
+  const tab = !canManage && rawTab === "sync" ? "overview" : rawTab;
+  const setTab = (t: string) => {
+    setRawTab(t);
+    try {
+      localStorage.setItem("gp_cso_tab", t);
+    } catch {
+      /* ignore */
+    }
+  };
+  const visible = WMS_SECTIONS.filter((t) => canManage || t.key !== "sync");
+  const groups: WmsNavGroup[] = [
+    {
+      heading: "Menu",
+      items: visible.map((sec) => ({ label: sec.label, active: tab === sec.key, onClick: () => setTab(sec.key) })),
+    },
+  ];
+
+  return (
+    <WmsShell brand="CSO" brandSub="Customer Complaint" nav={groups}>
+      <div className="cso-scope">
+        {state.status === "loading" ? (
+          <div className="body">
+            <div className="splash">
+              <div className="spinner" />
+              Memuat data komplain…
+            </div>
+          </div>
+        ) : state.status === "error" ? (
+          <div className="body">
+            <div className="splash error">
+              <div className="splash-title">Gagal memuat data</div>
+              <div className="splash-msg">{state.error}</div>
+              <div className="splash-msg">API: {api.base}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="body">
+            {tab === "sync" ? (
+              <SyncSpreadsheet />
+            ) : tab === "tiket" ? (
+              <TicketsView tickets={state.data.tickets ?? []} canManage={canManage} />
+            ) : tab === "ranking" ? (
+              <RankingView D={state.data} />
+            ) : tab === "kurva" ? (
+              <KurvaView D={state.data} />
+            ) : (
+              <CsoOverviewWms D={state.data} setTab={setTab} />
+            )}
+          </div>
+        )}
+      </div>
+    </WmsShell>
+  );
+}
+
 /**
  * CSO (Customer Complaint) division shell. Same unified chrome as the other
  * divisions (green header + tab bar from sales.css), dashboard content scoped
  * under `.cso-scope`. Data comes from the CSO backend (:8088), fed by async
  * Google-Sheets sync of GREENPARK_CSO_MASTER_DATA and live WhatsApp tickets.
  */
-export default function CsoApp() {
+function CsoClassic() {
   const { user, logout } = useAuth();
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [state] = useDashboard();

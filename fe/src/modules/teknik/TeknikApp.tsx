@@ -11,6 +11,9 @@ import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { MasterData } from "./master/MasterData";
 import { SyncSpreadsheet } from "./master/SyncSpreadsheet";
 import { AiInsight } from "./components/AiInsight";
+import { WmsShell } from "@/components/wms/WmsShell";
+import type { WmsNavGroup } from "@/components/wms/WmsShell";
+import { TeknikOverviewWms } from "./TeknikOverviewWms";
 import "../sales/sales.css"; // shared division shell chrome (green header + tabs)
 import "./teknik.css"; // teknik dashboard content, scoped under .tk-scope
 import { AiGenerateButton } from "@/ai/AiGenerate";
@@ -65,6 +68,9 @@ const rupiah = (v: number) =>
  */
 export default function TeknikApp() {
   const { user, logout } = useAuth();
+  // All-access directors (CEO / Dirops) keep the original division chrome;
+  // staff & kadep get the new WMS "Ops Console" redesign.
+  const wms = !user?.allAccess;
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [state, reload] = useDashboard();
   const [rawTab, setRawTab] = useState<string>(() => localStorage.getItem("gp_tab") ?? "overview");
@@ -82,6 +88,58 @@ export default function TeknikApp() {
   };
   const visible = TABS.filter((t) => canManage || (t.id !== "sync" && t.id !== "master"));
 
+  // Shared dashboard body — the loading/error splash + the active view. Rendered
+  // inside the original `.tk-scope` chrome for CEO, or inside the WMS shell for
+  // staff/kadep. For staff the index/overview becomes the WMS Ops-Console view;
+  // every other section keeps its existing sub-view unchanged.
+  const body =
+    state.status === "loading" ? (
+      <div className="body">
+        <div className="splash">
+          <div className="spinner" />
+          Memuat data teknik…
+        </div>
+      </div>
+    ) : state.status === "error" ? (
+      <div className="body">
+        <div className="splash error">
+          <div className="splash-title">Gagal memuat data</div>
+          <div className="splash-msg">{state.error}</div>
+          <div className="splash-msg">API: {api.base}</div>
+          <button className="splash-btn" onClick={reload}>
+            Coba lagi
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div className="body">
+        {tab === "master" ? (
+          <MasterData />
+        ) : tab === "sync" ? (
+          <SyncSpreadsheet />
+        ) : tab === "deviasi" ? (
+          <DeviasiView D={state.data} onProject={setSel} />
+        ) : tab === "kpi" ? (
+          <KpiView D={state.data} onProject={setSel} />
+        ) : wms ? (
+          <TeknikOverviewWms D={state.data} onProject={setSel} setTab={setTab} />
+        ) : (
+          <Overview D={state.data} setTab={setTab} onProject={setSel} />
+        )}
+        {sel && <ProjectModal p={sel} D={state.data} onClose={() => setSel(null)} />}
+      </div>
+    );
+
+  // Staff / kadep → new WMS "Ops Console" shell (sidebar = the same sections).
+  if (wms) {
+    return (
+      <TeknikWmsLayout sections={visible} tab={tab} onTab={setTab}>
+        {body}
+      </TeknikWmsLayout>
+    );
+  }
+
+  // All-access directors (CEO / Dirops) keep the original division chrome.
   return (
     <div className="sales-stage">
       <div className="sales-canvas">
@@ -117,45 +175,42 @@ export default function TeknikApp() {
         </DivisionTabBar>
 
         <main className="content">
-          <div className="tk-scope">
-            {state.status === "loading" ? (
-              <div className="body">
-                <div className="splash">
-                  <div className="spinner" />
-                  Memuat data teknik…
-                </div>
-              </div>
-            ) : state.status === "error" ? (
-              <div className="body">
-                <div className="splash error">
-                  <div className="splash-title">Gagal memuat data</div>
-                  <div className="splash-msg">{state.error}</div>
-                  <div className="splash-msg">API: {api.base}</div>
-                  <button className="splash-btn" onClick={reload}>
-                    Coba lagi
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="body">
-                {tab === "master" ? (
-                  <MasterData />
-                ) : tab === "sync" ? (
-                  <SyncSpreadsheet />
-                ) : tab === "deviasi" ? (
-                  <DeviasiView D={state.data} onProject={setSel} />
-                ) : tab === "kpi" ? (
-                  <KpiView D={state.data} onProject={setSel} />
-                ) : (
-                  <Overview D={state.data} setTab={setTab} onProject={setSel} />
-                )}
-                {sel && <ProjectModal p={sel} D={state.data} onClose={() => setSel(null)} />}
-              </div>
-            )}
-          </div>
+          <div className="tk-scope">{body}</div>
         </main>
       </div>
     </div>
+  );
+}
+
+/** New WMS "Ops Console" chrome for staff/kadep — sidebar (the teknik sections)
+ *  + shared shell. The active dashboard body renders inside `.tk-scope` so the
+ *  existing sub-views keep their styling. Teknik is tab-driven (not routed), so
+ *  the sidebar switches the same tab state the original chrome uses. */
+function TeknikWmsLayout({
+  sections,
+  tab,
+  onTab,
+  children,
+}: {
+  sections: TabDef[];
+  tab: string;
+  onTab: (id: string) => void;
+  children: ReactNode;
+}) {
+  const groups: WmsNavGroup[] = [
+    {
+      heading: "Menu",
+      items: sections.map((s) => ({
+        label: s.label,
+        active: tab === s.id,
+        onClick: () => onTab(s.id),
+      })),
+    },
+  ];
+  return (
+    <WmsShell brand="Teknik" brandSub="Progres Pembangunan" nav={groups}>
+      <div className="tk-scope">{children}</div>
+    </WmsShell>
   );
 }
 

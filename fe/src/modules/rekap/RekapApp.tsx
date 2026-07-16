@@ -88,6 +88,21 @@ export default function RekapApp() {
     if (active) load(active);
   }, [active, load]);
 
+  // Realtime auto-refresh: the sheets bridge is read-only (Google Sheets can't
+  // push), so poll the active tab every 15s and swap in fresh rows silently —
+  // no loading flash, errors ignored — so new bookings appear without a manual
+  // reload.
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => {
+      sheetsApi
+        .data(active)
+        .then(setData)
+        .catch(() => {});
+    }, 15000);
+    return () => clearInterval(id);
+  }, [active]);
+
   const rows = data?.rows ?? [];
 
   const statusOpts = useMemo(() => countBy(rows, "Status").map(([v]) => v), [rows]);

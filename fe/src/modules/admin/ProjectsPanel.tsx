@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
+import { WmsSearch } from "@/components/wms/widgets";
 
 /* ─────────────────────────────────────────────────────────────────────────
  * Proyek panel (Admin): map a real-estate project to the Meta accounts
@@ -9,6 +19,9 @@ import { useCallback, useEffect, useState } from "react";
 
 const META = ((import.meta.env.VITE_META_API as string) ?? "/be/meta").replace(/\/$/, "") + "/api";
 const AUTH = ((import.meta.env.VITE_AUTH_API as string) ?? "/api").replace(/\/$/, "");
+// Master project list is owned by Perencanaan; the Proyek name is picked from it
+// (not free-typed). Dev falls back to :8082 (no proxy); prod uses /be/perencanaan.
+const PERENCANAAN = ((import.meta.env.VITE_PERENCANAAN_API as string) ?? "http://localhost:8082").replace(/\/$/, "") + "/api";
 const TOKEN_KEY = "gp_dashboard_token";
 
 function authHeaders(): Record<string, string> {
@@ -40,6 +53,12 @@ interface UserOpt {
   email: string;
   name: string;
 }
+interface MasterProj {
+  id: string;
+  gp: string;
+  name: string;
+  lokasi: string;
+}
 
 const emptyDraft = { id: 0, name: "", note: "", wa: new Set<string>(), ig: new Set<string>(), ad: new Set<string>(), sales: new Set<string>() };
 type Draft = { id: number; name: string; note: string; wa: Set<string>; ig: Set<string>; ad: Set<string>; sales: Set<string> };
@@ -50,6 +69,7 @@ export function ProjectsPanel() {
   const [igOpts, setIgOpts] = useState<Opt[]>([]);
   const [adOpts, setAdOpts] = useState<Opt[]>([]);
   const [users, setUsers] = useState<UserOpt[]>([]);
+  const [masterProjects, setMasterProjects] = useState<MasterProj[]>([]);
   const [draft, setDraft] = useState<Draft>({ ...emptyDraft });
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
@@ -58,7 +78,7 @@ export function ProjectsPanel() {
   const load = useCallback(async () => {
     setErr("");
     try {
-      const [pj, wa, ig, conns, us] = await Promise.all([
+      const [pj, wa, ig, conns, us, mp] = await Promise.all([
         fetch(`${META}/meta/projects`, { headers: authHeaders() }).then((r) => r.json()),
         fetch(`${META}/meta/whatsapp`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
         fetch(`${META}/meta/instagram/accounts`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
@@ -73,6 +93,9 @@ export function ProjectsPanel() {
               .catch(() => []),
           ),
         ).then((lists) => lists.flatMap((x) => (Array.isArray(x) ? x : x.users ?? []))),
+        // Master proyek (Perencanaan) — sumber pilihan Nama Proyek. Tolerant: kalau
+        // service mati / token ditolak, list kosong dan form fallback ke input teks.
+        fetch(`${PERENCANAAN}/projects`, { headers: authHeaders() }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
       setProjects(pj.projects ?? []);
       // WA numbers: wabas[].phones[] → {id=phone_number_id, display_phone_number}
@@ -108,6 +131,14 @@ export function ProjectsPanel() {
         salesUsers.push({ email, name: u.name || u.username || email });
       }
       setUsers(salesUsers);
+      // Master projects: perencanaan returns ProjectRollup[]; keep gp + name + lokasi.
+      const mpRaw = mp as { projects?: unknown[] } | unknown[] | null;
+      const mpArr = (Array.isArray(mpRaw) ? mpRaw : mpRaw?.projects ?? []) as Array<{ id?: string; gp?: string; name?: string; lokasi?: string }>;
+      setMasterProjects(
+        mpArr
+          .filter((p) => p.name)
+          .map((p) => ({ id: String(p.id ?? p.name), gp: String(p.gp ?? ""), name: String(p.name), lokasi: String(p.lokasi ?? "") })),
+      );
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -129,13 +160,6 @@ export function ProjectsPanel() {
       sales: new Set((p.sales ?? []).map((s) => s.email)),
     });
   };
-
-  const toggle = (set: "wa" | "ig" | "ad" | "sales", key: string) =>
-    setDraft((d) => {
-      const next = new Set(d[set]);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return { ...d, [set]: next };
-    });
 
   const save = async () => {
     if (!draft.name.trim()) {
@@ -180,109 +204,403 @@ export function ProjectsPanel() {
     }
   };
 
-  return (
-    <div className="adm-projects">
-      {err && <div className="adm-err">{err}</div>}
-      {msg && <div className="adm-ok">{msg}</div>}
+  const checkGroup = (
+    title: ReactNode,
+    opts: Opt[],
+    emptyMsg: string,
+    set: "wa" | "ig" | "ad",
+    colLabel: string,
+    searchPlaceholder: string,
+  ) => (
+    <div className="wms-field">
+      <span>{title} {opts.length > 0 && <small>({draft[set].size}/{opts.length} dipilih)</small>}</span>
+      {opts.length === 0 ? (
+        <div className="wms-note small">{emptyMsg}</div>
+      ) : (
+        <PickerTable
+          items={opts}
+          getKey={(o) => o.ref}
+          columns={[{ id: "label", header: colLabel, value: (o) => o.label }]}
+          selected={draft[set]}
+          onChange={(next) => setDraft((d) => ({ ...d, [set]: next }))}
+          searchPlaceholder={searchPlaceholder}
+          emptyText="Tidak ada yang cocok."
+        />
+      )}
+    </div>
+  );
 
-      <div className="adm-proj-grid">
+  return (
+    <div>
+      {err && <div className="wms-err" style={{ marginBottom: 10 }}>{err}</div>}
+      {msg && <div className="wms-ok" style={{ marginBottom: 10 }}>{msg}</div>}
+
+      <div className="wms-grid">
         {/* ── Editor ── */}
-        <section className="adm-card">
-          <h2>{draft.id ? "Edit Proyek" : "Proyek Baru"}</h2>
-          <label className="adm-field">
-            NAMA PROYEK
-            <input value={draft.name} placeholder="mis. Green Park Serua" onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          </label>
-          <label className="adm-field">
-            CATATAN (opsional)
+        <div className="wms-card wms-col-5">
+          <div className="wms-card-h"><h3>{draft.id ? "Edit Proyek" : "Proyek Baru"}</h3></div>
+          <div className="wms-field">
+            <span>Nama Proyek <small>(dari master Perencanaan)</small></span>
+            {masterProjects.length === 0 ? (
+              <>
+                <input value={draft.name} placeholder="mis. Green Park Serua" onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+                <div className="wms-note small">Master proyek Perencanaan tidak tersedia — ketik manual.</div>
+              </>
+            ) : (
+              <ProjectCombobox
+                projects={masterProjects}
+                value={draft.name}
+                onSelect={(m) => setDraft((d) => ({ ...d, name: m.name, note: d.note.trim() ? d.note : m.lokasi }))}
+              />
+            )}
+          </div>
+          <label className="wms-field">
+            <span>Catatan <small>(opsional)</small></span>
             <input value={draft.note} placeholder="lokasi / keterangan" onChange={(e) => setDraft({ ...draft, note: e.target.value })} />
           </label>
 
-          <div className="adm-field">
-            NOMOR WHATSAPP
-            {waOpts.length === 0 && <span className="adm-hint">Belum ada nomor WA terhubung.</span>}
-            {waOpts.map((o) => (
-              <label key={o.ref} className="adm-check">
-                <input type="checkbox" checked={draft.wa.has(o.ref)} onChange={() => toggle("wa", o.ref)} /> {o.label}
-              </label>
-            ))}
+          {checkGroup("Nomor WhatsApp", waOpts, "Belum ada nomor WA terhubung.", "wa", "Nomor WA", "Cari nomor WA…")}
+          {checkGroup("Akun Instagram", igOpts, "Belum ada akun IG terhubung.", "ig", "Akun IG", "Cari akun IG…")}
+          {checkGroup(<>Akun Iklan <small>(filter Ads)</small></>, adOpts, "Belum ada akun iklan terhubung.", "ad", "Akun Iklan", "Cari akun iklan…")}
+
+          <div className="wms-field">
+            <span>Tim Sales {users.length > 0 && <small>({draft.sales.size}/{users.length} dipilih)</small>}</span>
+            {users.length === 0 ? (
+              <div className="wms-note small">Belum ada user marketing/sales.</div>
+            ) : (
+              <PickerTable
+                items={users}
+                getKey={(u) => u.email}
+                columns={[
+                  { id: "name", header: "Nama", value: (u) => u.name },
+                  { id: "email", header: "Email", value: (u) => u.email, muted: true },
+                ]}
+                selected={draft.sales}
+                onChange={(next) => setDraft((d) => ({ ...d, sales: next }))}
+                searchPlaceholder="Cari nama / email…"
+                emptyText="Tidak ada user yang cocok."
+              />
+            )}
           </div>
 
-          <div className="adm-field">
-            AKUN INSTAGRAM
-            {igOpts.length === 0 && <span className="adm-hint">Belum ada akun IG terhubung.</span>}
-            {igOpts.map((o) => (
-              <label key={o.ref} className="adm-check">
-                <input type="checkbox" checked={draft.ig.has(o.ref)} onChange={() => toggle("ig", o.ref)} /> {o.label}
-              </label>
-            ))}
-          </div>
-
-          <div className="adm-field">
-            AKUN IKLAN (untuk filter Ads)
-            {adOpts.length === 0 && <span className="adm-hint">Belum ada akun iklan terhubung.</span>}
-            {adOpts.map((o) => (
-              <label key={o.ref} className="adm-check">
-                <input type="checkbox" checked={draft.ad.has(o.ref)} onChange={() => toggle("ad", o.ref)} /> {o.label}
-              </label>
-            ))}
-          </div>
-
-          <div className="adm-field">
-            TIM SALES
-            {users.length === 0 && <span className="adm-hint">Belum ada user marketing/sales.</span>}
-            {users.map((u) => (
-              <label key={u.email} className="adm-check">
-                <input type="checkbox" checked={draft.sales.has(u.email)} onChange={() => toggle("sales", u.email)} /> {u.name} <em>{u.email}</em>
-              </label>
-            ))}
-          </div>
-
-          <div className="adm-proj-actions">
-            <button className="adm-btn" disabled={busy} onClick={save}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="wms-btn" disabled={busy} onClick={save}>
               {busy ? "Menyimpan…" : draft.id ? "Simpan Perubahan" : "Tambah Proyek"}
             </button>
             {draft.id !== 0 && (
-              <button className="adm-btn ghost" disabled={busy} onClick={() => setDraft({ ...emptyDraft })}>
-                Batal
-              </button>
+              <button className="wms-btn ghost" disabled={busy} onClick={() => setDraft({ ...emptyDraft })}>Batal</button>
             )}
           </div>
-        </section>
+        </div>
 
         {/* ── List ── */}
-        <section className="adm-card">
-          <h2>Proyek ({projects.length})</h2>
-          {projects.length === 0 && <div className="adm-hint">Belum ada proyek. Buat di sebelah kiri.</div>}
-          <div className="adm-proj-list">
+        <div className="wms-card wms-col-7">
+          <div className="wms-card-h"><h3>Proyek ({projects.length})</h3></div>
+          {projects.length === 0 && <div className="wms-empty">Belum ada proyek. Buat di sebelah kiri.</div>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {projects.map((p) => (
-              <div key={p.id} className="adm-proj-item">
-                <div className="adm-proj-head">
+              <div key={p.id} className="wms-listrow">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                   <b>{p.name}</b>
-                  <div className="adm-proj-btns">
-                    <button className="adm-link" onClick={() => editProject(p)}>edit</button>
-                    <button className="adm-link danger" onClick={() => del(p)}>hapus</button>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <button className="wms-linkbtn" onClick={() => editProject(p)}>edit</button>
+                    <button className="wms-linkbtn danger" onClick={() => del(p)}>hapus</button>
                   </div>
                 </div>
-                {p.note && <div className="adm-proj-note">{p.note}</div>}
-                <div className="adm-proj-tags">
+                {p.note && <div className="wms-note small" style={{ margin: "2px 0 0" }}>{p.note}</div>}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                   {(p.accounts ?? []).map((a, i) => (
-                    <span key={i} className={"adm-tag " + a.kind}>
+                    <span key={i} className="wms-badge grey">
                       {a.kind === "wa" ? "📱" : a.kind === "ig" ? "📷" : "💰"} {a.label}
                     </span>
                   ))}
                   {(p.sales ?? []).map((s, i) => (
-                    <span key={"s" + i} className="adm-tag sales">
-                      🧑‍💼 {s.name}
-                    </span>
+                    <span key={"s" + i} className="wms-badge">🧑‍💼 {s.name}</span>
                   ))}
                 </div>
-                {(p.accounts ?? []).length === 0 && (p.sales ?? []).length === 0 && <div className="adm-hint">Belum ada akun/sales.</div>}
+                {(p.accounts ?? []).length === 0 && (p.sales ?? []).length === 0 && (
+                  <div className="wms-note small" style={{ marginTop: 6 }}>Belum ada akun/sales.</div>
+                )}
               </div>
             ))}
           </div>
-        </section>
+        </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Generic multi-select picker: searchable, sortable table (TanStack). ──
+ * Used for Tim Sales and the WA/IG/Ad account groups. Row click toggles an
+ * item; the header checkbox selects/clears exactly the rows matching the
+ * current search. `selected` (a Set of item keys) is owned by the parent draft;
+ * we hand back the next Set via onChange. */
+interface PickerColumn<T> {
+  id: string;
+  header: string;
+  value: (item: T) => string; // used for the cell text, sorting and search
+  muted?: boolean; // render in muted colour (e.g. the email column)
+}
+
+function PickerTable<T>({
+  items,
+  getKey,
+  columns,
+  selected,
+  onChange,
+  searchPlaceholder,
+  emptyText,
+}: {
+  items: T[];
+  getKey: (item: T) => string;
+  columns: PickerColumn<T>[];
+  selected: Set<string>;
+  onChange: (next: Set<string>) => void;
+  searchPlaceholder: string;
+  emptyText: string;
+}) {
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const cbStyle = { width: 16, height: 16, accentColor: "var(--wms-green)", cursor: "pointer" } as const;
+
+  const colDefs = useMemo<ColumnDef<T>[]>(
+    () => [
+      {
+        id: "pick",
+        enableSorting: false,
+        enableGlobalFilter: false,
+        header: ({ table }) => {
+          const rows = table.getFilteredRowModel().rows;
+          const all = rows.length > 0 && rows.every((r) => selected.has(getKey(r.original)));
+          return (
+            <input
+              type="checkbox"
+              aria-label="Pilih semua"
+              checked={all}
+              onChange={() => {
+                const next = new Set(selected);
+                for (const r of rows) all ? next.delete(getKey(r.original)) : next.add(getKey(r.original));
+                onChange(next);
+              }}
+              style={cbStyle}
+            />
+          );
+        },
+        cell: ({ row }) => (
+          <input type="checkbox" checked={selected.has(getKey(row.original))} readOnly tabIndex={-1} style={cbStyle} />
+        ),
+      },
+      ...columns.map(
+        (c): ColumnDef<T> => ({
+          id: c.id,
+          header: c.header,
+          accessorFn: (item) => c.value(item),
+          cell: c.muted
+            ? ({ row }) => <span style={{ color: "var(--wms-muted)" }}>{c.value(row.original)}</span>
+            : undefined,
+        }),
+      ),
+    ],
+    [columns, selected, onChange, getKey],
+  );
+
+  const table = useReactTable({
+    data: items,
+    columns: colDefs,
+    state: { globalFilter, sorting },
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
+    globalFilterFn: (row, _id, value) =>
+      columns
+        .map((c) => c.value(row.original))
+        .join(" ")
+        .toLowerCase()
+        .includes(String(value).toLowerCase()),
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  const toggleOne = (key: string) => {
+    const next = new Set(selected);
+    next.has(key) ? next.delete(key) : next.add(key);
+    onChange(next);
+  };
+
+  const sortMark: Record<string, string> = { asc: " ▲", desc: " ▼" };
+  const rows = table.getRowModel().rows;
+  const colCount = columns.length + 1;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 8 }}>
+        <WmsSearch value={globalFilter} onChange={setGlobalFilter} placeholder={searchPlaceholder} />
+      </div>
+      <div style={{ maxHeight: "40vh", overflowY: "auto", border: "1px solid var(--wms-line)", borderRadius: "var(--wms-radius-sm)" }}>
+        <table className="wms-table">
+          <thead>
+            {table.getHeaderGroups().map((hg) => (
+              <tr key={hg.id}>
+                {hg.headers.map((h) => (
+                  <th
+                    key={h.id}
+                    onClick={h.column.getCanSort() ? h.column.getToggleSortingHandler() : undefined}
+                    style={{ cursor: h.column.getCanSort() ? "pointer" : "default", userSelect: "none", width: h.id === "pick" ? 40 : undefined, textAlign: h.id === "pick" ? "center" : "left" }}
+                  >
+                    {flexRender(h.column.columnDef.header, h.getContext())}
+                    {sortMark[h.column.getIsSorted() as string] ?? ""}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={colCount} className="wms-empty">{emptyText}</td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} onClick={() => toggleOne(getKey(row.original))} style={{ cursor: "pointer" }}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} style={{ textAlign: cell.column.id === "pick" ? "center" : "left" }}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── Project combobox: type-to-search over the Perencanaan master list. ──
+ * Dropdown height is capped at ~4 rows (scroll for the rest). Selecting only
+ * happens via a list pick, so a legacy name that isn't in the master survives
+ * until the user deliberately replaces it. */
+const CB_ROW = 44; // approx px per option → 4 rows visible before scroll
+function ProjectCombobox({
+  projects,
+  value,
+  onSelect,
+}: {
+  projects: MasterProj[];
+  value: string;
+  onSelect: (p: MasterProj) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  const q = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () => (q ? projects.filter((p) => `${p.gp} ${p.name} ${p.lokasi}`.toLowerCase().includes(q)) : projects),
+    [projects, q],
+  );
+
+  // Close when clicking outside.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  // Keep the highlighted row in range and scrolled into view (keyboard nav).
+  useEffect(() => {
+    if (active > filtered.length - 1) setActive(Math.max(0, filtered.length - 1));
+  }, [filtered.length, active]);
+  useEffect(() => {
+    if (open) (listRef.current?.children[active] as HTMLElement | undefined)?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+
+  const choose = (p: MasterProj) => {
+    onSelect(p);
+    setQuery("");
+    setOpen(false);
+  };
+
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setActive((a) => Math.min(a + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((a) => Math.max(a - 1, 0));
+    } else if (e.key === "Enter") {
+      if (open && filtered[active]) {
+        e.preventDefault();
+        choose(filtered[active]);
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={boxRef} style={{ position: "relative" }}>
+      <input
+        value={open ? query : value}
+        placeholder={value || "Cari / pilih proyek…"}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); setActive(0); }}
+        onFocus={() => { setOpen(true); setQuery(""); setActive(0); }}
+        onKeyDown={onKey}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls="proj-cb-list"
+        autoComplete="off"
+        style={{ width: "100%" }}
+      />
+      {open && (
+        <ul
+          id="proj-cb-list"
+          ref={listRef}
+          role="listbox"
+          style={{
+            position: "absolute", zIndex: 30, top: "calc(100% + 4px)", left: 0, right: 0,
+            margin: 0, padding: 4, listStyle: "none",
+            maxHeight: CB_ROW * 4, overflowY: "auto",
+            background: "var(--wms-panel)", border: "1px solid var(--wms-line)",
+            borderRadius: "var(--wms-radius-sm)", boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+          }}
+        >
+          {filtered.length === 0 ? (
+            <li style={{ padding: "10px 10px", color: "var(--wms-muted)", fontSize: 12.5 }}>Tidak ada proyek cocok.</li>
+          ) : (
+            filtered.map((p, i) => {
+              const selected = p.name === value;
+              return (
+                <li
+                  key={p.id}
+                  role="option"
+                  aria-selected={selected}
+                  onMouseDown={(e) => { e.preventDefault(); choose(p); }}
+                  onMouseEnter={() => setActive(i)}
+                  style={{
+                    padding: "7px 10px", borderRadius: 6, cursor: "pointer",
+                    background: i === active ? "var(--wms-green-50)" : "transparent",
+                    display: "flex", flexDirection: "column", gap: 1,
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: selected ? 700 : 500, color: "var(--wms-ink)" }}>
+                    {p.gp ? `${p.gp} · ` : ""}{p.name}{selected ? " ✓" : ""}
+                  </span>
+                  {p.lokasi && <span style={{ fontSize: 11.5, color: "var(--wms-muted)" }}>{p.lokasi}</span>}
+                </li>
+              );
+            })
+          )}
+        </ul>
+      )}
     </div>
   );
 }

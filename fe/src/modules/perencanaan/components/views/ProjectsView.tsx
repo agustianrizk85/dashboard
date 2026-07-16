@@ -245,6 +245,7 @@ function TaskRow({
           status={task.status}
           doc={task.doc}
           approvedBy={task.approvedBy}
+          revisiNote={task.revisiNote}
           canUpload={editable}
           canApprove={canManage}
           onDone={onReview}

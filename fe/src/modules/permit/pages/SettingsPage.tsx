@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import type { DACIConfig, NotificationConfig } from "@/modules/permit/models";
 import { settingsService } from "@/modules/permit/services/settings.service";
-import { useAuth } from "@/auth/AuthContext";
 
 export function SettingsPage() {
-  const { user } = useAuth();
-  // Editable for the legal department + directors (CEO/Dirops were read-only before).
-  const canEdit = ["ceo", "dirops", "kadep", "legal_permit"].includes(user?.role ?? "");
+  // Read-only gate removed — every authenticated permit user may edit.
+  const canEdit = true;
   const [daci, setDaci] = useState<DACIConfig | null>(null);
   const [notif, setNotif] = useState<NotificationConfig | null>(null);
   const [msg, setMsg] = useState("");

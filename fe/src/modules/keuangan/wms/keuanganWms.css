@@ -1,0 +1,91 @@
+/* WMS-native styles for the Keuangan Ops-Console overview. Everything is scoped
+ * under `.kwms` (the overview root) and leans on the shared wms.css tokens
+ * (--wms-*). No dependency on the war-room keuangan.css / .kc-scope theme.
+ * Section components (wms/sections/*) render inside `.kwms` and may use these
+ * classes plus the shared wms-card / wms-grid / wms-table / wms-badge kit. */
+
+.kwms { color: var(--wms-ink); }
+
+/* ---- KPI scorecard row ------------------------------------------------- */
+.kwms-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 16px; }
+@media (max-width: 1200px) { .kwms-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .kwms-kpis { grid-template-columns: repeat(2, 1fr); } }
+.kwms-kpi {
+  background: var(--wms-panel); border: 1px solid var(--wms-line); border-top: 3px solid var(--wms-line-strong, #cdd6e2);
+  border-radius: var(--wms-radius-sm); padding: 13px 15px; box-shadow: var(--wms-shadow); min-width: 0;
+}
+.kwms-kpi.ok { border-top-color: var(--wms-green); }
+.kwms-kpi.warn { border-top-color: var(--wms-warn); }
+.kwms-kpi.bad { border-top-color: var(--wms-danger); }
+.kwms-kpi .k-label { font-size: 11px; font-weight: 700; color: var(--wms-muted); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 5px; }
+.kwms-kpi .k-val { font-size: 27px; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; margin-top: 6px; color: var(--wms-ink); word-break: break-word; }
+.kwms-kpi.ok .k-val { color: var(--wms-green-700); }
+.kwms-kpi.warn .k-val { color: var(--wms-warn); }
+.kwms-kpi.bad .k-val { color: var(--wms-danger); }
+.kwms-kpi .k-val .u { font-size: 13px; font-weight: 600; color: var(--wms-muted); margin-left: 4px; }
+.kwms-kpi .k-delta { font-size: 11px; font-weight: 700; color: var(--wms-muted); margin-top: 3px; }
+
+/* ---- Donut + legend --------------------------------------------------- */
+.kwms-chartrow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.kwms-donut-wrap { position: relative; flex: none; display: grid; place-items: center; }
+.kwms-donut-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.kwms-donut-c .dc-main { font-size: 17px; font-weight: 800; color: var(--wms-ink); letter-spacing: -.01em; }
+.kwms-donut-c .dc-sub { font-size: 10.5px; font-weight: 600; color: var(--wms-muted); text-transform: uppercase; letter-spacing: .05em; }
+
+.kwms-legend { display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 140px; }
+.kwms-lg { display: grid; grid-template-columns: 14px 1fr auto auto; align-items: center; gap: 8px; font-size: 12.5px; }
+.kwms-lg-dot { width: 11px; height: 11px; border-radius: 3px; }
+.kwms-lg-name { color: var(--wms-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kwms-lg-val { font-weight: 700; color: var(--wms-ink); font-variant-numeric: tabular-nums; }
+.kwms-lg-pct { color: var(--wms-muted); font-weight: 600; min-width: 34px; text-align: right; }
+
+/* ---- Radial gauges ---------------------------------------------------- */
+.kwms-gauges { display: flex; gap: 10px; justify-content: center; }
+.kwms-gauge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.kwms-gauge .g-val { font-size: 22px; font-weight: 800; fill: var(--wms-ink); }
+.kwms-gauge .g-cap { font-size: 10px; font-weight: 600; fill: var(--wms-muted); }
+.kwms-gauge .g-label { font-size: 11px; font-weight: 700; color: var(--wms-muted); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---- Compact list rows (projects / sales / pipeline / suppliers) -------
+ * Flex row: optional .kwms-li-rank · .kwms-li-main (name + sub/note stacked) ·
+ * optional .kwms-li-val. Works with or without a rank / value. */
+.kwms-list { display: flex; flex-direction: column; }
+.kwms-li { display: flex; align-items: center; gap: 11px; padding: 9px 4px; border-bottom: 1px solid var(--wms-line-2); text-align: left; width: 100%; background: none; border-left: none; border-right: none; border-top: none; font: inherit; color: inherit; }
+.kwms-li:last-child { border-bottom: none; }
+button.kwms-li { cursor: pointer; border-radius: 8px; }
+button.kwms-li:hover { background: var(--wms-green-50); }
+.kwms-li-rank { flex: none; width: 24px; height: 24px; border-radius: 7px; background: var(--wms-line-2); color: var(--wms-muted); font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+.kwms-li-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kwms-li-name { font-size: 13.5px; font-weight: 700; color: var(--wms-ink); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kwms-li-sub { font-size: 11.5px; color: var(--wms-muted); }
+.kwms-li-note { font-size: 11.5px; color: var(--wms-ink-2); }
+.kwms-li-val { flex: none; font-size: 13.5px; font-weight: 800; color: var(--wms-ink); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+/* ---- Small stat tiles (achievement / purchasing) ---------------------- */
+.kwms-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; }
+.kwms-tile { border: 1px solid var(--wms-line); border-radius: var(--wms-radius-sm); padding: 9px 11px; text-align: center; min-width: 0; }
+.kwms-tile .t-label { font-size: 10.5px; font-weight: 700; color: var(--wms-muted); text-transform: uppercase; letter-spacing: .04em; }
+.kwms-tile .t-val { font-size: 16.5px; font-weight: 800; margin-top: 3px; color: var(--wms-ink); overflow-wrap: anywhere; }
+.kwms-tile.ok .t-val { color: var(--wms-green-700); }
+.kwms-tile.warn .t-val { color: var(--wms-warn); }
+.kwms-tile.bad .t-val { color: var(--wms-danger); }
+
+/* ---- Dual-series monthly line ----------------------------------------- */
+.kwms-line { width: 100%; }
+.kwms-line .grid-l { stroke: var(--wms-line); stroke-width: 1; }
+.kwms-line .axis-t { fill: var(--wms-muted); font-size: 10px; }
+.kwms-line .ln-a { fill: none; stroke: var(--wms-green); stroke-width: 2.5; }
+.kwms-line .dot-a { fill: var(--wms-green); }
+.kwms-line .ln-b { fill: none; stroke: var(--wms-danger); stroke-width: 2; stroke-dasharray: 4 4; }
+
+/* ---- Alert / AI stacked items ----------------------------------------- */
+.kwms-alerts { display: flex; flex-direction: column; gap: 10px; }
+.kwms-alert { border: 1px solid var(--wms-line); border-left: 3px solid var(--wms-muted); border-radius: var(--wms-radius-sm); padding: 10px 12px; }
+.kwms-alert.ok { border-left-color: var(--wms-green); }
+.kwms-alert.warn { border-left-color: var(--wms-warn); }
+.kwms-alert.bad, .kwms-alert.crisis { border-left-color: var(--wms-danger); }
+.kwms-alert .a-detail { font-size: 12.5px; color: var(--wms-ink-2); margin-top: 4px; line-height: 1.4; }
+.kwms-alert .a-action { font-size: 12px; color: var(--wms-green-700); font-weight: 600; margin-top: 4px; }
+
+/* Section sub-caption shown under a card title. */
+.kwms-cap { font-size: 11.5px; color: var(--wms-muted); font-weight: 500; }

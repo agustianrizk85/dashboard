@@ -87,7 +87,7 @@ export function DesktopShell({ user }: { user: User }) {
     : TABS;
 
   return (
-    <div className="mk-stage">
+    <div className="mk-stage mk-scope">
       <div className="mk-canvas">
         <header className="hdr">
           <div className="hdr-logo"><img src="/brand/logo-mark.png" alt="Greenpark Group" /></div>

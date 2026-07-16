@@ -1,0 +1,53 @@
+/* ============================================================================
+   Director Console — the all-access directors' (CEO / Dirops) home. A launcher
+   into every division + the cross-division director tools (Persetujuan, Chat,
+   Kotak Masuk). Built on the shared WMS shell, so everything here is scoped
+   under `.wms` and reuses its tokens (green theme, cards, badges).
+   ============================================================================ */
+
+/* Greeting */
+.con-hi { margin: 2px 0 6px; }
+.con-hi h1 { margin: 0; font-size: 22px; font-weight: 800; color: var(--wms-green-700); letter-spacing: -.01em; }
+.con-hi p { margin: 5px 0 0; font-size: 13px; color: var(--wms-ink-2); }
+
+/* Section heading between blocks */
+.con-sech { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--wms-muted); margin: 24px 0 12px; }
+
+/* Green rounded icon square, reused by tiles + CTA rows */
+.con-ic {
+  width: 38px; height: 38px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
+  background: var(--wms-green-50); color: var(--wms-green-700);
+  font-size: 18px; font-weight: 800;
+}
+
+/* Division launcher grid */
+.con-launch { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.con-tile {
+  text-align: left; cursor: pointer; width: 100%;
+  background: var(--wms-panel); border: 1px solid var(--wms-line); border-radius: var(--wms-radius);
+  padding: 16px; box-shadow: var(--wms-shadow);
+  display: flex; flex-direction: column; gap: 6px;
+  transition: border-color .12s, transform .12s, box-shadow .12s;
+}
+.con-tile:hover { border-color: var(--wms-green); transform: translateY(-2px); }
+.con-tile .con-ic { margin-bottom: 4px; }
+.con-tile b { font-size: 14px; font-weight: 700; color: var(--wms-ink); }
+.con-tile > span:not(.con-ic) { font-size: 12px; color: var(--wms-muted); }
+.con-tile .t-go { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--wms-green-700); }
+
+/* CTA / tool cards row */
+.con-cta { display: flex; align-items: center; gap: 14px; }
+.con-cta .c-txt { flex: 1; min-width: 0; }
+.con-cta .c-txt b { font-size: 14.5px; font-weight: 700; color: var(--wms-ink); }
+.con-cta .c-txt p { margin: 4px 0 0; font-size: 12.5px; color: var(--wms-ink-2); line-height: 1.45; }
+
+/* Kotak Masuk notification icon */
+.inbox-noti-ic { font-size: 20px; line-height: 1.2; flex: none; }
+
+/* "Segera hadir" placeholder page (unused now; kept for reuse) */
+.con-soon { display: grid; place-items: center; min-height: 56vh; text-align: center; }
+.con-soon .s-ic { font-size: 46px; line-height: 1; margin-bottom: 14px; }
+.con-soon h2 { margin: 0 0 8px; font-size: 20px; font-weight: 800; color: var(--wms-ink); }
+.con-soon p { margin: 0 auto; font-size: 13.5px; color: var(--wms-ink-2); max-width: 440px; line-height: 1.6; }
+.con-soon .s-badge { margin-top: 16px; }

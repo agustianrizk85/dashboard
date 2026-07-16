@@ -22,6 +22,9 @@ export interface SessionUser {
   allAccess?: boolean;
   /** All-access users only: true = may approve/edit data (Dirops); false = overview-only (CEO). */
   canApprove?: boolean;
+  /** The platform super admin (auth `super`). Gets the new WMS UI like staff,
+   *  even though allAccess is true — unlike the executive CEO/directors. */
+  super?: boolean;
 }
 
 type AuthStatus = "checking" | "in" | "out";
@@ -288,6 +291,10 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
     const deptCodes = Object.keys(roles);
     // super, OR roles across many depts (a director), ⇒ all-access overview.
     const all = !!au.super || deptCodes.length >= 3;
+    // Who may APPROVE (not just review): the superadmin, and the Dirops — whose
+    // cross-division role is "dirops" on every department. The CEO (role "ceo")
+    // is overview-only. Without this the real-auth Dirops would be read-only.
+    const canApprove = !!au.super || Object.values(roles).includes("dirops");
     // Map an auth department code → the dashboard's Division.
     const DEPT2DIV: Record<string, Division> = {
       finance: "keuangan",
@@ -307,7 +314,8 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
       role: au.super ? "ceo" : ownDept ? roles[ownDept] : "viewer",
       division,
       allAccess: all,
-      canApprove: !!au.super,
+      canApprove,
+      super: !!au.super,
     };
     if (division === "marketing") {
       user.position = MARKETING_POSITIONS[au.username.toLowerCase()] ?? (user.role === "kadep" ? "Kepala Departemen Marketing" : "Tim Marketing");

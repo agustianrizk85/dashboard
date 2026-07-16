@@ -41,7 +41,7 @@ export function MobileApp({ user }: { user: User }) {
   }, [steps]);
 
   return (
-    <div className="m-app">
+    <div className="m-app mk-scope">
       <header className="m-bar">
         <div className="m-bar-l">
           <div className="m-logo">GP</div>

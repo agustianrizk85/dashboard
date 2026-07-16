@@ -44,7 +44,7 @@ export function Layout() {
   // All-access directors (CEO/Dirops) only need the dashboard, not the menus.
   const nav = user?.allAccess ? NAV.filter((n) => n.to === "/permit") : NAV;
   return (
-    <div className="app">
+    <div className="app pm-scope">
       <header className="hdr">
         <div className="hdr-logo">
           <img src="/brand/logo-mark.png" alt="Greenpark Group" />

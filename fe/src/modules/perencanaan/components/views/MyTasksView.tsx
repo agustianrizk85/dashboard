@@ -142,6 +142,7 @@ export function MyTasksView({
                       status={t.status}
                       doc={t.doc}
                       approvedBy={t.approvedBy}
+                      revisiNote={t.revisiNote}
                       canUpload={editable}
                       canApprove={canManage}
                       onDone={() => {

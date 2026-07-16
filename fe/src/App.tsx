@@ -16,11 +16,11 @@ const SalesApp = lazy(() => import("@/modules/sales/SalesApp"));
 const KeuanganApp = lazy(() => import("@/modules/keuangan/KeuanganApp"));
 const TeknikApp = lazy(() => import("@/modules/teknik/TeknikApp"));
 const CsoApp = lazy(() => import("@/modules/cso/CsoApp"));
-const ApprovalsApp = lazy(() => import("@/approvals/ApprovalsApp"));
 const RekapApp = lazy(() => import("@/modules/rekap/RekapApp"));
 const OrchestratorApp = lazy(() => import("@/modules/orchestrator/OrchestratorApp"));
 const AiImportApp = lazy(() => import("@/modules/aiimport/AiImportApp"));
 const AdminApp = lazy(() => import("@/modules/admin/AdminApp"));
+const ConsoleApp = lazy(() => import("@/modules/console/ConsoleApp"));
 
 /** Where a given division's full dashboard lives. */
 function homePath(division: Division): string {
@@ -30,7 +30,13 @@ function homePath(division: Division): string {
 /** Where a user lands on login. The CEO's home is the Marketing performance
  *  dashboard (Performa Iklan); everyone else lands on their own division. */
 function landingPath(user: SessionUser): string {
-  if (user.role === "ceo") return "/marketing";
+  // Super admin's job is platform admin only (accounts · AI key · settings) —
+  // they land on the Admin panel, not an operational division dashboard.
+  if (user.super) return "/admin";
+  // All-access directors (CEO / Dirops) land on their cross-division Console —
+  // a launcher into every division + Persetujuan / Chat / Kotak Masuk. They are
+  // NOT the platform admin, so they never land on /admin.
+  if (user.allAccess) return "/console";
   return homePath(user.division);
 }
 
@@ -40,6 +46,17 @@ function RequireAllAccess({ children }: { children: ReactNode }) {
   if (status === "checking") return <LoadingSplash label="Memeriksa sesi…" />;
   if (status === "out" || !user) return <Navigate to="/login" replace />;
   if (!user.allAccess) return <Navigate to={homePath(user.division)} replace />;
+  return <Suspense fallback={<LoadingSplash />}>{children}</Suspense>;
+}
+
+/** Gate a route to the platform SUPER admin only (the Admin panel — accounts,
+ *  master data, AI key). Directors (CEO / Dirops) are all-access but NOT super,
+ *  so hitting /admin bounces them to their own home (the Console). */
+function RequireSuper({ children }: { children: ReactNode }) {
+  const { status, user } = useAuth();
+  if (status === "checking") return <LoadingSplash label="Memeriksa sesi…" />;
+  if (status === "out" || !user) return <Navigate to="/login" replace />;
+  if (!user.super) return <Navigate to={landingPath(user)} replace />;
   return <Suspense fallback={<LoadingSplash />}>{children}</Suspense>;
 }
 
@@ -129,14 +146,9 @@ export function App() {
             </RequireDivision>
           }
         />
-        <Route
-          path="/approvals/*"
-          element={
-            <RequireAllAccess>
-              <ApprovalsApp />
-            </RequireAllAccess>
-          }
-        />
+        {/* Legacy path → the Console's in-frame Persetujuan view (same content,
+            now hosted inside the director Console shell instead of standalone). */}
+        <Route path="/approvals/*" element={<Navigate to="/console/persetujuan" replace />} />
         <Route
           path="/rekap/*"
           element={
@@ -164,8 +176,16 @@ export function App() {
         <Route
           path="/admin/*"
           element={
-            <RequireAllAccess>
+            <RequireSuper>
               <AdminApp />
+            </RequireSuper>
+          }
+        />
+        <Route
+          path="/console/*"
+          element={
+            <RequireAllAccess>
+              <ConsoleApp />
             </RequireAllAccess>
           }
         />

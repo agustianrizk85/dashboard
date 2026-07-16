@@ -1,10 +1,8 @@
 import { MasterDeadline } from "@/modules/permit/components/MasterDeadline";
-import { useAuth } from "@/auth/AuthContext";
 
 export function DeadlinePage() {
-  const { user } = useAuth();
-  // Editable for the legal department + directors (CEO/Dirops were read-only before).
-  const canEdit = ["ceo", "dirops", "kadep", "legal_permit"].includes(user?.role ?? "");
+  // Read-only gate removed — every authenticated permit user may edit.
+  const canEdit = true;
 
   return (
     <div className="page">

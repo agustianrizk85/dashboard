@@ -4,6 +4,7 @@ import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { KeuanganView } from "./KeuanganView";
 import { ARView } from "./ARView";
 import { ImportPanel } from "./components/admin/ImportPanel";
+import { KeuanganWmsShell } from "./wms/KeuanganWmsShell";
 import "../sales/sales.css"; // shared division shell chrome (stage/header/tabs)
 import "./keuangan.css"; // finance dashboard content, scoped under .kc-scope
 import { AiGenerateButton } from "@/ai/AiGenerate";
@@ -44,6 +45,10 @@ export default function KeuanganApp() {
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [tab, setTab] = useState<Tab>("dash");
   const active: Tab = tab === "sync" && !canManage ? "dash" : tab;
+
+  // CEO / all-access directors keep the original war-room UI; staff & kadep get
+  // the new WMS Ops-Console redesign.
+  if (!user?.allAccess) return <KeuanganWmsShell />;
 
   return (
     <div className="sales-stage">

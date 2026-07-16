@@ -4,6 +4,7 @@ import type { User, Role } from "./models";
 import { realtimeURL } from "./services/api";
 import { DesktopShell } from "./components/DesktopShell";
 import { MobileApp } from "./components/MobileApp";
+import { MarketingWmsShell } from "./components/MarketingWmsShell";
 import "./styles.base.css";
 import "./styles.marketing.css";
 
@@ -28,9 +29,16 @@ export default function MarketingApp() {
     updated_at: "",
   };
 
+  // GATE: CEO / all-access directors keep the ORIGINAL marketing UI unchanged
+  // (DesktopShell, or MobileApp for field roles). Non-all-access marketing staff
+  // get the new WMS "Ops Console" redesign. Field roles (Talent / Videografer)
+  // keep their touch-first MobileApp on both paths.
+  const wms = !user.allAccess;
+  const mobile = MOBILE_POSITIONS.includes(mkUser.position);
+
   return (
     <RealtimeProvider url={realtimeURL()}>
-      {MOBILE_POSITIONS.includes(mkUser.position) ? <MobileApp user={mkUser} /> : <DesktopShell user={mkUser} />}
+      {mobile ? <MobileApp user={mkUser} /> : wms ? <MarketingWmsShell user={mkUser} /> : <DesktopShell user={mkUser} />}
     </RealtimeProvider>
   );
 }

@@ -18,6 +18,7 @@ export function ReviewControls({
   status,
   doc,
   approvedBy,
+  revisiNote,
   canUpload,
   canApprove,
   onDone,
@@ -27,6 +28,7 @@ export function ReviewControls({
   status: TaskStatus;
   doc?: TaskDoc;
   approvedBy?: string;
+  revisiNote?: string;
   canUpload: boolean;
   canApprove: boolean;
   onDone: () => void;
@@ -99,6 +101,11 @@ export function ReviewControls({
 
   return (
     <div className="review">
+      {revisiNote && status !== "done" && (
+        <span className="review-revisi" title="Instruksi revisi dari reviewer">
+          ⚠ Revisi: {revisiNote}
+        </span>
+      )}
       {doc && (
         <button
           type="button"
