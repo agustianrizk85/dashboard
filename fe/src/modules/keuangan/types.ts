@@ -393,3 +393,163 @@ export interface LoginResponse {
   token: string;
   user: User;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * PURCHASING module (PR / PO / Master Data / Approval).
+ * Mirrors the greenparkkeuanganbe Go structs 1:1 (camelCase JSON).
+ * IMPORTANT: money here (harga / hargaSatuan / subTotal / total / …) is in
+ * FULL Rupiah integers — NOT the millions used by the akad dashboard aggregates.
+ * ════════════════════════════════════════════════════════════════════════ */
+
+export interface Vendor {
+  id: string;
+  nama: string;
+  alamat: string;
+  telepon: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Produk {
+  id: string;
+  nama: string;
+  vendorId: string;
+  /** Denormalized vendor name for display. */
+  vendorNama: string;
+  harga: number; // Rp (full)
+  satuan: string;
+  negotiable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** SLA master row (SOP 5.2). */
+export interface SLAItem {
+  id: string;
+  no: number;
+  aktivitas: string;
+  pic: string;
+  /** Free text e.g. "1 Hari", "Sesuai tempo". */
+  slaHari: string;
+  /** Numeric target for computing keterangan; 0 if N/A. */
+  slaTargetHari: number;
+  output: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Embedded approval record (PR & PO). */
+export interface Approval {
+  approvedBy: string;
+  approvedByRole: string;
+  approvedAt: string;
+  note: string;
+  rejectedBy: string;
+  rejectedByRole: string;
+  rejectedAt: string;
+  rejectNote: string;
+}
+
+/** Embedded receiving / BAST record (PO only). */
+export interface Receiving {
+  received: boolean;
+  tanggalDiterima: string;
+  bastSigned: boolean;
+  /** "Tepat Waktu" | "Terlambat" | "" */
+  keterangan: string;
+  /** Actual days from tanggal to diterima. */
+  slaHari: number;
+}
+
+export interface PRItem {
+  no: number;
+  nama: string;
+  satuan: string;
+  qty: number;
+  /** keperluan / tujuan item. */
+  tujuan: string;
+}
+
+export type PRStatus = "draft" | "pending" | "approved" | "rejected";
+
+export interface PurchaseRequest {
+  id: string;
+  nomor: string;
+  status: PRStatus;
+  requestDate: string; // YYYY-MM-DD
+  dateRequired: string; // YYYY-MM-DD
+  requestBy: string;
+  dept: string;
+  proyek: string;
+  supplier: string;
+  alamatPengiriman: string;
+  pic: string;
+  items: PRItem[];
+  catatan: string;
+  diajukanOleh: string;
+  diketahuiOleh: string;
+  approval: Approval;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+export interface POItem {
+  no: number;
+  nama: string;
+  satuan: string;
+  qty: number;
+  hargaSatuan: number; // Rp (full)
+  jumlah: number; // = qty * hargaSatuan
+}
+
+export type POStatus = "draft" | "pending" | "approved" | "rejected" | "received" | "completed";
+export type POTier = "none" | "kadep" | "dirops";
+
+export interface PurchaseOrder {
+  id: string;
+  nomor: string;
+  prId: string;
+  prNomor: string;
+  status: POStatus;
+  tanggal: string;
+  tanggalPengiriman: string;
+  syaratPembayaran: string;
+  caraBayar: string;
+  purchaser: string;
+  supplier: string;
+  vendorId: string;
+  alamatPengiriman: string;
+  pic: string;
+  proyek: string;
+  items: POItem[];
+  subTotal: number;
+  potongan: number;
+  biayaPengiriman: number;
+  total: number;
+  terbilang: string;
+  tanpaPo: boolean;
+  tier: POTier;
+  disiapkanOleh: string;
+  diketahuiOleh: string;
+  disetujuiOleh: string;
+  approval: Approval;
+  receiving: Receiving;
+  catatan: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+/** Body for approve / reject endpoints. */
+export interface ApproverBody {
+  approver: { name: string; role: string };
+  note: string;
+}
+
+/** Body for PO receive / BAST. */
+export interface ReceiveBody {
+  tanggalDiterima: string;
+  bastSigned: boolean;
+  keterangan: string;
+}

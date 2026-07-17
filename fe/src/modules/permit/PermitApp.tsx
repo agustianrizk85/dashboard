@@ -14,6 +14,7 @@ import { SPKPage } from "@/modules/permit/pages/SPKPage";
 import { DeadlinePage } from "@/modules/permit/pages/DeadlinePage";
 import { SettingsPage } from "@/modules/permit/pages/SettingsPage";
 import { SyncPage } from "@/modules/permit/pages/SyncPage";
+import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 import "./permit.css";
 
 const SECTIONS = [
@@ -66,6 +67,7 @@ export default function PermitApp() {
           <Route path="vendors" element={<VendorPage />} />
           <Route path="spk" element={<SPKPage />} />
           <Route path="deadline" element={<DeadlinePage />} />
+          <Route path="pembelian" element={<PurchasingInbox />} />
           <Route path="sync" element={<SyncPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/permit" replace />} />

@@ -71,6 +71,30 @@
 .adm-del { background: transparent; border: 1px solid #4a2a30; color: #ff9ea1; border-radius: 7px; width: 28px; height: 28px; cursor: pointer; flex: none; }
 .adm-del:hover { background: rgba(210,59,65,.18); }
 
+/* ---- Master Akun Karyawan: preset, picker, preview ---- */
+.adm-preset {
+  background: #0e1b30; border: 1px solid #2c4368; color: #eaf1fb;
+  border-radius: 9px; padding: 9px 12px; font-size: 13.5px; width: 100%; cursor: pointer;
+}
+.adm-preset:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.18); }
+
+.adm-super-note {
+  border: 1px solid #6d4a12; background: rgba(180,83,9,.14); color: #f2d9ac;
+  border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; margin: 6px 0 14px;
+}
+.adm-super-note b { color: #ffe4b8; }
+
+.adm-preview { border-top: 1px solid #243a5c; padding-top: 12px; margin: 12px 0 14px; }
+.adm-preview-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.adm-chip {
+  background: #17335c; border: 1px solid #2e5288; color: #cfe0f5;
+  border-radius: 6px; padding: 3px 9px; font-size: 11.5px; font-weight: 600;
+}
+.adm-chip.muted { background: #16273f; border-color: #2c4368; color: #7e93b3; }
+.adm-chip.dir { background: #143b30; border-color: #1f6b52; color: #a7eccf; }
+.adm-chip.super { background: #b45309; border-color: #d97706; color: #fff5e6; }
+.adm-badge.dir { background: #143b30; border-color: #1f6b52; color: #a7eccf; }
+
 .adm-note { font-size: 12.5px; color: #9db2cf; line-height: 1.5; margin: 0 0 12px; }
 .adm-note.small { font-size: 11.5px; margin-top: 12px; }
 .adm-note b, .adm-note code { color: #cfe0f5; }

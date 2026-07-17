@@ -7,3 +7,8 @@ dist-ssr
 .DS_Store
 
 vite.log
+
+# runtime logs (bukan bagian source)
+*.log
+dev.out
+dev.err

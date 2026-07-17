@@ -18,6 +18,7 @@ const NAV = [
   { to: "/permit/vendors", label: "Vendor" },
   { to: "/permit/spk", label: "SPK" },
   { to: "/permit/deadline", label: "Deadline" },
+  { to: "/permit/pembelian", label: "Pembelian" },
   { to: "/permit/sync", label: "Sync Sheet" },
   { to: "/permit/settings", label: "Setting" },
 ];

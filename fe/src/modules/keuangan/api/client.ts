@@ -1,4 +1,5 @@
 import type {
+  ApproverBody,
   ARData,
   ARSource,
   AutoSyncStatus,
@@ -6,7 +7,13 @@ import type {
   ImportRecord,
   ImportResult,
   LoginResponse,
+  Produk,
+  PurchaseOrder,
+  PurchaseRequest,
+  ReceiveBody,
+  SLAItem,
   User,
+  Vendor,
 } from "../types";
 
 /** Finance backend base URL — override with VITE_KEUANGAN_API. */
@@ -106,4 +113,41 @@ export const api = {
   importHistory: () => req<ImportRecord[]>("GET", "/import/history"),
   importReset: () => req<ImportRecord>("POST", "/import/reset"),
   importRollback: (id: string) => req<ImportRecord>("POST", `/import/rollback/${encodeURIComponent(id)}`),
+
+  /* ── Purchasing · master data (CRUD) ──────────────────────────────────── */
+  vendors: () => req<Vendor[]>("GET", "/vendors"),
+  createVendor: (body: Partial<Vendor>) => req<Vendor>("POST", "/vendors", body),
+  updateVendor: (id: string, body: Partial<Vendor>) => req<Vendor>("PUT", `/vendors/${encodeURIComponent(id)}`, body),
+  deleteVendor: (id: string) => req<{ ok: boolean }>("DELETE", `/vendors/${encodeURIComponent(id)}`),
+
+  produk: () => req<Produk[]>("GET", "/produk"),
+  createProduk: (body: Partial<Produk>) => req<Produk>("POST", "/produk", body),
+  updateProduk: (id: string, body: Partial<Produk>) => req<Produk>("PUT", `/produk/${encodeURIComponent(id)}`, body),
+  deleteProduk: (id: string) => req<{ ok: boolean }>("DELETE", `/produk/${encodeURIComponent(id)}`),
+
+  sla: () => req<SLAItem[]>("GET", "/sla"),
+  createSla: (body: Partial<SLAItem>) => req<SLAItem>("POST", "/sla", body),
+  updateSla: (id: string, body: Partial<SLAItem>) => req<SLAItem>("PUT", `/sla/${encodeURIComponent(id)}`, body),
+  deleteSla: (id: string) => req<{ ok: boolean }>("DELETE", `/sla/${encodeURIComponent(id)}`),
+
+  /* ── Purchasing · Purchase Request ────────────────────────────────────── */
+  prList: (status?: string) => req<PurchaseRequest[]>("GET", `/pr${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+  prGet: (id: string) => req<PurchaseRequest>("GET", `/pr/${encodeURIComponent(id)}`),
+  prCreate: (body: Partial<PurchaseRequest> & { submit?: boolean }) => req<PurchaseRequest>("POST", "/pr", body),
+  prUpdate: (id: string, body: Partial<PurchaseRequest>) => req<PurchaseRequest>("PUT", `/pr/${encodeURIComponent(id)}`, body),
+  prDelete: (id: string) => req<{ ok: boolean }>("DELETE", `/pr/${encodeURIComponent(id)}`),
+  prSubmit: (id: string) => req<PurchaseRequest>("POST", `/pr/${encodeURIComponent(id)}/submit`),
+  prApprove: (id: string, body: ApproverBody) => req<PurchaseRequest>("POST", `/pr/${encodeURIComponent(id)}/approve`, body),
+  prReject: (id: string, body: ApproverBody) => req<PurchaseRequest>("POST", `/pr/${encodeURIComponent(id)}/reject`, body),
+
+  /* ── Purchasing · Purchase Order ──────────────────────────────────────── */
+  poList: (status?: string) => req<PurchaseOrder[]>("GET", `/po${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+  poGet: (id: string) => req<PurchaseOrder>("GET", `/po/${encodeURIComponent(id)}`),
+  poCreate: (body: Partial<PurchaseOrder> & { submit?: boolean }) => req<PurchaseOrder>("POST", "/po", body),
+  poUpdate: (id: string, body: Partial<PurchaseOrder>) => req<PurchaseOrder>("PUT", `/po/${encodeURIComponent(id)}`, body),
+  poDelete: (id: string) => req<{ ok: boolean }>("DELETE", `/po/${encodeURIComponent(id)}`),
+  poSubmit: (id: string) => req<PurchaseOrder>("POST", `/po/${encodeURIComponent(id)}/submit`),
+  poApprove: (id: string, body: ApproverBody) => req<PurchaseOrder>("POST", `/po/${encodeURIComponent(id)}/approve`, body),
+  poReject: (id: string, body: ApproverBody) => req<PurchaseOrder>("POST", `/po/${encodeURIComponent(id)}/reject`, body),
+  poReceive: (id: string, body: ReceiveBody) => req<PurchaseOrder>("POST", `/po/${encodeURIComponent(id)}/receive`, body),
 };

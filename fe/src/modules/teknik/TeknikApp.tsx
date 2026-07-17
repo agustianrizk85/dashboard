@@ -17,6 +17,7 @@ import { TeknikOverviewWms } from "./TeknikOverviewWms";
 import "../sales/sales.css"; // shared division shell chrome (green header + tabs)
 import "./teknik.css"; // teknik dashboard content, scoped under .tk-scope
 import { AiGenerateButton } from "@/ai/AiGenerate";
+import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 
 interface TabDef {
   id: string;
@@ -27,6 +28,7 @@ const TABS: TabDef[] = [
   { id: "overview", label: "Overview" },
   { id: "deviasi", label: "Deviasi & SPI" },
   { id: "kpi", label: "KPI Direksi" },
+  { id: "pembelian", label: "Pembelian" },
   { id: "sync", label: "Sync Spreadsheet" },
   { id: "master", label: "Master Data" },
 ];
@@ -117,6 +119,8 @@ export default function TeknikApp() {
           <MasterData />
         ) : tab === "sync" ? (
           <SyncSpreadsheet />
+        ) : tab === "pembelian" ? (
+          <PurchasingInbox />
         ) : tab === "deviasi" ? (
           <DeviasiView D={state.data} onProject={setSel} />
         ) : tab === "kpi" ? (

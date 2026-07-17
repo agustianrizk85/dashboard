@@ -18,8 +18,9 @@ import { WorkDrawingsView } from "./views/WorkDrawingsView";
 import { StaffView } from "./views/StaffView";
 import { MasterView } from "./views/MasterView";
 import { AiGenerateButton } from "@/ai/AiGenerate";
+import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 
-type Tab = "summary" | "board" | "projects" | "tasks" | "outputs" | "workdrawings" | "staff" | "master";
+type Tab = "summary" | "board" | "projects" | "tasks" | "outputs" | "workdrawings" | "staff" | "master" | "pembelian";
 
 const TABS: { key: Tab; label: string; icon: string; tip: string }[] = [
   { key: "summary", label: "Ringkasan", icon: "grid", tip: "PROSES · Snapshot portfolio: progress rata-rata, beban tiap author, kesiapan output divisi, dan ringkasan alert." },
@@ -30,6 +31,7 @@ const TABS: { key: Tab; label: string; icon: string; tip: string }[] = [
   { key: "workdrawings", label: "Gambar Kerja", icon: "home", tip: "PROSES · Flow gambar kerja per konsumen: SLA 15 hk (konsumen) & 5 hk (kontraktor), alert, dan revisi AI." },
   { key: "staff", label: "Tim", icon: "user", tip: "Daftar staf departemen dan beban kerja tiap author." },
   { key: "master", label: "Data Master", icon: "layers", tip: "MASTER · Data acuan read-only: proyek master, template deliverable, akun & peran, dan divisi output." },
+  { key: "pembelian", label: "Pembelian", icon: "list", tip: "Ajukan & setujui Purchase Request" },
 ];
 
 /** The planning control tower shell: header, tab nav and the active view. */
@@ -196,6 +198,7 @@ export function Dashboard() {
         {tab === "workdrawings" && <WorkDrawingsView projects={projects} />}
         {tab === "staff" && <StaffView />}
         {tab === "master" && <MasterView canManage={canManage} onChanged={reload} />}
+        {tab === "pembelian" && <PurchasingInbox />}
       </main>
 
       {confirm === "proses" && (

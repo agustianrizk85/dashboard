@@ -1237,3 +1237,184 @@
   .kc-scope .ar-grid { grid-template-columns: 1fr; }
   .kc-scope .ar-grid .panel { grid-column: auto; }
 }
+
+/* ====================================================================
+   PURCHASING module — Master Data (CRUD) + PR / PO / Approval
+   Ported from Teknik master styles, every selector prefixed with
+   `.kc-scope ` so it stays isolated. Money shown here is full Rupiah.
+   ==================================================================== */
+
+/* ---- Master data workspace ------------------------------------------- */
+.kc-scope .master { flex: 1; display: flex; gap: 14px; min-height: 520px; }
+.kc-scope .master-nav {
+  width: 220px; flex: none; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 10px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; align-self: flex-start;
+}
+.kc-scope .master-nav-title {
+  font-size: 10.5px; font-weight: 700; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: .05em; padding: 6px 10px 8px;
+}
+.kc-scope .master-nav-item {
+  text-align: left; font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--ink-2); background: transparent; border: none; border-radius: 8px;
+  padding: 9px 11px; cursor: pointer; width: 100%;
+}
+.kc-scope .master-nav-item:hover { background: var(--panel-2); }
+.kc-scope .master-nav-item.active { background: var(--navy-800); color: #fff; }
+.kc-scope .master-content { flex: 1; min-height: 0; display: flex; }
+.kc-scope .md-panel {
+  flex: 1; min-height: 0; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
+}
+.kc-scope .md-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--line); flex: none;
+}
+.kc-scope .md-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--navy-800); margin: 0; }
+.kc-scope .md-count { font-size: 11.5px; color: var(--ink-3); }
+.kc-scope .md-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.kc-scope .md-table-wrap { flex: 1; min-height: 0; overflow: auto; padding: 6px 0; }
+.kc-scope .md-empty { padding: 40px; text-align: center; color: var(--ink-3); font-size: 13px; }
+.kc-scope .md-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.kc-scope .md-table th {
+  position: sticky; top: 0; background: var(--panel-2); text-align: left;
+  font-size: 10.5px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .03em;
+  padding: 9px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; z-index: 1;
+}
+.kc-scope .md-table td { padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--ink-2); vertical-align: middle; }
+.kc-scope .md-table tr:hover td { background: var(--panel-2); }
+.kc-scope .md-actions-col { text-align: right; }
+.kc-scope .md-actions { display: flex; gap: 6px; justify-content: flex-end; white-space: nowrap; }
+.kc-scope .md-error {
+  margin: 10px 18px 0; font-size: 12.5px; font-weight: 600; color: #b22a30;
+  background: var(--bad-bg); border: 1px solid #f3cfcf; border-radius: 8px; padding: 9px 11px;
+}
+.kc-scope .md-btn {
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+  color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line-strong);
+  border-radius: 7px; padding: 6px 12px; cursor: pointer;
+}
+.kc-scope .md-btn:hover { background: #e9eef4; }
+.kc-scope .md-btn.primary { background: var(--navy-800); color: #fff; border-color: var(--navy-800); }
+.kc-scope .md-btn.primary:hover { background: var(--navy-900); }
+.kc-scope .md-btn.primary:disabled, .kc-scope .md-btn:disabled { opacity: .6; cursor: not-allowed; }
+.kc-scope .md-btn.danger { color: #b22a30; }
+.kc-scope .md-btn.danger:hover { background: var(--bad-bg); border-color: #f3cfcf; }
+
+/* ---- Modal form (shared by master + PR/PO) --------------------------- */
+.kc-scope .mdf-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(8, 18, 36, .55); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+.kc-scope .mdf-card {
+  background: var(--panel); width: 100%; max-width: 640px; max-height: 92vh;
+  border-radius: 14px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden;
+}
+.kc-scope .mdf-card.wide-card { max-width: 880px; }
+.kc-scope .mdf-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 20px; background: var(--navy-800); color: #fff;
+}
+.kc-scope .mdf-head h3 { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px; }
+.kc-scope .mdf-close { background: rgba(255,255,255,.12); border: none; color: #fff; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 17px; }
+.kc-scope .mdf-close:hover { background: rgba(255,255,255,.24); }
+.kc-scope .mdf-body {
+  padding: 18px 20px; overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 13px;
+}
+.kc-scope .mdf-field { display: flex; flex-direction: column; gap: 5px; }
+.kc-scope .mdf-field.wide { grid-column: 1 / -1; }
+.kc-scope .mdf-field .mdf-label { font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+.kc-scope .mdf-field input, .kc-scope .mdf-field select, .kc-scope .mdf-field textarea {
+  font-family: var(--font-body); font-size: 13px; color: var(--ink);
+  padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); outline: none;
+}
+.kc-scope .mdf-field input:focus, .kc-scope .mdf-field select:focus, .kc-scope .mdf-field textarea:focus { border-color: var(--green-600); background: #fff; }
+.kc-scope .mdf-field textarea { resize: vertical; }
+.kc-scope .mdf-error { margin: 12px 20px 0; font-size: 12.5px; font-weight: 600; color: #b22a30; }
+.kc-scope .mdf-foot { display: flex; align-items: center; justify-content: flex-end; gap: 9px; padding: 14px 20px; border-top: 1px solid var(--line); }
+
+/* ---- Purchasing list toolbar + filters ------------------------------- */
+.kc-scope .pur-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.kc-scope .pur-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.kc-scope .pur-chip {
+  font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--ink-2);
+  background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 6px 14px; cursor: pointer;
+}
+.kc-scope .pur-chip:hover { background: var(--line); }
+.kc-scope .pur-chip.on { background: var(--navy-800); color: #fff; border-color: var(--navy-800); }
+.kc-scope .pur-row { cursor: pointer; }
+.kc-scope .pur-row:hover td { background: rgba(255,255,255,.04); }
+.kc-scope .pur-link { color: var(--green-600); font-weight: 700; font-size: 11.5px; white-space: nowrap; }
+
+/* ---- Dynamic item rows (PR & PO forms) ------------------------------- */
+.kc-scope .pur-items { display: flex; flex-direction: column; gap: 5px; }
+.kc-scope .pur-items-h, .kc-scope .pur-items-r {
+  display: grid; grid-template-columns: 34px 1.6fr 0.8fr 60px 1.4fr 30px; gap: 6px; align-items: center;
+}
+.kc-scope .pur-items.po .pur-items-h, .kc-scope .pur-items.po .pur-items-r,
+.kc-scope .pur-items-h.po, .kc-scope .pur-items-r.po {
+  grid-template-columns: 34px 1.8fr 0.9fr 60px 110px 110px; gap: 6px;
+}
+.kc-scope .pur-items-h { font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .03em; }
+.kc-scope .pur-items-h .c, .kc-scope .pur-items-r .c { text-align: center; }
+.kc-scope .pur-items-r input {
+  font-family: var(--font-body); font-size: 12.5px; color: var(--ink);
+  padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel-2); outline: none; width: 100%;
+}
+.kc-scope .pur-items-r input:focus { border-color: var(--green-600); background: #fff; }
+.kc-scope .pur-items-r input.q { text-align: right; }
+.kc-scope .pur-items-r .jml { text-align: right; font-family: var(--font-mono); font-weight: 700; font-size: 12px; color: var(--ink); }
+.kc-scope .pur-itemx {
+  background: var(--bad-bg); color: #b22a30; border: 1px solid #f3cfcf; border-radius: 7px;
+  cursor: pointer; height: 30px; font-size: 12px;
+}
+.kc-scope .pur-itemx:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ---- Detail meta grid ------------------------------------------------ */
+.kc-scope .pur-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+.kc-scope .pur-meta-r { display: flex; font-size: 12.5px; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+.kc-scope .pur-meta-l { width: 140px; color: var(--ink-3); font-weight: 600; flex: none; }
+.kc-scope .pur-meta-v { color: var(--ink); }
+
+/* ---- Totals preview -------------------------------------------------- */
+.kc-scope .pur-preview {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.kc-scope .pur-preview-r { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--ink-2); }
+.kc-scope .pur-preview-r b { font-family: var(--font-mono); color: var(--ink); }
+.kc-scope .pur-preview-r i { color: var(--ink-3); font-size: 11.5px; text-align: right; }
+.kc-scope .pur-preview-r.grand { border-top: 1.5px solid var(--line-strong); margin-top: 4px; padding-top: 6px; font-weight: 800; }
+.kc-scope .pur-preview-r.grand b { font-size: 15px; color: var(--green-700); }
+
+/* ---- Receiving / BAST inline panel ----------------------------------- */
+.kc-scope .pur-recv { margin-top: 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.kc-scope .pur-recv-h { font-weight: 700; font-size: 13px; color: var(--navy-800); margin-bottom: 8px; }
+.kc-scope .pur-recv-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end; }
+
+/* ---- Approval view --------------------------------------------------- */
+.kc-scope .pur-approve-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.kc-scope .pur-cards { display: flex; flex-direction: column; gap: 10px; }
+.kc-scope .pur-card { background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--navy-600); border-radius: 10px; padding: 12px 14px; }
+.kc-scope .pur-card-h { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 6px; }
+.kc-scope .pur-card-h b { color: var(--ink); }
+.kc-scope .pur-card-l { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+.kc-scope .pur-card-note {
+  margin-top: 8px; width: 100%; font-family: var(--font-body); font-size: 12.5px; color: var(--ink);
+  padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; outline: none; resize: vertical;
+}
+.kc-scope .pur-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.kc-scope .pur-review-only { font-size: 11.5px; color: var(--ink-3); font-style: italic; }
+
+@media (max-width: 900px) {
+  .kc-scope .master { flex-direction: column; }
+  .kc-scope .master-nav { width: 100%; flex-direction: row; flex-wrap: wrap; }
+  .kc-scope .mdf-body { grid-template-columns: 1fr; }
+  .kc-scope .pur-meta { grid-template-columns: 1fr; }
+  .kc-scope .pur-approve-grid { grid-template-columns: 1fr; }
+  .kc-scope .pur-recv-grid { grid-template-columns: 1fr; }
+}

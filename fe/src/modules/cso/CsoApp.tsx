@@ -12,12 +12,14 @@ import type { WmsNavGroup } from "@/components/wms/WmsShell";
 import { CsoOverviewWms } from "./CsoOverviewWms";
 import "../sales/sales.css"; // shared division chrome (green header + tabs)
 import "./cso.css"; // CSO dashboard content, scoped under .cso-scope
+import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "kurva", label: "Kurva-S" },
   { id: "ranking", label: "Ranking" },
   { id: "tiket", label: "Tiket WA" },
+  { id: "pembelian", label: "Pembelian" },
   { id: "sync", label: "Sync Spreadsheet" },
 ];
 
@@ -193,6 +195,8 @@ function CsoClassic() {
               <div className="body">
                 {tab === "sync" ? (
                   <SyncSpreadsheet />
+                ) : tab === "pembelian" ? (
+                  <PurchasingInbox />
                 ) : tab === "tiket" ? (
                   <TicketsView tickets={state.data.tickets ?? []} canManage={canManage} />
                 ) : tab === "ranking" ? (

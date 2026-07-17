@@ -11,8 +11,9 @@ import { AdsView, WhatsAppView, InstagramView } from "../meta/MetaViews";
 import { AccountsView } from "../meta/AccountsView";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { AiGenerateButton } from "@/ai/AiGenerate";
+import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 
-type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig" | "akun";
+type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig" | "akun" | "pembelian";
 
 const roleLabel: Record<string, string> = {
   kadep: "Kepala Departemen",
@@ -79,6 +80,7 @@ export function DesktopShell({ user }: { user: User }) {
     { key: "wa", label: "WhatsApp" },
     { key: "ig", label: "Instagram" },
     { key: "akun", label: "Akun Meta" },
+    { key: "pembelian", label: "Pembelian" },
   ];
   // Directors get the overview + live Meta tabs, no operational task tabs and no
   // "Akun Meta" account-connect tab (managed by the marketing team).
@@ -145,6 +147,7 @@ export function DesktopShell({ user }: { user: User }) {
           {tab === "wa" && <WhatsAppView />}
           {tab === "ig" && <InstagramView />}
           {tab === "akun" && <AccountsView user={user} />}
+          {tab === "pembelian" && <PurchasingInbox />}
         </main>
       </div>
     </div>

@@ -5,12 +5,13 @@ import { ControlTowerView } from "./controltower/ControlTower";
 import { AdminView } from "./AdminView";
 import { AiGenerateButton } from "@/ai/AiGenerate";
 import { DeepAnalysisButton } from "@/ai/DeepAnalysis";
+import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 import "./sales.css";
 
 // Monev bundles xlsx + chart.js — code-split so they only load when its tab opens.
 const MonevView = lazy(() => import("./monev/MonevView"));
 
-type Tab = "tower" | "monev" | "master";
+type Tab = "tower" | "monev" | "master" | "pembelian";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -81,6 +82,9 @@ export default function SalesApp() {
           <button className={`tab ${active === "monev" ? "on" : ""}`} onClick={() => setTab("monev")}>
             Sales Monev
           </button>
+          <button className={`tab ${active === "pembelian" ? "on" : ""}`} onClick={() => setTab("pembelian")}>
+            Pembelian
+          </button>
           {canManage && (
             <button className={`tab ${active === "master" ? "on" : ""}`} onClick={() => setTab("master")}>
               Master Data
@@ -91,6 +95,8 @@ export default function SalesApp() {
         <main className="content">
           {active === "master" ? (
             <AdminView />
+          ) : active === "pembelian" ? (
+            <PurchasingInbox />
           ) : active === "monev" ? (
             <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Sales Monev…</div>}>
               <MonevView />

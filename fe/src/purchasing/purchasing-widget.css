@@ -1,0 +1,386 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * Purchasing widget — cross-division PR inbox.
+ * Everything is scoped under `.pw-scope` and built ONLY on the app's global
+ * CSS custom properties (src/styles.css :root), so it renders consistently
+ * dropped into any of the 6 division dashboards without needing that
+ * division's own stylesheet.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+.pw-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.pw-loading,
+.pw-error-box {
+  padding: 24px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.pw-error-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  color: var(--bad);
+  background: var(--bad-bg);
+  border-radius: var(--radius, 12px);
+}
+
+/* ---- Panel shell -------------------------------------------------------- */
+.pw-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow, 0 1px 3px rgba(0, 0, 0, 0.06));
+  padding: 16px 18px;
+}
+.pw-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.pw-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.pw-empty {
+  padding: 26px 10px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+/* ---- Buttons -------------------------------------------------------------- */
+.pw-btn {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm, 8px);
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pw-btn:hover {
+  background: var(--line);
+}
+.pw-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.pw-btn-primary {
+  background: var(--ink);
+  color: var(--ink-inv, #fff);
+  border-color: var(--ink);
+}
+.pw-btn-primary:hover {
+  background: var(--ink-2);
+}
+.pw-btn-danger {
+  color: var(--bad);
+  background: var(--bad-bg);
+  border-color: var(--bad);
+}
+.pw-btn-danger:hover {
+  opacity: 0.85;
+}
+.pw-btn-ghost {
+  background: transparent;
+  border-style: dashed;
+}
+
+/* ---- Status pill ------------------------------------------------------ */
+.pw-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pw-pill-draft {
+  color: var(--ink-3);
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+}
+.pw-pill-pending {
+  color: var(--warn);
+  background: var(--warn-bg, rgba(217, 144, 8, 0.12));
+}
+.pw-pill-approved {
+  color: var(--ok);
+  background: var(--ok-bg, rgba(26, 165, 108, 0.12));
+}
+.pw-pill-rejected {
+  color: var(--bad);
+  background: var(--bad-bg);
+}
+
+/* ---- Table -------------------------------------------------------------- */
+.pw-tablewrap {
+  overflow-x: auto;
+}
+.pw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.pw-table th {
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+.pw-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: middle;
+}
+.pw-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.pw-table tbody tr:hover td {
+  background: var(--panel-2);
+}
+
+/* ---- Approval cards ----------------------------------------------------- */
+.pw-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pw-card {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-sm, 8px);
+  padding: 12px 14px;
+}
+.pw-card-head {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.pw-card-head b {
+  color: var(--ink);
+}
+.pw-card-line {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.pw-textarea {
+  margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--panel);
+  outline: none;
+  resize: vertical;
+}
+.pw-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pw-error-inline {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bad);
+}
+
+/* ---- Modal (create form) ------------------------------------------------- */
+.pw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(8, 18, 20, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.pw-modal {
+  background: var(--panel);
+  width: 100%;
+  max-width: 720px;
+  max-height: 92vh;
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow-lg, 0 24px 60px rgba(0, 0, 0, 0.3));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pw-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--ink);
+  color: var(--ink-inv, #fff);
+}
+.pw-modal-head h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0;
+}
+.pw-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: inherit;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+.pw-modal-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.pw-modal-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.pw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pw-field-wide {
+  grid-column: 1 / -1;
+}
+.pw-field > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.pw-field input {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--panel-2);
+  outline: none;
+}
+.pw-field input:focus {
+  border-color: var(--ink-2);
+  background: var(--panel);
+}
+.pw-modal-error {
+  margin: 0 18px;
+}
+.pw-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---- Item rows (create form) -------------------------------------------- */
+.pw-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pw-items-head,
+.pw-items-row {
+  display: grid;
+  grid-template-columns: 28px 1.6fr 70px 1.4fr 28px;
+  gap: 6px;
+  align-items: center;
+}
+.pw-items-head {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.pw-items-no {
+  text-align: center;
+}
+.pw-items-qty {
+  text-align: right;
+}
+.pw-items-row input {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+  padding: 7px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--panel-2);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.pw-items-row input:focus {
+  border-color: var(--ink-2);
+  background: var(--panel);
+}
+.pw-items-row input.pw-items-qty {
+  text-align: right;
+}
+.pw-items-remove {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border: 1px solid var(--bad);
+  border-radius: 7px;
+  cursor: pointer;
+  height: 30px;
+  font-size: 12px;
+}
+.pw-items-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pw-items-add {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* ---- Small screens -------------------------------------------------------- */
+@media (max-width: 640px) {
+  .pw-modal-body {
+    grid-template-columns: 1fr;
+  }
+  .pw-items-head,
+  .pw-items-row {
+    grid-template-columns: 22px 1fr 55px 1fr 24px;
+  }
+}

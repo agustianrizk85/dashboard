@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { isDirectorRole } from "./roles";
 
 /**
  * The two departments ("divisi") the unified dashboard serves. The logged-in
@@ -89,6 +90,7 @@ const MOCK_ACCOUNTS: MockAccount[] = [
   { username: "viewer@greenpark.id", password: "viewer123", name: "Sales Viewer", role: "viewer", division: "sales", email: "viewer@greenpark.id" },
   // ── Departemen Keuangan ── (Akad/KPR control tower; reads the finance backend :8084)
   { username: "keuangan@greenpark.id", password: "keuangan123", name: "Kepala Dept. Keuangan", role: "kadep", division: "keuangan", email: "keuangan@greenpark.id" },
+  { username: "purchasing@greenpark.id", password: "purchasing123", name: "Staff Purchasing", role: "purchasing", division: "keuangan", email: "purchasing@greenpark.id", position: "Staff Purchasing" },
   // ── Departemen Teknik ── (kendali progres pembangunan; reads the teknik backend :8083)
   { username: "teknik@greenpark.id", password: "teknik123", name: "Kepala Dept. Teknik", role: "kadep", division: "teknik", email: "teknik@greenpark.id" },
   // ── Departemen CSO (Customer Complaint) ── (reads the CSO backend :8088)
@@ -289,12 +291,19 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
     const au = data.user;
     const roles = au.roles ?? {};
     const deptCodes = Object.keys(roles);
-    // super, OR roles across many depts (a director), ⇒ all-access overview.
-    const all = !!au.super || deptCodes.length >= 3;
+    // A cross-division director role (dirops / ceo) — held across divisions —
+    // grants all-access on its own, WITHOUT the account-admin `super` flag
+    // (which stays reserved for the account manager).
+    const roleValues = Object.values(roles);
+    const hasDirectorRole = roleValues.some(isDirectorRole);
+    // Prefer the operational director role (can approve) when present.
+    const directorRole = roleValues.includes("dirops") ? "dirops" : "ceo";
+    // super, OR a director role, OR roles across many depts ⇒ all-access overview.
+    const all = !!au.super || hasDirectorRole || deptCodes.length >= 3;
     // Who may APPROVE (not just review): the superadmin, and the Dirops — whose
     // cross-division role is "dirops" on every department. The CEO (role "ceo")
     // is overview-only. Without this the real-auth Dirops would be read-only.
-    const canApprove = !!au.super || Object.values(roles).includes("dirops");
+    const canApprove = !!au.super || roleValues.includes("dirops");
     // Map an auth department code → the dashboard's Division.
     const DEPT2DIV: Record<string, Division> = {
       finance: "keuangan",
@@ -311,7 +320,7 @@ async function authenticate(identifier: string, password: string): Promise<{ tok
       username: au.username,
       name: au.name || au.username,
       email: au.email,
-      role: au.super ? "ceo" : ownDept ? roles[ownDept] : "viewer",
+      role: au.super ? "ceo" : hasDirectorRole ? directorRole : ownDept ? roles[ownDept] : "viewer",
       division,
       allAccess: all,
       canApprove,
