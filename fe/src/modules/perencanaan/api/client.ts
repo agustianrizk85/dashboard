@@ -219,6 +219,52 @@ export const api = {
     request<WorkDrawing>("POST", `/workdrawings/${id}/revisi`, { instruction }),
   alerts: () => request<AlertItem[]>("GET", "/alerts"),
 
+  // --- Deep Revisi AI (GK Kontraktor vs GK TTD vision check) ---
+  uploadGK: async (id: string, kind: "kontraktor" | "ttd", file: File): Promise<WorkDrawing> => {
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = "Bearer " + token;
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${BASE}/workdrawings/${id}/gk/${kind}`, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+    if (res.status === 401) {
+      setToken("");
+      onUnauthorized();
+      throw new ApiError("Sesi berakhir — silakan login kembali.", 401);
+    }
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = ((await res.json()) as { error?: string }).error ?? "";
+      } catch {
+        /* no JSON body */
+      }
+      throw new ApiError(detail || `HTTP ${res.status}`, res.status);
+    }
+    return (await res.json()) as WorkDrawing;
+  },
+  startDeepRevisi: (id: string) =>
+    request<{ status: string }>("POST", `/workdrawings/${id}/deep-revisi`),
+  deepRevisiStatus: (id: string) => request<WorkDrawing>("GET", `/workdrawings/${id}/deep-revisi`),
+  // Fetch a GK PDF (kontraktor/ttd/annotated) with auth and return an object
+  // URL for in-app rendering, same pattern as taskDocUrl.
+  gkDocUrl: async (id: string, kind: "kontraktor" | "ttd" | "annotated"): Promise<string> => {
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = "Bearer " + token;
+    const res = await fetch(`${BASE}/workdrawings/${id}/gk/${kind}`, { headers });
+    if (res.status === 401) {
+      setToken("");
+      onUnauthorized();
+      throw new ApiError("Sesi berakhir — silakan login kembali.", 401);
+    }
+    if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  },
+
   // --- Staff / team ---
   staff: () => request<StaffMember[]>("GET", "/staff"),
 

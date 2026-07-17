@@ -10,6 +10,7 @@ import {
 } from "../../lib/localStore";
 import { RagDot } from "../ui";
 import { Modal } from "../Modal";
+import { PdfViewerModal } from "../PdfViewerModal";
 
 const AUTHORS = ["agus", "rio", "randi", "ananto"];
 const CUSTOM_PIC = "__custom__";
@@ -37,6 +38,7 @@ export function WorkDrawingsView({ projects }: { projects: ProjectRollup[] }) {
   const [err, setErr] = useState("");
   const [creating, setCreating] = useState(false);
   const [revising, setRevising] = useState<WorkDrawing | null>(null);
+  const [deepRevising, setDeepRevising] = useState<WorkDrawing | null>(null);
   const [detail, setDetail] = useState<WorkDrawing | null>(null);
 
   const load = () => {
@@ -116,6 +118,7 @@ export function WorkDrawingsView({ projects }: { projects: ProjectRollup[] }) {
                       onOpen={() => setDetail(d)}
                       onAdvance={advance}
                       onRevise={() => setRevising(d)}
+                      onDeepRevise={() => setDeepRevising(d)}
                     />
                   ))}
                 </div>
@@ -168,6 +171,15 @@ export function WorkDrawingsView({ projects }: { projects: ProjectRollup[] }) {
           }}
         />
       )}
+      {deepRevising && (
+        <DeepReviseModal
+          drawing={deepRevising}
+          onClose={() => {
+            setDeepRevising(null);
+            load();
+          }}
+        />
+      )}
       {detail && (
         <DetailModal
           drawing={detail}
@@ -191,11 +203,13 @@ function WorkDrawingCard({
   onOpen,
   onAdvance,
   onRevise,
+  onDeepRevise,
 }: {
   d: WorkDrawing;
   onOpen: () => void;
   onAdvance: (id: string, action: WorkDrawingAction) => void;
   onRevise: () => void;
+  onDeepRevise: () => void;
 }) {
   const attachCount = getAttachments(d.id).length;
 
@@ -285,6 +299,9 @@ function WorkDrawingCard({
         )}
         <button className="btn-ai sm" onClick={stop(onRevise)}>
           ✦ Revisi AI
+        </button>
+        <button className="btn-ai sm" onClick={stop(onDeepRevise)}>
+          🔬 Deep Revisi AI
         </button>
       </div>
 
@@ -660,5 +677,213 @@ function ReviseModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+/**
+ * DeepReviseModal — upload GK Kontraktor + GK TTD, run the vision-based
+ * comparison (Ollama, server-side in greenparkperencanaanbe), poll while it
+ * runs, then show findings + the annotated correction PDF.
+ */
+function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: () => void }) {
+  const [wd, setWd] = useState<WorkDrawing>(drawing);
+  const [uploading, setUploading] = useState<"" | "kontraktor" | "ttd">("");
+  const [err, setErr] = useState("");
+  const [viewing, setViewing] = useState<{ name: string; url: string } | null>(null);
+
+  // Poll status while a check is running.
+  useEffect(() => {
+    if (wd.gkStatus !== "running") return;
+    const t = setInterval(() => {
+      api
+        .deepRevisiStatus(wd.id)
+        .then(setWd)
+        .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+    }, 4000);
+    return () => clearInterval(t);
+  }, [wd.gkStatus, wd.id]);
+
+  const upload = async (kind: "kontraktor" | "ttd", file: File) => {
+    setUploading(kind);
+    setErr("");
+    try {
+      setWd(await api.uploadGK(wd.id, kind, file));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploading("");
+    }
+  };
+
+  const start = async () => {
+    setErr("");
+    try {
+      await api.startDeepRevisi(wd.id);
+      setWd(await api.deepRevisiStatus(wd.id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const openDoc = async (kind: "kontraktor" | "ttd" | "annotated", name: string) => {
+    try {
+      setViewing({ name, url: await api.gkDocUrl(wd.id, kind) });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const ready = !!wd.gkKontraktor && !!wd.gkTTD;
+  const status = wd.gkStatus || "idle";
+
+  return (
+    <Modal
+      title="🔬 Deep Revisi AI — Cek Gambar Kerja"
+      sub={`${wd.konsumen} · ${wd.unit} — GK Kontraktor vs GK TTD (vision AI, Ollama)`}
+      onClose={onClose}
+      width={680}
+    >
+      <div className="form">
+        <div className="gk-upload-row">
+          <GKUploadSlot
+            label="GK Kontraktor"
+            doc={wd.gkKontraktor}
+            busy={uploading === "kontraktor"}
+            onUpload={(f) => upload("kontraktor", f)}
+            onView={() => wd.gkKontraktor && openDoc("kontraktor", wd.gkKontraktor.name)}
+          />
+          <GKUploadSlot
+            label="GK TTD"
+            doc={wd.gkTTD}
+            busy={uploading === "ttd"}
+            onUpload={(f) => upload("ttd", f)}
+            onView={() => wd.gkTTD && openDoc("ttd", wd.gkTTD.name)}
+          />
+        </div>
+
+        {err && <div className="login-error">{err}</div>}
+
+        {status === "idle" ? (
+          <div className="form-actions">
+            <button type="button" className="btn-ghost" onClick={onClose}>
+              Tutup
+            </button>
+            <button type="button" className="btn-ai" disabled={!ready} onClick={start}>
+              🔬 Mulai Cek
+            </button>
+          </div>
+        ) : status === "running" ? (
+          <div className="empty-note">
+            ⏳ Menganalisis tiap halaman dengan AI — bisa beberapa menit untuk gambar kerja
+            panjang.
+          </div>
+        ) : status === "failed" ? (
+          <>
+            <div className="login-error">Gagal: {wd.gkError}</div>
+            <div className="form-actions">
+              <button type="button" className="btn-ghost" onClick={onClose}>
+                Tutup
+              </button>
+              <button type="button" className="btn-ai" onClick={start}>
+                🔬 Coba Lagi
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="wd-revisi big">
+              {wd.gkFindings && wd.gkFindings.length > 0 ? (
+                <ul className="gk-findings">
+                  {wd.gkFindings.map((f, i) => (
+                    <li key={i}>
+                      <b>Hal. {f.page}</b>
+                      {f.wrong && (
+                        <>
+                          {" "}
+                          — SALAH: <code>{f.wrong}</code> → SEHARUSNYA: <code>{f.correct}</code>
+                        </>
+                      )}
+                      <div className="gk-explain">
+                        {f.explain} {f.confidence && `(${f.confidence})`}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                "Tidak ada ketidaksesuaian ditemukan — GK Kontraktor konsisten dengan GK TTD."
+              )}
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-ghost" onClick={onClose}>
+                Tutup
+              </button>
+              {wd.gkAnnotated && (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => openDoc("annotated", wd.gkAnnotated!.name)}
+                >
+                  Lihat PDF Beranotasi
+                </button>
+              )}
+              <button type="button" className="btn-ai" onClick={start}>
+                🔬 Cek Ulang
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {viewing && (
+        <PdfViewerModal
+          name={viewing.name}
+          url={viewing.url}
+          canReplace={false}
+          busy={false}
+          onReplace={() => {}}
+          onClose={() => setViewing(null)}
+        />
+      )}
+    </Modal>
+  );
+}
+
+function GKUploadSlot({
+  label,
+  doc,
+  busy,
+  onUpload,
+  onView,
+}: {
+  label: string;
+  doc?: { name: string; size: number };
+  busy: boolean;
+  onUpload: (file: File) => void;
+  onView: () => void;
+}) {
+  return (
+    <div className="gk-upload-slot">
+      <div className="gk-upload-label">{label}</div>
+      {doc ? (
+        <button type="button" className="btn-ghost sm" onClick={onView}>
+          📄 {doc.name}
+        </button>
+      ) : (
+        <label className="btn-ghost sm gk-upload-btn">
+          {busy ? "Mengunggah…" : "Upload PDF"}
+          <input
+            type="file"
+            accept="application/pdf"
+            hidden
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onUpload(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
+    </div>
   );
 }

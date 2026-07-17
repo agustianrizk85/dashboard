@@ -126,6 +126,30 @@ export interface WorkDrawing {
   sev: Rag;
   /** Files linked to this drawing (e.g. imported from cicle). */
   attachments?: { name: string; url: string }[];
+
+  /** Deep Revisi AI — GK Kontraktor vs GK TTD vision check (Ollama). */
+  gkKontraktor?: GKDoc;
+  gkTTD?: GKDoc;
+  gkAnnotated?: GKDoc;
+  gkStatus?: "" | "idle" | "running" | "done" | "failed";
+  gkFindings?: GKFinding[];
+  gkError?: string;
+  gkCheckedAt?: string;
+}
+
+export interface GKDoc {
+  name: string;
+  size: number;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+export interface GKFinding {
+  page: number;
+  wrong: string;
+  correct: string;
+  explain: string;
+  confidence: string;
 }
 
 export interface AlertItem {
