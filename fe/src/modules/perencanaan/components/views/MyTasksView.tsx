@@ -16,12 +16,15 @@ export function MyTasksView({
   canEdit,
   pics,
   onChanged,
+  rev,
 }: {
   username: string;
   canManage: boolean;
   canEdit: (pic: string) => boolean;
   pics: StaffMember[];
   onChanged: () => void;
+  /** Realtime revision — bumps on any backend write; drives an in-place refresh. */
+  rev: number;
 }) {
   const [pic, setPic] = useState(username);
   const [picTouched, setPicTouched] = useState(false);
@@ -35,8 +38,8 @@ export function MyTasksView({
     if (canManage && !picTouched && pics.length) setPic(pics[0].username);
   }, [canManage, picTouched, pics]);
 
-  const load = (who: string) => {
-    setTasks(null);
+  const load = (who: string, silent = false) => {
+    if (!silent) setTasks(null); // show the loading state only on pic change, not realtime refresh
     setErr("");
     api
       .myTasks(canManage ? who : undefined)
@@ -45,6 +48,14 @@ export function MyTasksView({
   };
 
   useEffect(() => load(pic), [pic]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Realtime: on each backend write, refresh the board IN PLACE (no loading
+  // flash / unmount) so an open Deep Analisis modal inside a task card survives.
+  // Skips the initial mount (the [pic] effect already loaded it).
+  useEffect(() => {
+    if (tasks === null) return;
+    load(pic, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
 
   // Project options, derived from the loaded tasks — lets the user narrow the
   // board to a single project so the columns are not too long.

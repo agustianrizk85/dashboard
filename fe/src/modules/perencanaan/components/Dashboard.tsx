@@ -181,8 +181,10 @@ export function Dashboard() {
       </DivisionTabBar>
 
       {/* key={rev} remounts the active view on each realtime push so views that
-          load their own data (Tugas, Gambar Kerja, Tim, Master) refetch live. */}
-      <main className="content" key={rev}>
+          load their own data (Tim, Master) refetch live. Tugas & Gambar Kerja are
+          EXCLUDED — they refresh in place via a `rev` prop instead, so an open
+          Deep Analisis / Deep Revisi AI modal isn't unmounted mid-run. */}
+      <main className="content" key={tab === "tasks" || tab === "workdrawings" ? tab : rev}>
         {err && <div className="empty-note error">{err}</div>}
         {tab === "summary" && (summary ? <SummaryView summary={summary} /> : <Loading />)}
         {tab === "projects" && (
@@ -195,10 +197,11 @@ export function Dashboard() {
             canEdit={canEdit}
             pics={pics}
             onChanged={reload}
+            rev={rev}
           />
         )}
         {tab === "outputs" && (outputs.length ? <OutputsView outputs={outputs} /> : <Loading />)}
-        {tab === "workdrawings" && <WorkDrawingsView projects={projects} pics={pics} />}
+        {tab === "workdrawings" && <WorkDrawingsView projects={projects} pics={pics} rev={rev} />}
         {tab === "staff" && <StaffView />}
         {tab === "master" && <MasterView canManage={canManage} onChanged={reload} />}
         {tab === "skill" && <SkillView canManage={canManage} />}

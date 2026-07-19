@@ -135,10 +135,14 @@ function PerencanaanWmsLayout() {
     <WmsShell brand="Perencanaan" brandSub="Design & Deliverable" nav={groups}>
       <PerencanaanDataContext.Provider value={data}>
         {/* key={rev} remounts the active view on each realtime push so the
-            self-loading views (Papan, Tugas, Gambar Kerja, Tim) refetch. Data
-            Master is EXCLUDED — it self-reloads on its own edits, so remounting
-            it on every keystroke-save would reset its tab/inputs (jarring). */}
-        <div className="pr-scope" key={active === "master" ? "master" : rev}>
+            self-loading views (Papan, Tim) refetch. EXCLUDED from the remount:
+            Data Master (self-reloads on its own edits) and Tugas / Gambar Kerja
+            (they refetch in place via a `rev` prop instead — so an open Deep
+            Analisis / Deep Revisi AI modal isn't unmounted mid-run). */}
+        <div
+          className="pr-scope"
+          key={active === "master" || active === "tasks" || active === "workdrawings" ? active : rev}
+        >
           {err && <div className="empty-note error" style={{ marginBottom: 12 }}>{err}</div>}
           <ErrorBoundary key={active}>
             <Outlet />
@@ -157,6 +161,7 @@ function ProjectsSection() {
 }
 function TasksSection() {
   const d = usePerencanaanData();
+  const rev = useRev();
   return (
     <MyTasksView
       username={d.username}
@@ -164,6 +169,7 @@ function TasksSection() {
       canEdit={d.canEdit}
       pics={d.roster.filter((r) => r.isPic)}
       onChanged={d.reload}
+      rev={rev}
     />
   );
 }
@@ -173,7 +179,8 @@ function OutputsSection() {
 }
 function WorkDrawingsSection() {
   const d = usePerencanaanData();
-  return <WorkDrawingsView projects={d.projects} pics={d.roster.filter((r) => r.isPic)} />;
+  const rev = useRev();
+  return <WorkDrawingsView projects={d.projects} pics={d.roster.filter((r) => r.isPic)} rev={rev} />;
 }
 function MasterSection() {
   const d = usePerencanaanData();

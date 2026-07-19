@@ -32,7 +32,7 @@ const STAGE_ORDER: WorkDrawing["status"][] = ["info", "konsumen", "ttd", "kontra
  * TTD konsumen), the live alert board, and the AI-assisted revision. Cards are
  * grouped per project so flows from different projects never mix.
  */
-export function WorkDrawingsView({ projects, pics }: { projects: ProjectRollup[]; pics: StaffMember[] }) {
+export function WorkDrawingsView({ projects, pics, rev }: { projects: ProjectRollup[]; pics: StaffMember[]; rev: number }) {
   const [drawings, setDrawings] = useState<WorkDrawing[] | null>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [err, setErr] = useState("");
@@ -51,7 +51,10 @@ export function WorkDrawingsView({ projects, pics }: { projects: ProjectRollup[]
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
   };
 
-  useEffect(load, []);
+  // Reload on mount + each realtime backend write. load() refreshes in place
+  // (never clears to null), so the open Deep Revisi modal (view-level state)
+  // survives — no remount needed.
+  useEffect(load, [rev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group flows by project, preserving the portfolio order of `projects` and
   // appending any project not present in the rollup at the end.
