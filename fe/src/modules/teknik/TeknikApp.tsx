@@ -10,6 +10,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { MasterData } from "./master/MasterData";
 import { SyncSpreadsheet } from "./master/SyncSpreadsheet";
+import { RabAtapBajaRingan } from "./rab/RabAtapBajaRingan";
 import { AiInsight } from "./components/AiInsight";
 import { WmsShell } from "@/components/wms/WmsShell";
 import type { WmsNavGroup } from "@/components/wms/WmsShell";
@@ -28,6 +29,7 @@ const TABS: TabDef[] = [
   { id: "overview", label: "Overview" },
   { id: "deviasi", label: "Deviasi & SPI" },
   { id: "kpi", label: "KPI Direksi" },
+  { id: "rab", label: "Kalkulator RAB" },
   { id: "pembelian", label: "Pembelian" },
   { id: "sync", label: "Sync Spreadsheet" },
   { id: "master", label: "Master Data" },
@@ -119,6 +121,8 @@ export default function TeknikApp() {
           <MasterData />
         ) : tab === "sync" ? (
           <SyncSpreadsheet />
+        ) : tab === "rab" ? (
+          <RabAtapBajaRingan />
         ) : tab === "pembelian" ? (
           <PurchasingInbox />
         ) : tab === "deviasi" ? (
