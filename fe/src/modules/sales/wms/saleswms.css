@@ -1,0 +1,62 @@
+/* ====================================================================
+   Sales WMS "Ops Console" overview — scoped under `.swms`. Uses the shared
+   WMS tokens/cards (components/wms/wms.css); only sales-specific widgets
+   (funnel bars, rank lists, target gauge, alert list) live here.
+   ==================================================================== */
+.swms { color: var(--wms-ink); }
+.swms .swms-period { font-size: 12px; color: var(--wms-muted); margin: 0 0 12px; }
+.swms .r { text-align: right; }
+.swms .swms-dim { color: var(--wms-muted); font-weight: 400; font-size: 12px; }
+.swms .swms-tablewrap { overflow-x: auto; margin: 0 -4px; }
+
+/* ---- target gauge ---- */
+.swms .swms-gauge-val { font-size: 32px; font-weight: 800; letter-spacing: -.02em; color: var(--wms-green-700); margin: 6px 0 8px; }
+.swms .swms-gauge { height: 12px; border-radius: 999px; background: var(--wms-line-2); overflow: hidden; }
+.swms .swms-gauge-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--wms-green), var(--wms-green-700)); }
+.swms .swms-status {
+  display: inline-block; margin-top: 12px; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em; padding: 3px 10px; border-radius: 999px;
+  background: var(--wms-line-2); color: var(--wms-ink-2);
+}
+.swms .swms-status[data-tone="on-track"] { background: var(--wms-green-50); color: var(--wms-green-700); }
+.swms .swms-status[data-tone="risk"] { background: #fcf3df; color: #9a6a08; }
+.swms .swms-status[data-tone="off-track"] { background: #fdecec; color: var(--wms-danger); }
+
+/* ---- funnel ---- */
+.swms .swms-funnel { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
+.swms .swms-fn-row { display: grid; grid-template-columns: 140px 1fr 52px; align-items: center; gap: 10px; }
+.swms .swms-fn-label { font-size: 12.5px; color: var(--wms-ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swms .swms-fn-track { background: var(--wms-line-2); border-radius: 7px; overflow: hidden; }
+.swms .swms-fn-fill {
+  min-width: 34px; height: 26px; border-radius: 7px;
+  background: linear-gradient(90deg, var(--wms-green), var(--wms-green-700));
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 9px;
+}
+.swms .swms-fn-fill span { color: #fff; font-size: 12px; font-weight: 700; }
+.swms .swms-fn-conv { font-size: 12px; font-weight: 700; color: var(--wms-green-700); text-align: right; }
+@media (max-width: 560px) { .swms .swms-fn-row { grid-template-columns: 96px 1fr 44px; } }
+
+/* ---- ranking / channel bars ---- */
+.swms .swms-rank { display: flex; flex-direction: column; gap: 11px; margin-top: 4px; }
+.swms .swms-rank-row { display: flex; align-items: center; gap: 11px; }
+.swms .swms-rank-no {
+  width: 24px; height: 24px; flex: none; border-radius: 7px; display: grid; place-items: center;
+  font-size: 12px; font-weight: 800; background: var(--wms-line-2); color: var(--wms-ink-2);
+}
+.swms .swms-rank-no[data-top="1"] { background: var(--wms-green-700); color: #fff; }
+.swms .swms-rank-main { flex: 1; min-width: 0; }
+.swms .swms-rank-name { font-size: 13px; font-weight: 600; color: var(--wms-ink); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swms .swms-rank-bar { height: 7px; border-radius: 999px; background: var(--wms-line-2); overflow: hidden; }
+.swms .swms-rank-bar > div { height: 100%; background: var(--wms-green); border-radius: 999px; }
+.swms .swms-rank-bar.alt > div { background: #5fa8d3; }
+.swms .swms-rank-val { font-size: 13px; font-weight: 800; color: var(--wms-ink); white-space: nowrap; text-align: right; }
+.swms .swms-rank-val span { font-size: 10.5px; font-weight: 600; color: var(--wms-muted); }
+
+/* ---- AI alerts ---- */
+.swms .swms-alerts { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+.swms .swms-alert { border-left: 3px solid var(--wms-line); background: var(--wms-line-2); border-radius: 8px; padding: 9px 11px; }
+.swms .swms-alert-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.swms .swms-alert-sev { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; padding: 2px 7px; border-radius: 999px; flex: none; }
+.swms .swms-alert-title { font-size: 12.5px; font-weight: 700; color: var(--wms-ink); }
+.swms .swms-alert-detail { font-size: 12px; color: var(--wms-ink-2); line-height: 1.45; }
+.swms .swms-alert-meta { font-size: 11px; color: var(--wms-muted); margin-top: 3px; }

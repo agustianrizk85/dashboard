@@ -1,4 +1,5 @@
 import type { Alert, AutoSyncStatus, Dashboard, ImportRecord, ImportResult, LoginResponse, User } from "../types";
+import type { AssessRequest, ScreeningQuestion, ScreeningSubmission } from "../../staff/types";
 
 /** AI Alert & Action Plan response (OpenRouter, with rule-based fallback). */
 export interface AiAlerts {
@@ -91,6 +92,18 @@ export const api = {
 
   // ---- singleton writes (PUT) ----
   putSingleton: <T>(path: string, body: T) => req<T>("PUT", "/" + path, body),
+
+  // ---- konsumen screening (staff tools) ----
+  screeningQuestions: () => req<ScreeningQuestion[]>("GET", "/screening/questions"),
+  /** Replace the whole questionnaire (Kadep/admin only — backend enforces). */
+  setScreeningQuestions: (qs: ScreeningQuestion[]) =>
+    req<ScreeningQuestion[]>("PUT", "/screening/questions", qs),
+  /** Staff sees only their own; the Kadep sees every submission. */
+  screeningSubmissions: () => req<ScreeningSubmission[]>("GET", "/screening/submissions"),
+  /** Run an eligibility assessment (AI, rule-based fallback) and persist it. */
+  assessScreening: (body: AssessRequest) => req<ScreeningSubmission>("POST", "/screening/assess", body),
+  deleteScreening: (id: string) =>
+    req<{ status: string }>("DELETE", `/screening/submissions/${encodeURIComponent(id)}`),
 
   // ---- import / upload pipeline ----
   importPreview: (file: File) => upload<ImportResult>("/import/preview", file),

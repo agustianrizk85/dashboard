@@ -3309,3 +3309,70 @@
   .ct-scope.embed .cmd-head { font-size: 12px; }
   .ct-scope.embed .cmd-issue small { font-size: 11.5px; }
 }
+
+/* ====================================================================
+   EMBEDDED CONTROL TOWER — FLUID, CONTAINER-QUERY LAYOUT (2026-07-19)
+   Reflows the war-room cleanly from phone → 11" laptop → 50" display with
+   NO cut-off text and NO overlapping panels. It keys off each panel's REAL
+   available width (container query), not the viewport, because the WMS
+   sidebar eats part of the window so viewport breakpoints misjudge the
+   panels. The fullscreen war-room (`.ct-scope` WITHOUT `.embed`, the scaled
+   1920×1080 canvas) is intentionally left untouched.
+   This block is last in the file so it wins over the older embed rules.
+   ==================================================================== */
+.ct-scope.embed { display: block; height: auto; background: transparent; }
+.ct-scope.embed .gp-root {
+  width: 100%; height: auto; min-height: 0; padding: 0; overflow: visible;
+  container-type: inline-size; container-name: cttower;
+}
+
+/* Natural-height panels — only the WMS content area scrolls, never a panel,
+   so nothing is clipped ("kepotong") and no chart spills into its neighbour. */
+.ct-scope.embed .bento {
+  display: grid; grid-template-columns: 1fr;
+  grid-template-rows: none; grid-auto-rows: auto;
+  align-items: start; gap: 16px; min-height: 0;
+}
+.ct-scope.embed .bento-col { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.ct-scope.embed .bento-col > * { flex: 0 0 auto; min-height: auto; }
+.ct-scope.embed .bento-row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.ct-scope.embed .sales-list,
+.ct-scope.embed .reason-list,
+.ct-scope.embed .proj-list,
+.ct-scope.embed .alert-list,
+.ct-scope.embed .cmd-table,
+.ct-scope.embed .ag-list { max-height: none; overflow: visible; }
+
+/* Funnel bars are sized as a % of the track height (log scale). In the
+   natural-height embed layout the chart has no definite height, so the % would
+   collapse and every bar would look identical — pin a definite chart height so
+   the bars scale correctly (25rb tall → 86 short). */
+.ct-scope.embed .ff-chart { height: 220px; min-height: 220px; }
+
+/* Each panel body is a query container so its dense sub-grids can adapt to the
+   width the column actually gives them (not the whole window). */
+.ct-scope.embed .card-body { container-type: inline-size; container-name: ctcard; }
+
+/* --- bento column count by available width: phone 1 · laptop 2 · big 4 --- */
+@container cttower (min-width: 720px) {
+  .ct-scope.embed .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ct-scope.embed .bento-row { grid-template-columns: 1fr 1fr; }
+}
+@container cttower (min-width: 1600px) {
+  .ct-scope.embed .bento { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* --- dense panels adapt to their own card width (no overlap "numpuk") --- */
+/* CEO Command Panel: narrow card → stack each command's fields vertically
+   instead of crushing 5 columns into each other. */
+@container ctcard (max-width: 470px) {
+  .ct-scope.embed .cmd-head { display: none; }
+  .ct-scope.embed .cmd-row { grid-template-columns: 1fr; gap: 4px; padding: 9px 11px; }
+  .ct-scope.embed .cmd-dl, .ct-scope.embed .cmd-impact { justify-self: start; }
+}
+/* Executive / cash KPI strips: 4-up → 2-up when the card is tight. */
+@container ctcard (max-width: 340px) {
+  .ct-scope.embed .exec-kpis,
+  .ct-scope.embed .cash-stages { grid-template-columns: repeat(2, 1fr); }
+  .ct-scope.embed .lq-rings { grid-template-columns: 1fr; }
+}

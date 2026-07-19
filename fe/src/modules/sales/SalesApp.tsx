@@ -6,12 +6,16 @@ import { AdminView } from "./AdminView";
 import { AiGenerateButton } from "@/ai/AiGenerate";
 import { DeepAnalysisButton } from "@/ai/DeepAnalysis";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
+import { SalesWmsShell } from "./wms/SalesWmsShell";
 import "./sales.css";
 
 // Monev bundles xlsx + chart.js — code-split so they only load when its tab opens.
 const MonevView = lazy(() => import("./monev/MonevView"));
+// Staff tools (Screening Konsumen + Simulasi Kredit) — code-split too.
+const ScreeningView = lazy(() => import("./staff/ScreeningView"));
+const CreditSimView = lazy(() => import("./staff/CreditSimView"));
 
-type Tab = "tower" | "monev" | "master" | "pembelian";
+type Tab = "tower" | "screening" | "kredit" | "monev" | "master" | "pembelian";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -48,6 +52,10 @@ export default function SalesApp() {
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [tab, setTab] = useState<Tab>("tower");
   const active: Tab = tab === "master" && canManage ? "master" : tab;
+  // Staff / kadep (non-all-access) get the WMS "Ops Console" (sidebar) redesign;
+  // the all-access CEO / directors keep the original war-room top-tab UI below.
+  // (Gate placed after all hooks so hook order stays stable — see KeuanganApp.)
+  if (!user?.allAccess) return <SalesWmsShell />;
   return (
     <div className="sales-stage">
       <div className="sales-canvas">
@@ -79,6 +87,12 @@ export default function SalesApp() {
           <button className={`tab ${active === "tower" ? "on" : ""}`} onClick={() => setTab("tower")}>
             Control Tower
           </button>
+          <button className={`tab ${active === "screening" ? "on" : ""}`} onClick={() => setTab("screening")}>
+            Screening Konsumen
+          </button>
+          <button className={`tab ${active === "kredit" ? "on" : ""}`} onClick={() => setTab("kredit")}>
+            Simulasi Kredit
+          </button>
           <button className={`tab ${active === "monev" ? "on" : ""}`} onClick={() => setTab("monev")}>
             Sales Monev
           </button>
@@ -97,6 +111,14 @@ export default function SalesApp() {
             <AdminView />
           ) : active === "pembelian" ? (
             <PurchasingInbox />
+          ) : active === "screening" ? (
+            <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Screening…</div>}>
+              <ScreeningView />
+            </Suspense>
+          ) : active === "kredit" ? (
+            <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Simulasi Kredit…</div>}>
+              <CreditSimView />
+            </Suspense>
           ) : active === "monev" ? (
             <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Sales Monev…</div>}>
               <MonevView />
