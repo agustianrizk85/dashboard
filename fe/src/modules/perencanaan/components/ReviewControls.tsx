@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import type { TaskDoc, TaskStatus } from "../types";
 import { picName } from "../lib/format";
 import { PdfViewerModal } from "./PdfViewerModal";
+import { TaskDeepAnalisisModal } from "./TaskDeepAnalisisModal";
 
 /**
  * ReviewControls renders the review document workflow for a single task:
@@ -21,6 +22,7 @@ export function ReviewControls({
   revisiNote,
   canUpload,
   canApprove,
+  aiRunning = false,
   onDone,
 }: {
   projectId: string;
@@ -31,12 +33,14 @@ export function ReviewControls({
   revisiNote?: string;
   canUpload: boolean;
   canApprove: boolean;
+  aiRunning?: boolean;
   onDone: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [view, setView] = useState<{ url: string; name: string } | null>(null);
+  const [analisis, setAnalisis] = useState(false);
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(label);
@@ -127,11 +131,22 @@ export function ReviewControls({
       {canUpload && <input ref={fileRef} type="file" accept="application/pdf" hidden onChange={onPick} />}
 
       <div className="review-btns">
+        {(canUpload || canApprove) && (
+          <button
+            type="button"
+            className="rv-btn ai"
+            disabled={busy !== "" || !doc}
+            title={doc ? "Cek dokumen dengan AI vision terhadap checklist skill" : "Unggah PDF dulu untuk analisis AI"}
+            onClick={() => setAnalisis(true)}
+          >
+            {aiRunning ? "🔬 Memproses…" : "🔬 Deep Analisis"}
+          </button>
+        )}
         {showUpload && (
           <button
             type="button"
             className="rv-btn"
-            disabled={busy !== ""}
+            disabled={busy !== "" || aiRunning}
             onClick={() => fileRef.current?.click()}
           >
             {busy === "upload" ? "Mengunggah…" : doc ? "Ganti PDF" : "Unggah PDF"}
@@ -142,7 +157,7 @@ export function ReviewControls({
             <button
               type="button"
               className="rv-btn approve"
-              disabled={busy !== ""}
+              disabled={busy !== "" || aiRunning}
               onClick={() => void run("approve", () => api.approveTask(projectId, taskId))}
             >
               {busy === "approve" ? "…" : "Setujui"}
@@ -150,7 +165,7 @@ export function ReviewControls({
             <button
               type="button"
               className="rv-btn reject"
-              disabled={busy !== ""}
+              disabled={busy !== "" || aiRunning}
               onClick={() => void run("reject", () => api.rejectTask(projectId, taskId))}
             >
               Tolak
@@ -169,6 +184,15 @@ export function ReviewControls({
           busy={busy === "upload"}
           onReplace={() => fileRef.current?.click()}
           onClose={closeView}
+        />
+      )}
+
+      {analisis && doc && (
+        <TaskDeepAnalisisModal
+          projectId={projectId}
+          taskId={taskId}
+          docName={doc.name}
+          onClose={() => setAnalisis(false)}
         />
       )}
     </div>

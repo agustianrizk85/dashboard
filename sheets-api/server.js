@@ -22,10 +22,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT ?? 8091;
 const SPREADSHEET_ID =
   process.env.SPREADSHEET_ID ?? "10au7z7FR6SpWt1VJ5TTB7WJSbuIBauECCj9zf9xWlYw";
-// Credential lives one level up (frontend/), already git-ignored.
+// Service-account credential (git-ignored). It lives in the repo's dev/ folder
+// (moved there during the 2026-07-16 tidy-up). Override with the standard
+// GOOGLE_APPLICATION_CREDENTIALS env when it sits elsewhere.
 const KEY_FILE =
   process.env.GOOGLE_APPLICATION_CREDENTIALS ??
-  path.resolve(__dirname, "../gen-lang-client-0184893739-5da33d38e992.json");
+  path.resolve(__dirname, "../../dev/gen-lang-client-0184893739-5da33d38e992.json");
 
 const auth = new google.auth.GoogleAuth({
   keyFile: KEY_FILE,

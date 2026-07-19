@@ -1,31 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AssignedTask, TaskStatus } from "../../types";
+import type { AssignedTask, StaffMember, TaskStatus } from "../../types";
 import { api } from "../../api/client";
 import { STATUS_LABELS, STATUS_ORDER, picName, ragTone } from "../../lib/format";
 import { ReviewControls } from "../ReviewControls";
 
-const AUTHORS = ["randi", "ananto", "agus", "rio"];
-
 /**
  * Tugas Saya view — the "flow membagi tugas": every deliverable assigned to one
  * author across the whole portfolio, grouped as a kanban by status. Managers can
- * switch between authors; an author sees only their own board.
+ * switch between authors (roster from the SSO sync); an author sees only their
+ * own board.
  */
 export function MyTasksView({
   username,
   canManage,
   canEdit,
+  pics,
   onChanged,
 }: {
   username: string;
   canManage: boolean;
   canEdit: (pic: string) => boolean;
+  pics: StaffMember[];
   onChanged: () => void;
 }) {
-  const [pic, setPic] = useState(canManage ? AUTHORS[0] : username);
+  const [pic, setPic] = useState(username);
+  const [picTouched, setPicTouched] = useState(false);
   const [projFilter, setProjFilter] = useState("");
   const [tasks, setTasks] = useState<AssignedTask[] | null>(null);
   const [err, setErr] = useState("");
+
+  // Default a manager to the first author's board once the roster loads (unless
+  // they've picked one). A non-manager always sees their own board.
+  useEffect(() => {
+    if (canManage && !picTouched && pics.length) setPic(pics[0].username);
+  }, [canManage, picTouched, pics]);
 
   const load = (who: string) => {
     setTasks(null);
@@ -91,9 +99,16 @@ export function MyTasksView({
           </label>
           {canManage && (
             <div className="seg">
-              {AUTHORS.map((a) => (
-                <button key={a} className={pic === a ? "on" : ""} onClick={() => setPic(a)}>
-                  {picName(a)}
+              {pics.map((p) => (
+                <button
+                  key={p.username}
+                  className={pic === p.username ? "on" : ""}
+                  onClick={() => {
+                    setPicTouched(true);
+                    setPic(p.username);
+                  }}
+                >
+                  {p.name}
                 </button>
               ))}
             </div>
@@ -127,6 +142,7 @@ export function MyTasksView({
                       <select
                         className="status-select sm"
                         value={t.status}
+                        disabled={t.aiStatus === "running"}
                         onChange={(e) => setStatus(t, e.target.value as TaskStatus)}
                       >
                         {STATUS_ORDER.map((s) => (
@@ -145,6 +161,7 @@ export function MyTasksView({
                       revisiNote={t.revisiNote}
                       canUpload={editable}
                       canApprove={canManage}
+                      aiRunning={t.aiStatus === "running"}
                       onDone={() => {
                         load(pic);
                         onChanged();

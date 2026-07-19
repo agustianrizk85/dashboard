@@ -10,26 +10,36 @@ import { PerencanaanOverviewWms } from "./PerencanaanOverviewWms";
 import { PerencanaanDataContext } from "./PerencanaanWmsData";
 import type { PerencanaanData } from "./PerencanaanWmsData";
 import { usePerencanaanData } from "./PerencanaanWmsData";
-import { CicleBoardView } from "./components/views/CicleBoardView";
 import { ProjectsView } from "./components/views/ProjectsView";
 import { MyTasksView } from "./components/views/MyTasksView";
 import { OutputsView } from "./components/views/OutputsView";
 import { WorkDrawingsView } from "./components/views/WorkDrawingsView";
 import { StaffView } from "./components/views/StaffView";
 import { MasterView } from "./components/views/MasterView";
+import { SkillView } from "./components/views/SkillView";
+import { ChatView } from "@/messaging/ChatView";
+import { MessagesPane } from "@/messaging/MessagesPane";
+import { chatApi, subscribeChat } from "@/messaging/api";
+import { usePicRoster } from "./lib/roster";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import type { DivisionOutputs, ProjectRollup, Summary } from "./types";
 import "./perencanaan.css";
 
+// Full operational menu — managers (Kadep) only.
 const SECTIONS = [
   { key: "", label: "Ringkasan" },
-  { key: "board", label: "Papan Cicle" },
   { key: "projects", label: "Proyek" },
   { key: "tasks", label: "Tugas Saya" },
   { key: "outputs", label: "Output Divisi" },
   { key: "workdrawings", label: "Gambar Kerja" },
   { key: "staff", label: "Tim" },
   { key: "master", label: "Data Master" },
+  { key: "skill", label: "Skill AI" },
 ];
+
+// Staff (arsitek/drafter, i.e. non-Kadep) get a deliberately minimal menu: their
+// own tasks plus the two communication tools. Everything else is manager-only.
+const STAFF_SECTIONS = [{ key: "tasks", label: "Tugas Saya" }];
 
 function Loading() {
   return (
@@ -51,6 +61,9 @@ function PerencanaanWmsLayout() {
 
   const active = loc.pathname.replace(/^\/perencanaan\/?/, "").split("/")[0];
 
+  // Department roster from the SSO sync — drives PIC pickers + display names.
+  const roster = usePicRoster(rev);
+
   // Staff are never all-access here (that path renders the classic UI), so
   // management rights follow the native role, exactly like Dashboard does.
   const canManage = user?.role === "ceo" || user?.role === "kadep";
@@ -60,6 +73,18 @@ function PerencanaanWmsLayout() {
   const [projects, setProjects] = useState<ProjectRollup[]>([]);
   const [outputs, setOutputs] = useState<DivisionOutputs[]>([]);
   const [err, setErr] = useState("");
+
+  // Chat / Kotak Masuk unread badges — refreshed realtime by the chat SSE stream.
+  const [chanUnread, setChanUnread] = useState(0);
+  const [dmUnread, setDmUnread] = useState(0);
+  const refreshChatCounts = useCallback(() => {
+    chatApi.channels().then((cs) => setChanUnread(cs.reduce((n, c) => n + c.unread, 0))).catch(() => {});
+    chatApi.conversations().then((cs) => setDmUnread(cs.reduce((n, c) => n + c.unread, 0))).catch(() => {});
+  }, []);
+  useEffect(() => {
+    refreshChatCounts();
+  }, [refreshChatCounts]);
+  useEffect(() => subscribeChat(refreshChatCounts), [refreshChatCounts]);
 
   const reload = useCallback(() => {
     Promise.all([api.summary(), api.projects(), api.outputs()])
@@ -83,16 +108,26 @@ function PerencanaanWmsLayout() {
     canManage,
     canEdit,
     username: user?.username ?? "",
+    roster,
   };
 
+  // Managers (Kadep) see the full operational menu; staff only their own tasks.
+  const menu = canManage ? SECTIONS : STAFF_SECTIONS;
   const groups: WmsNavGroup[] = [
     {
       heading: "Menu",
-      items: SECTIONS.map((s) => ({
+      items: menu.map((s) => ({
         label: s.label,
         active: active === s.key,
         onClick: () => nav(`/perencanaan/${s.key}`),
       })),
+    },
+    {
+      heading: "Komunikasi",
+      items: [
+        { label: "Chat", active: active === "chat", onClick: () => nav("/perencanaan/chat"), badge: chanUnread },
+        { label: "Kotak Masuk", active: active === "inbox", onClick: () => nav("/perencanaan/inbox"), badge: dmUnread },
+      ],
     },
   ];
 
@@ -100,10 +135,14 @@ function PerencanaanWmsLayout() {
     <WmsShell brand="Perencanaan" brandSub="Design & Deliverable" nav={groups}>
       <PerencanaanDataContext.Provider value={data}>
         {/* key={rev} remounts the active view on each realtime push so the
-            self-loading views (Papan, Tugas, Gambar Kerja, Tim, Master) refetch. */}
-        <div className="pr-scope" key={rev}>
+            self-loading views (Papan, Tugas, Gambar Kerja, Tim) refetch. Data
+            Master is EXCLUDED — it self-reloads on its own edits, so remounting
+            it on every keystroke-save would reset its tab/inputs (jarring). */}
+        <div className="pr-scope" key={active === "master" ? "master" : rev}>
           {err && <div className="empty-note error" style={{ marginBottom: 12 }}>{err}</div>}
-          <Outlet />
+          <ErrorBoundary key={active}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </PerencanaanDataContext.Provider>
     </WmsShell>
@@ -118,7 +157,15 @@ function ProjectsSection() {
 }
 function TasksSection() {
   const d = usePerencanaanData();
-  return <MyTasksView username={d.username} canManage={d.canManage} canEdit={d.canEdit} onChanged={d.reload} />;
+  return (
+    <MyTasksView
+      username={d.username}
+      canManage={d.canManage}
+      canEdit={d.canEdit}
+      pics={d.roster.filter((r) => r.isPic)}
+      onChanged={d.reload}
+    />
+  );
 }
 function OutputsSection() {
   const d = usePerencanaanData();
@@ -126,11 +173,15 @@ function OutputsSection() {
 }
 function WorkDrawingsSection() {
   const d = usePerencanaanData();
-  return <WorkDrawingsView projects={d.projects} />;
+  return <WorkDrawingsView projects={d.projects} pics={d.roster.filter((r) => r.isPic)} />;
 }
 function MasterSection() {
   const d = usePerencanaanData();
   return <MasterView canManage={d.canManage} onChanged={d.reload} />;
+}
+function SkillSection() {
+  const d = usePerencanaanData();
+  return <SkillView canManage={d.canManage} />;
 }
 
 export default function PerencanaanApp() {
@@ -138,6 +189,9 @@ export default function PerencanaanApp() {
   // CEO / all-access directors keep the original UI; staff & kadep get the new
   // WMS Ops-Console redesign.
   const wms = !user?.allAccess;
+  // Only Kadep gets the full operational menu; other staff (arsitek/drafter) are
+  // limited to their own tasks + Chat + Kotak Masuk.
+  const canManage = user?.role === "ceo" || user?.role === "kadep";
 
   useEffect(() => {
     // A 401 from the perencanaan API normally ends the dashboard session. But an
@@ -153,21 +207,36 @@ export default function PerencanaanApp() {
       {wms ? (
         <Routes>
           <Route element={<PerencanaanWmsLayout />}>
-            <Route index element={<PerencanaanOverviewWms />} />
-            <Route path="board" element={<CicleBoardView />} />
-            <Route path="projects" element={<ProjectsSection />} />
-            <Route path="tasks" element={<TasksSection />} />
-            <Route path="outputs" element={<OutputsSection />} />
-            <Route path="workdrawings" element={<WorkDrawingsSection />} />
-            <Route path="staff" element={<StaffView />} />
-            <Route path="master" element={<MasterSection />} />
-            <Route path="*" element={<Navigate to="/perencanaan" replace />} />
+            {canManage ? (
+              <>
+                <Route index element={<PerencanaanOverviewWms />} />
+                <Route path="projects" element={<ProjectsSection />} />
+                <Route path="tasks" element={<TasksSection />} />
+                <Route path="outputs" element={<OutputsSection />} />
+                <Route path="workdrawings" element={<WorkDrawingsSection />} />
+                <Route path="staff" element={<StaffView />} />
+                <Route path="master" element={<MasterSection />} />
+                <Route path="skill" element={<SkillSection />} />
+              </>
+            ) : (
+              <>
+                {/* Staff: only their own tasks — everything else is manager-only. */}
+                <Route index element={<Navigate to="/perencanaan/tasks" replace />} />
+                <Route path="tasks" element={<TasksSection />} />
+              </>
+            )}
+            {/* Communication tools available to everyone. */}
+            <Route path="chat" element={<ChatView />} />
+            <Route path="inbox" element={<MessagesPane mode="dms" />} />
+            <Route path="*" element={<Navigate to={canManage ? "/perencanaan" : "/perencanaan/tasks"} replace />} />
           </Route>
         </Routes>
       ) : (
         <div className="pr-scope pz-stage">
           <div className="pz-canvas" id="pz-canvas">
-            <Dashboard />
+            <ErrorBoundary>
+              <Dashboard />
+            </ErrorBoundary>
           </div>
         </div>
       )}

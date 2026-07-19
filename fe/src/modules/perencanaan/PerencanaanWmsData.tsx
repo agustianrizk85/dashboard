@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { DivisionOutputs, ProjectRollup, Summary } from "./types";
+import type { DivisionOutputs, ProjectRollup, StaffMember, Summary } from "./types";
 
 /** Portfolio data loaded once by `PerencanaanWmsLayout` and shared with the WMS
  *  overview + section routes (mirrors what the classic `Dashboard` loads so the
@@ -16,6 +16,8 @@ export interface PerencanaanData {
   /** Whether the current user may edit a task owned by `pic`. */
   canEdit: (pic: string) => boolean;
   username: string;
+  /** Department roster from the SSO sync (drives PIC pickers + display names). */
+  roster: StaffMember[];
 }
 
 export const PerencanaanDataContext = createContext<PerencanaanData | null>(null);

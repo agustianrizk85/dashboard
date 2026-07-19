@@ -673,7 +673,91 @@ body {
 
 /* ---- Panels ----------------------------------------------------------- */
 .pr-scope .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.pr-scope .panel-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--navy-800); margin: 0 0 12px; }
+.pr-scope .panel-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--navy-800); margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
+.pr-scope .acct-refresh {
+  margin-left: auto; font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  color: var(--green-700); background: var(--ok-bg); border: 1px solid transparent;
+  border-radius: 6px; padding: 3px 9px; cursor: pointer;
+}
+.pr-scope .acct-refresh:hover { background: var(--green-700); color: #fff; }
+.pr-scope .panel .acct-hint { padding: 0 16px; font-size: 11.5px; color: var(--ink-3); margin: -4px 0 8px; line-height: 1.4; }
+
+.pr-scope .panel-pad { padding: 4px 15px 14px; }
+.pr-scope .acct-name-cell { display: inline-flex; align-items: center; gap: 8px; }
+.pr-scope .me-addbar { display: flex; align-items: center; gap: 8px; padding: 2px 15px 12px; }
+.pr-scope .me-addbar .me-in { flex: 1; min-width: 0; border: 1px solid var(--line-strong); background: var(--panel); }
+.pr-scope .me-addbar .me-in[style] { flex: none; }
+.pr-scope .me-addbar .btn-primary.sm { flex: none; white-space: nowrap; }
+
+/* ---- Master editor tables (GP + Tipe Bangunan) ---- */
+.pr-scope .scroll-x { overflow-x: auto; }
+.pr-scope .tbl.master-edit { width: 100%; border-collapse: collapse; }
+.pr-scope .tbl.master-edit thead th {
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+  font-weight: 700; text-align: left; padding: 4px 10px 8px; border-bottom: 1px solid var(--line);
+}
+.pr-scope .tbl.master-edit td { padding: 3px 6px; vertical-align: middle; border: 0; }
+.pr-scope .tbl.master-edit tbody tr:hover .me-in:not(:focus) { border-color: var(--line); }
+.pr-scope .me-in {
+  width: 100%; font-family: var(--font-body); font-size: 13px; color: var(--ink);
+  border: 1px solid transparent; border-radius: 7px; padding: 6px 8px; background: transparent;
+  transition: border-color .12s, background .12s;
+}
+.pr-scope .me-in:hover { border-color: var(--line); }
+.pr-scope .me-in:focus { outline: none; border-color: var(--green-600); background: var(--panel); box-shadow: 0 0 0 3px rgba(14,77,38,.08); }
+.pr-scope .me-num { text-align: right; font-variant-numeric: tabular-nums; }
+/* add row: a subtly tinted "new entry" strip */
+.pr-scope .me-add td { padding-top: 10px; }
+.pr-scope .me-add td:first-child { border-bottom-left-radius: 9px; border-top-left-radius: 9px; }
+.pr-scope .me-add td:last-child { border-bottom-right-radius: 9px; border-top-right-radius: 9px; }
+.pr-scope .me-add .me-in { border: 1px solid var(--line-strong); background: var(--panel-2); }
+.pr-scope .me-add .me-in:focus { background: var(--panel); }
+.pr-scope .me-add .btn-primary.sm { width: 100%; white-space: nowrap; }
+.pr-scope .me-empty td { color: var(--ink-3); font-size: 12.5px; font-style: italic; padding: 14px 10px; text-align: center; }
+
+/* ---- Kavling & Blok editor ---- */
+.pr-scope .kav-blok-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel-2);
+}
+.pr-scope .kav-blok-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.pr-scope .kav-blok-chip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line-strong); border-radius: 20px; padding: 3px 6px 3px 11px;
+}
+.pr-scope .kav-blok-x {
+  border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font-size: 15px; line-height: 1;
+  width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+}
+.pr-scope .kav-blok-x:hover { background: var(--bad); color: #fff; }
+.pr-scope .kav-blok-empty { font-size: 12px; color: var(--ink-3); font-style: italic; }
+.pr-scope .kav-blok-add { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.pr-scope .kav-blok-add .me-in { width: 150px; border: 1px solid var(--line-strong); background: var(--panel); }
+.pr-scope .kav-add {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 11px 16px; background: var(--panel-2); border-bottom: 1px solid var(--line);
+}
+.pr-scope .kav-add .me-in { border: 1px solid var(--line-strong); background: var(--panel); }
+.pr-scope .kav-add-no { width: 68px; }
+.pr-scope .kav-add-sel { width: 156px; }
+.pr-scope .kav-add-num { width: 92px; }
+.pr-scope .kav-add-lebar { width: 118px; }
+.pr-scope .kav-add .btn-primary.sm { margin-left: auto; }
+
+/* subtle inline note inside a form (info, not a heavy callout) */
+.pr-scope .form-note-soft {
+  margin: 0; font-size: 12px; color: var(--ink-3); line-height: 1.5;
+  padding-left: 12px; border-left: 2px solid var(--green-600);
+}
+.pr-scope .form-note-soft b { color: var(--green-700); }
+/* small section divider label within a form */
+.pr-scope .form-sec {
+  font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3);
+  margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+/* rounded panel corners preserved without clipping (panels are overflow:visible in master) */
+.pr-scope .view-master .panel > .panel-title { margin-bottom: 8px; }
+.pr-scope .view-master .panel .acct-hint { margin-bottom: 6px; }
 .pr-scope .panel .panel-title { padding: 14px 16px 0; }
 .pr-scope .panel .tbl { padding: 0 8px 10px; }
 
@@ -862,6 +946,28 @@ body {
 .pr-scope .gk-findings li { border-bottom: 1px solid rgba(255,255,255,.12); padding-bottom: 8px; }
 .pr-scope .gk-findings li:last-child { border-bottom: none; padding-bottom: 0; }
 .pr-scope .gk-findings code { background: rgba(255,255,255,.14); padding: 1px 5px; border-radius: 5px; }
+.pr-scope .gk-findings-head { font-size: 11.5px; color: rgba(255,255,255,.6); margin-bottom: 10px; }
+.pr-scope .gk-dup { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 700; color: #d9c9ff; background: rgba(255,255,255,.16); border-radius: 999px; padding: 1px 7px; }
+/* Deep Revisi modal — central Kunci AI status + vision model dropdown */
+.pr-scope .gk-keybox { margin-top: 11px; padding: 10px 12px; border: 1px dashed #cfc6ec; border-radius: 10px; background: #f6f3fd; }
+.pr-scope .gk-keyrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.pr-scope .gk-modellabel { font-size: 12px; font-weight: 600; color: #5a4a7a; }
+.pr-scope .gk-model { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #d3d0dd; border-radius: 8px; background: #fff; color: #16241c; min-width: 200px; }
+.pr-scope .gk-model:focus { outline: none; border-color: #6d3fd0; }
+.pr-scope .gk-model:disabled { background: #efedf5; color: #8a8598; }
+.pr-scope .gk-modelsaving { font-size: 11.5px; color: #6d3fd0; }
+.pr-scope .gk-keyok { margin-top: 10px; font-size: 12.5px; color: #147a4a; font-weight: 600; }
+.pr-scope .gk-keywarn { margin-top: 10px; font-size: 12.5px; color: #9a6a00; font-weight: 600; }
+.pr-scope .gk-keyhint { margin-top: 4px; font-size: 11px; color: #8a8598; }
+/* Deep Revisi — running progress */
+.pr-scope .gk-progress { margin-top: 4px; }
+.pr-scope .gk-progress-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #16241c; margin-bottom: 8px; }
+.pr-scope .gk-progress-top b { font-size: 16px; color: #6d3fd0; font-variant-numeric: tabular-nums; }
+.pr-scope .gk-progress-bar { height: 8px; border-radius: 999px; background: #ece8f7; overflow: hidden; }
+.pr-scope .gk-progress-bar span { display: block; height: 100%; background: linear-gradient(90deg, #6d3fd0, #3f4fd0); border-radius: 999px; transition: width .4s ease; }
+.pr-scope .gk-progress-bar span.indet { width: 30% !important; animation: gkIndet 1.2s ease-in-out infinite; }
+@keyframes gkIndet { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+.pr-scope .gk-progress-sub { margin-top: 8px; font-size: 11.5px; color: #8a8598; }
 .pr-scope .gk-explain { opacity: .8; font-size: 10.5px; margin-top: 2px; }
 
 /* ---- Alerts ----------------------------------------------------------- */
@@ -991,11 +1097,53 @@ body {
 }
 .pr-scope .master-note-text { flex: 1; min-width: 0; }
 .pr-scope .master-note-btn { flex: none; margin-left: auto; }
+/* Data Master sub-tabs (Master · Kavling · Deliverable) */
+.pr-scope .master-subtabs { display: flex; gap: 4px; border-bottom: 1.5px solid var(--line); }
+.pr-scope .msub {
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--ink-3);
+  background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1.5px;
+  padding: 9px 16px; cursor: pointer; transition: color .12s, border-color .12s;
+}
+.pr-scope .msub:hover { color: var(--ink); }
+.pr-scope .msub.on { color: var(--green-700); border-bottom-color: var(--green-700); }
+.pr-scope .msub-n { margin-left: 7px; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: var(--panel-2); border: 1px solid var(--line); border-radius: 20px; padding: 1px 7px; }
+.pr-scope .msub.on .msub-n { color: var(--green-700); background: var(--ok-bg); border-color: transparent; }
+/* per-project picker shown in Kavling/Deliverable tabs */
+.pr-scope .master-picker {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 11px 15px;
+}
+.pr-scope .master-picker-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.pr-scope .master-picker select {
+  font-family: var(--font-body); font-size: 13.5px; color: var(--ink); font-weight: 600;
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 11px; background: var(--panel); min-width: 260px;
+}
+.pr-scope .master-picker-hint { font-size: 12px; color: var(--ink-3); font-style: italic; }
+
 .pr-scope .master-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
 .pr-scope .master-projects .tbl, .pr-scope .master-projects table { font-size: 12px; }
 .pr-scope .master-projects-hd { display: flex; align-items: center; justify-content: space-between; padding-right: 12px; }
 .pr-scope .master-projects-hd .panel-title { margin-bottom: 0; }
 .pr-scope .master-side { display: flex; flex-direction: column; gap: 16px; }
+
+/* Tooltips must escape the panel (panels clip with overflow:hidden). */
+.pr-scope .view-master .panel { overflow: visible; }
+.pr-scope [data-tip]::after { z-index: 200; }
+
+/* Master Produk — GP + Tipe Bangunan grouped in their own balanced row. */
+.pr-scope .master-products {
+  display: flex; flex-direction: column; gap: 12px;
+  border-top: 1px solid var(--line); padding-top: 18px;
+}
+.pr-scope .master-products-hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.pr-scope .mp-eyebrow {
+  font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--green-700);
+}
+.pr-scope .mp-note { font-size: 12px; color: var(--ink-3); }
+.pr-scope .master-products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .pr-scope .master-products-grid { grid-template-columns: 1fr; } }
 .pr-scope .tag-added {
   margin-left: 7px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   color: var(--green-700); background: var(--ok-bg); padding: 1px 6px; border-radius: 5px;
@@ -1005,13 +1153,18 @@ body {
 .pr-scope .div-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
 .pr-scope .div-chip {
   font-size: 11px; font-weight: 700; color: #fff; padding: 4px 11px; border-radius: 20px;
-  letter-spacing: .02em;
+  letter-spacing: .02em; background: #46566e; /* default so every code stays visible */
 }
 .pr-scope .div-chip.sm { font-size: 9px; font-weight: 700; padding: 1px 7px; text-transform: capitalize; }
-.pr-scope .out-legal { background: #9a1f2b; }
+.pr-scope .out-legal, .pr-scope .out-legalpermit { background: #9a1f2b; }
 .pr-scope .out-marketing { background: #8a3fc0; }
+.pr-scope .out-digitalmarketing { background: #b23f9e; }
 .pr-scope .out-teknik { background: #1d4373; }
-.pr-scope .out-konsumen { background: #e0701a; }
+.pr-scope .out-konsumen, .pr-scope .out-cso { background: #e0701a; }
+.pr-scope .out-sales { background: #1f8a5b; }
+.pr-scope .out-finance { background: #0f766e; }
+.pr-scope .out-sdm { background: #6b4fae; }
+.pr-scope .out-departemen { background: #64748b; }
 .pr-scope .out-ceo { background: #46566e; }
 
 /* Deliverable template tree (read-only master structure) */
@@ -1128,6 +1281,33 @@ body {
 .pr-scope .rv-btn.approve:hover { background: var(--ok); color: #fff; }
 .pr-scope .rv-btn.reject { background: var(--bad-bg); border-color: transparent; color: var(--bad); }
 .pr-scope .rv-btn.reject:hover { background: var(--bad); color: #fff; }
+.pr-scope .rv-btn.ai { background: #efeafc; border-color: transparent; color: #5a34c0; }
+.pr-scope .rv-btn.ai:hover { background: linear-gradient(135deg, #6d3fd0, #3f4fd0); color: #fff; }
+
+/* ---- Deep Analisis: skill picker + live findings ---- */
+.pr-scope .gk-skillpick { display: flex; flex-direction: column; gap: 8px; }
+.pr-scope .gk-skillpick-hd { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.pr-scope .gk-skilllist { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.pr-scope .gk-skillopt {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px;
+  padding: 8px 11px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel);
+  cursor: pointer;
+}
+.pr-scope .gk-skillopt:hover { background: var(--panel-2); }
+.pr-scope .gk-skillopt.on { background: var(--ok-bg); border-color: var(--green-600); }
+.pr-scope .gk-skillopt-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+.pr-scope .gk-skillopt-name { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
+
+.pr-scope .gk-live { margin-top: 12px; border-top: 1px dashed var(--line-strong); padding-top: 10px; }
+.pr-scope .gk-live-hd { font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
+.pr-scope .gk-live-count {
+  display: inline-block; min-width: 18px; text-align: center; margin-left: 6px;
+  background: var(--green-700); color: #fff; border-radius: 10px; font-size: 11px; padding: 0 6px;
+}
+.pr-scope .gk-live-empty { font-size: 12px; color: var(--ink-3); font-style: italic; }
+.pr-scope .gk-live-list { margin: 0; padding-left: 4px; list-style: none; display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
+.pr-scope .gk-live-list li { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+.pr-scope .gk-live-list code { font-family: var(--font-mono); font-size: 11.5px; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
 .pr-scope .review-err { font-size: 10.5px; color: var(--bad); width: 100%; }
 .pr-scope .review-revisi {
   font-size: 10.5px; color: var(--warn); font-weight: 600; width: 100%;

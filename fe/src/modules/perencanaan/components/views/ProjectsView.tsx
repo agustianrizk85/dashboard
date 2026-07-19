@@ -248,6 +248,7 @@ function TaskRow({
           revisiNote={task.revisiNote}
           canUpload={editable}
           canApprove={canManage}
+          aiRunning={task.aiStatus === "running"}
           onDone={onReview}
         />
         <span className={`avatar sm pic-${task.pic}`} title={picName(task.pic)}>
@@ -257,6 +258,7 @@ function TaskRow({
           <select
             className={`status-select ${tone}`}
             value={task.status}
+            disabled={task.aiStatus === "running"}
             onChange={(e) => onSet(task, e.target.value as TaskStatus)}
           >
             {STATUS_ORDER.map((s) => (

@@ -5,7 +5,9 @@ export type Rag = "green" | "amber" | "red" | "grey";
 
 export type TaskStatus = "todo" | "progress" | "review" | "done";
 
-export type Division = "" | "legal" | "marketing" | "teknik" | "konsumen" | "ceo";
+/** A task's output target: "" (no division) or a department code from the
+ *  central catalogue (dynamic, synced from auth SSO — e.g. "teknik", "cso"). */
+export type Division = string;
 
 /* ---- Auth -------------------------------------------------------------- */
 
@@ -39,6 +41,15 @@ export interface Task {
   approvedAt?: string;
   /** Revision instruction recorded when a reviewer sends the task back (Revisi). */
   revisiNote?: string;
+  /** Deep Analisis AI state (single-document vision QC of the review PDF). */
+  aiStatus?: "" | "idle" | "running" | "done" | "failed";
+  aiDone?: number;
+  aiTotal?: number;
+  aiFindings?: GKFinding[];
+  aiSkills?: string[];
+  aiAnnotated?: { name: string; size: number };
+  aiError?: string;
+  aiCheckedAt?: string;
 }
 
 export interface GroupRollup {
@@ -70,8 +81,29 @@ export interface ProjectRollup {
   categories?: CategoryRollup[];
 }
 
+/** Phase/cluster grouping within a project (A, B, "Verci 3 Ekstensi"). */
+export interface Blok {
+  id: string;
+  projectId: string;
+  name: string;
+}
+
+/** One unit/plot: sits in a Blok, built to a BuildingType. */
+export interface Kavling {
+  id: string;
+  projectId: string;
+  blokId: string;
+  noKav: string;
+  typeId: string;
+  luasBangunan: number;
+  luasKavling: number;
+  lebarKavling: string;
+}
+
 export interface ProjectDetail extends ProjectRollup {
   tasks: Task[];
+  bloks: Blok[];
+  kavling: Kavling[];
 }
 
 /** A task annotated with its owning project (the backend embeds Task). */
@@ -132,6 +164,8 @@ export interface WorkDrawing {
   gkTTD?: GKDoc;
   gkAnnotated?: GKDoc;
   gkStatus?: "" | "idle" | "running" | "done" | "failed";
+  gkDone?: number; // pages analysed so far (progress while running)
+  gkTotal?: number; // total pages to analyse
   gkFindings?: GKFinding[];
   gkError?: string;
   gkCheckedAt?: string;
@@ -238,11 +272,42 @@ export interface DivisionInfo {
   label: string;
 }
 
+/** Grup / cluster master (GP1, GP2, …) — a project belongs to one GP. */
+export interface GP {
+  id: string;
+  code: string;
+  name: string;
+}
+
+/** Reusable house-type master (Garnet, Ruby, …) with standard building + land area. */
+export interface BuildingType {
+  id: string;
+  name: string;
+  luasBangunan: number;
+  luasTanah: number;
+}
+
+/** Kavling frontage category master (L3.5, L4, L5). */
+export interface Lebar {
+  id: string;
+  name: string;
+}
+
+/** Location master (Leuwinanggung, Curug, …) reused across projects. */
+export interface Lokasi {
+  id: string;
+  name: string;
+}
+
 export interface MasterData {
   projects: MasterProjectInfo[];
   template: TemplateCategory[];
   accounts: AccountInfo[];
   divisions: DivisionInfo[];
+  gps: GP[];
+  types: BuildingType[];
+  lebars: Lebar[];
+  lokasis: Lokasi[];
   seedCount: number;
 }
 

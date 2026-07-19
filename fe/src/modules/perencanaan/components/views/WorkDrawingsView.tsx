@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AlertItem, ProjectRollup, WorkDrawing } from "../../types";
+import type { AlertItem, ProjectRollup, StaffMember, WorkDrawing } from "../../types";
 import { api } from "../../api/client";
-import type { CreateWorkDrawingInput, WorkDrawingAction } from "../../api/client";
+import type { CreateWorkDrawingInput, WorkDrawingAction, GkConfig } from "../../api/client";
 import { fmtDate, fmtDaysLeft, picName, ragTone } from "../../lib/format";
 import {
   getAttachments,
@@ -11,8 +11,8 @@ import {
 import { RagDot } from "../ui";
 import { Modal } from "../Modal";
 import { PdfViewerModal } from "../PdfViewerModal";
+import { dedupeFindings } from "../../lib/gkFindings";
 
-const AUTHORS = ["agus", "rio", "randi", "ananto"];
 const CUSTOM_PIC = "__custom__";
 
 const STAGE_LABELS: Record<string, string> = {
@@ -32,7 +32,7 @@ const STAGE_ORDER: WorkDrawing["status"][] = ["info", "konsumen", "ttd", "kontra
  * TTD konsumen), the live alert board, and the AI-assisted revision. Cards are
  * grouped per project so flows from different projects never mix.
  */
-export function WorkDrawingsView({ projects }: { projects: ProjectRollup[] }) {
+export function WorkDrawingsView({ projects, pics }: { projects: ProjectRollup[]; pics: StaffMember[] }) {
   const [drawings, setDrawings] = useState<WorkDrawing[] | null>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [err, setErr] = useState("");
@@ -154,6 +154,7 @@ export function WorkDrawingsView({ projects }: { projects: ProjectRollup[] }) {
       {creating && (
         <CreateFlowModal
           projects={projects}
+          pics={pics}
           onClose={() => setCreating(false)}
           onCreated={() => {
             setCreating(false);
@@ -494,10 +495,12 @@ function readAsAttachment(file: File): Promise<Attachment> {
 
 function CreateFlowModal({
   projects,
+  pics,
   onClose,
   onCreated,
 }: {
   projects: ProjectRollup[];
+  pics: StaffMember[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -505,7 +508,7 @@ function CreateFlowModal({
     projectId: projects[0]?.id ?? "",
     konsumen: "",
     unit: "",
-    pic: "agus",
+    pic: pics[0]?.username ?? "",
     infoMasuk: "",
   });
   // When the user picks "PIC custom" the select switches to a free-text field.
@@ -572,9 +575,9 @@ function CreateFlowModal({
                   }
                 }}
               >
-                {AUTHORS.map((a) => (
-                  <option key={a} value={a}>
-                    {picName(a)}
+                {pics.map((p) => (
+                  <option key={p.username} value={p.username}>
+                    {p.name}
                   </option>
                 ))}
                 <option value={CUSTOM_PIC}>+ PIC custom…</option>
@@ -690,6 +693,12 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
   const [uploading, setUploading] = useState<"" | "kontraktor" | "ttd">("");
   const [err, setErr] = useState("");
   const [viewing, setViewing] = useState<{ name: string; url: string } | null>(null);
+  const [gkCfg, setGkCfg] = useState<GkConfig>({ keyConfigured: false, keyModel: "", visionModel: "" });
+
+  // Central Kunci AI status (key + vision model both managed in Panel Admin).
+  useEffect(() => {
+    api.gkConfig().then(setGkCfg).catch(() => {});
+  }, []);
 
   // Poll status while a check is running.
   useEffect(() => {
@@ -733,13 +742,18 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
     }
   };
 
-  const ready = !!wd.gkKontraktor && !!wd.gkTTD;
+  const both = !!wd.gkKontraktor && !!wd.gkTTD;
+  const hasDoc = !!wd.gkKontraktor || !!wd.gkTTD; // 1 dokumen = QC checklist; 2 = banding
+  const ready = hasDoc && gkCfg.keyConfigured;
   const status = wd.gkStatus || "idle";
+  const gkTotal = wd.gkTotal ?? 0;
+  const gkDone = wd.gkDone ?? 0;
+  const gkPct = gkTotal > 0 ? Math.round((gkDone / gkTotal) * 100) : 0;
 
   return (
     <Modal
       title="🔬 Deep Revisi AI — Cek Gambar Kerja"
-      sub={`${wd.konsumen} · ${wd.unit} — GK Kontraktor vs GK TTD (vision AI, Ollama)`}
+      sub={`${wd.konsumen} · ${wd.unit} — ${both ? "GK Kontraktor vs GK TTD (banding)" : "QC 1 gambar vs checklist"} · vision AI, Ollama`}
       onClose={onClose}
       width={680}
     >
@@ -761,21 +775,49 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
           />
         </div>
 
+        <div className="gk-keybox">
+          <div className={gkCfg.keyConfigured ? "gk-keyok" : "gk-keywarn"}>
+            {gkCfg.keyConfigured
+              ? `✓ pakai Kunci AI pusat${gkCfg.visionModel ? ` · model vision: ${gkCfg.visionModel}` : ""}`
+              : "⚠ Kunci AI belum diset — atur di Panel Admin › Kunci AI"}
+          </div>
+          {gkCfg.keyConfigured && (
+            <div className="gk-keyhint">Model vision diatur terpusat di Panel Admin › Kunci AI.</div>
+          )}
+        </div>
+
         {err && <div className="login-error">{err}</div>}
 
         {status === "idle" ? (
-          <div className="form-actions">
-            <button type="button" className="btn-ghost" onClick={onClose}>
-              Tutup
-            </button>
-            <button type="button" className="btn-ai" disabled={!ready} onClick={start}>
-              🔬 Mulai Cek
-            </button>
-          </div>
+          <>
+            <div className="empty-note" style={{ marginBottom: 8 }}>
+              {!ready
+                ? "Upload minimal satu PDF (Kontraktor atau TTD) untuk mulai."
+                : both
+                  ? "Mode banding: GK Kontraktor dicek terhadap GK TTD."
+                  : "Mode QC 1 gambar: dicek terhadap checklist. Upload keduanya untuk mode banding."}
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-ghost" onClick={onClose}>
+                Tutup
+              </button>
+              <button type="button" className="btn-ai" disabled={!ready} onClick={start}>
+                🔬 Mulai Cek
+              </button>
+            </div>
+          </>
         ) : status === "running" ? (
-          <div className="empty-note">
-            ⏳ Menganalisis tiap halaman dengan AI — bisa beberapa menit untuk gambar kerja
-            panjang.
+          <div className="gk-progress">
+            <div className="gk-progress-top">
+              <span>⏳ Menganalisis halaman {gkTotal > 0 ? `${gkDone}/${gkTotal}` : "…"}</span>
+              <b>{gkTotal > 0 ? `${gkPct}%` : ""}</b>
+            </div>
+            <div className="gk-progress-bar">
+              <span style={{ width: gkTotal > 0 ? `${gkPct}%` : "8%" }} className={gkTotal > 0 ? "" : "indet"} />
+            </div>
+            <div className="gk-progress-sub">
+              Tiap halaman diperiksa AI vision — bisa beberapa menit untuk gambar kerja panjang.
+            </div>
           </div>
         ) : status === "failed" ? (
           <>
@@ -792,26 +834,38 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
         ) : (
           <>
             <div className="wd-revisi big">
-              {wd.gkFindings && wd.gkFindings.length > 0 ? (
-                <ul className="gk-findings">
-                  {wd.gkFindings.map((f, i) => (
-                    <li key={i}>
-                      <b>Hal. {f.page}</b>
-                      {f.wrong && (
-                        <>
-                          {" "}
-                          — SALAH: <code>{f.wrong}</code> → SEHARUSNYA: <code>{f.correct}</code>
-                        </>
-                      )}
-                      <div className="gk-explain">
-                        {f.explain} {f.confidence && `(${f.confidence})`}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                "Tidak ada ketidaksesuaian ditemukan — GK Kontraktor konsisten dengan GK TTD."
-              )}
+              {(() => {
+                const all = wd.gkFindings ?? [];
+                const groups = dedupeFindings(all);
+                if (groups.length === 0) return "Tidak ada ketidaksesuaian ditemukan — gambar sudah sesuai.";
+                const merged = all.length - groups.length;
+                return (
+                  <>
+                    <div className="gk-findings-head">
+                      {groups.length} temuan unik dari {all.length} deteksi{merged > 0 ? ` · ${merged} duplikat digabung` : ""}
+                    </div>
+                    <ul className="gk-findings">
+                      {groups.map((g, i) => (
+                        <li key={i}>
+                          <b>Hal. {g.pages.join(", ")}</b>
+                          {g.pages.length > 1 && <span className="gk-dup">×{g.pages.length}</span>}
+                          {g.wrong ? (
+                            <>
+                              {" "}
+                              — SALAH: <code>{g.wrong}</code> → SEHARUSNYA: <code>{g.correct}</code>
+                            </>
+                          ) : (
+                            <> — ⚠ Gagal dianalisis</>
+                          )}
+                          <div className="gk-explain">
+                            {g.explain} {g.confidence && `(${g.confidence})`}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                );
+              })()}
             </div>
             <div className="form-actions">
               <button type="button" className="btn-ghost" onClick={onClose}>

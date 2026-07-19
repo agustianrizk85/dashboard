@@ -52,6 +52,7 @@ type IconName = keyof typeof icons;
 const RULES: [string[], IconName][] = [
   [["output"], "layers"],
   [["gambar", "drawing"], "pencil"],
+  [["skill"], "clipboard"],
   [["papan", "cicle", "kanban", "board"], "kanban"],
   [["alur"], "workflow"],
   [["kelola user"], "users"],

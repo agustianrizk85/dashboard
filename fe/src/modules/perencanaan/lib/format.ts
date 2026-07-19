@@ -3,16 +3,24 @@
 
 import type { Rag, TaskStatus } from "../types";
 
-/** Display name for each author / PIC username. */
-export const PIC_NAMES: Record<string, string> = {
-  randi: "Surandi Yanda Saputra",
-  ananto: "Ananto",
-  agus: "Agus Priyanta",
-  rio: "Rio Zakaria",
-};
+/** Username → display name, populated at runtime from the SSO-synced roster
+ *  (registerPicNames). No hardcoded/seed names — everything comes from the
+ *  central Admin (auth). */
+const picNames: Record<string, string> = {};
+
+/** Feed the roster (from api.staff()/master accounts) so picName resolves real
+ *  names. Call whenever the roster is loaded. */
+export function registerPicNames(list: { username: string; name: string }[]): void {
+  for (const a of list) {
+    if (a.username && a.name) picNames[a.username] = a.name;
+  }
+}
 
 export function picName(pic: string): string {
-  return PIC_NAMES[pic] ?? pic;
+  if (!pic) return pic;
+  if (picNames[pic]) return picNames[pic];
+  // Fallback before the roster loads: humanise the username (never a seed name).
+  return pic.charAt(0).toUpperCase() + pic.slice(1);
 }
 
 /** Role labels (Indonesian). */

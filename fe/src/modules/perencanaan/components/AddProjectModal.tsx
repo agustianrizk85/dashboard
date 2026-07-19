@@ -1,22 +1,29 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import type { AddProjectInput } from "../api/client";
+import type { GP, Lokasi } from "../types";
 import { Modal } from "./Modal";
+import { SearchSelect } from "./SearchSelect";
 
 /**
  * AddProjectModal registers a new MASTER project. Creating a project is master
  * data management (the deliverable template is instantiated automatically), so
  * this lives in the Data Master view rather than the process (Proyek) view.
+ * GP is chosen from the GP master (managed in the same view).
  */
 export function AddProjectModal({
+  gps,
+  lokasis,
   onClose,
   onCreated,
 }: {
+  gps: GP[];
+  lokasis: Lokasi[];
   onClose: () => void;
   onCreated: (id: string) => void;
 }) {
   const [form, setForm] = useState<AddProjectInput>({
-    gp: "GP1",
+    gp: gps[0]?.code ?? "",
     name: "",
     lokasi: "",
     luas: "",
@@ -47,47 +54,45 @@ export function AddProjectModal({
     setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <Modal title="Tambah Proyek Master" sub="Template deliverable dibuat otomatis" onClose={onClose}>
+    <Modal title="Tambah Proyek Master" sub="Cangkang proyek — kavling & deliverable diisi setelah dibuat" onClose={onClose}>
       <form className="form" onSubmit={submit}>
+        {/* --- Identitas proyek --- */}
         <label className="form-field">
           <span>Nama proyek</span>
-          <input autoFocus value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Le Hauz …" />
+          <input autoFocus value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Le Hauz Premiere" />
         </label>
         <div className="form-row">
           <label className="form-field">
             <span>Grup (GP)</span>
-            <input value={form.gp} onChange={(e) => set("gp", e.target.value)} placeholder="GP2" />
+            <SearchSelect
+              value={form.gp}
+              options={gps.map((g) => ({ value: g.code, label: g.code, hint: g.name || undefined }))}
+              placeholder="— Tanpa GP —"
+              onChange={(v) => set("gp", v)}
+            />
+            {gps.length === 0 && <small className="form-hint">Buat GP dulu di panel Grup (GP).</small>}
           </label>
           <label className="form-field">
-            <span>Luas</span>
-            <input value={form.luas} onChange={(e) => set("luas", e.target.value)} placeholder="4.653 m2" />
+            <span>Luas total</span>
+            <input value={form.luas} onChange={(e) => set("luas", e.target.value)} placeholder="4.653 m²" />
           </label>
         </div>
         <label className="form-field">
           <span>Lokasi</span>
-          <input value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} placeholder="Leuwinanggung" />
+          <SearchSelect
+            value={form.lokasi}
+            options={lokasis.map((l) => ({ value: l.name, label: l.name }))}
+            placeholder="— pilih lokasi —"
+            onChange={(v) => set("lokasi", v)}
+          />
+          {lokasis.length === 0 && <small className="form-hint">Buat Lokasi dulu di tab Master Produk.</small>}
         </label>
-        <div className="form-row">
-          <label className="form-field">
-            <span>Jumlah unit</span>
-            <input
-              type="number"
-              min={0}
-              value={form.units || ""}
-              onChange={(e) => set("units", Number(e.target.value))}
-            />
-          </label>
-          <label className="form-field">
-            <span>Jumlah tipe</span>
-            <input
-              type="number"
-              min={0}
-              value={form.types || ""}
-              onChange={(e) => set("types", Number(e.target.value))}
-            />
-          </label>
-        </div>
+        <p className="form-note-soft">
+          Jumlah Unit &amp; Tipe dihitung <b>otomatis</b> dari kavling — diisi di editor Kavling setelah proyek dibuat.
+        </p>
 
+        {/* --- Template deliverable --- */}
+        <div className="form-sec">Template deliverable</div>
         <div className="form-row">
           <label className="form-field">
             <span>Jumlah Site Plan</span>
@@ -100,30 +105,22 @@ export function AddProjectModal({
             />
           </label>
           <div className="form-field">
-            <span>Komponen deliverable</span>
+            <span>Komponen</span>
             <div className="chk-row">
               <label className="chk">
-                <input
-                  type="checkbox"
-                  checked={form.includeUnit}
-                  onChange={(e) => set("includeUnit", e.target.checked)}
-                />
+                <input type="checkbox" checked={form.includeUnit} onChange={(e) => set("includeUnit", e.target.checked)} />
                 Desain Unit Hunian
               </label>
               <label className="chk">
-                <input
-                  type="checkbox"
-                  checked={form.includeKawasan}
-                  onChange={(e) => set("includeKawasan", e.target.checked)}
-                />
+                <input type="checkbox" checked={form.includeKawasan} onChange={(e) => set("includeKawasan", e.target.checked)} />
                 Desain Kawasan
               </label>
             </div>
           </div>
         </div>
         <p className="form-hint">
-          Site Plan dibuat sebanyak yang dipilih (mis. 3 → Site Plan 1, 2, 3). Deliverable & PIC
-          masih bisa ditambah / diubah setelah proyek dibuat.
+          Site Plan dibuat sebanyak yang dipilih (mis. 3 → Site Plan 1, 2, 3). Deliverable &amp; PIC masih bisa
+          diubah setelah proyek dibuat.
         </p>
 
         {err && <div className="login-error">{err}</div>}

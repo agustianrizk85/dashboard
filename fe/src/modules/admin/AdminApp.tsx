@@ -22,9 +22,14 @@ export default function AdminApp() {
 
   // Central AI key = the ONE Ollama key used by every AI feature (Generate AI,
   // Asisten AI, WhatsApp auto-reply). Set here → auth persists it → all services read it.
-  const [aiCfg, setAiCfg] = useState<{ configured: boolean; model: string }>({ configured: false, model: "" });
+  const [aiCfg, setAiCfg] = useState<{ configured: boolean; model: string; visionModel: string }>({
+    configured: false,
+    model: "",
+    visionModel: "",
+  });
   const [newKey, setNewKey] = useState("");
   const [newModel, setNewModel] = useState("");
+  const [newVisionModel, setNewVisionModel] = useState("");
   const [keyMsg, setKeyMsg] = useState("");
 
   const loadUsers = useCallback(async () => {
@@ -44,8 +49,9 @@ export default function AdminApp() {
       const r = await fetch(`${AUTH}/ai/config`, { headers: authHeaders() });
       if (r.ok) {
         const j = await r.json();
-        setAiCfg({ configured: !!j.configured, model: j.model ?? "" });
+        setAiCfg({ configured: !!j.configured, model: j.model ?? "", visionModel: j.visionModel ?? "" });
         setNewModel((m) => m || j.model || "");
+        setNewVisionModel((m) => m || j.visionModel || "");
       }
     } catch {
       /* auth offline — ignore */
@@ -77,13 +83,13 @@ export default function AdminApp() {
       const r = await fetch(`${AUTH}/ai/config`, {
         method: "PUT",
         headers: authHeaders(),
-        body: JSON.stringify({ key: newKey.trim(), model: newModel.trim() }),
+        body: JSON.stringify({ key: newKey.trim(), model: newModel.trim(), visionModel: newVisionModel.trim() }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-      setAiCfg({ configured: !!j.configured, model: j.model ?? "" });
+      setAiCfg({ configured: !!j.configured, model: j.model ?? "", visionModel: j.visionModel ?? "" });
       setNewKey("");
-      setKeyMsg(j.configured ? "✓ Key AI tersimpan terpusat" : "✓ Key diperbarui");
+      setKeyMsg(j.configured ? "✓ Tersimpan terpusat" : "✓ Diperbarui");
     } catch (e) {
       setKeyMsg("⚠ " + (e instanceof Error ? e.message : String(e)));
     }
@@ -162,7 +168,9 @@ export default function AdminApp() {
             <div className="wms-keystat">
               Status:{" "}
               {aiCfg.configured ? (
-                <span className="wms-ok inline">✓ aktif{aiCfg.model ? ` · model ${aiCfg.model}` : ""}</span>
+                <span className="wms-ok inline">
+                  ✓ aktif{aiCfg.model ? ` · umum ${aiCfg.model}` : ""}{aiCfg.visionModel ? ` · vision ${aiCfg.visionModel}` : ""}
+                </span>
               ) : (
                 <span className="wms-err inline">belum diset</span>
               )}
@@ -172,12 +180,21 @@ export default function AdminApp() {
               <input type="password" value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="tempel Ollama Cloud API key…" />
             </label>
             <label className="wms-field">
-              <span>Model <small>(opsional)</small></span>
+              <span>Model Umum <small>(dashboard · asisten · WA)</small></span>
               <input value={newModel} onChange={(e) => setNewModel(e.target.value)} placeholder="glm-5.2:cloud" />
             </label>
-            <button className="wms-btn" disabled={!newKey.trim()} onClick={saveAiKey}>Simpan Key</button>
+            <label className="wms-field">
+              <span>Model Perencanaan <small>(vision · Deep Revisi gambar kerja)</small></span>
+              <input value={newVisionModel} onChange={(e) => setNewVisionModel(e.target.value)} placeholder="qwen3.5:397b" />
+            </label>
+            <button className="wms-btn" disabled={!newKey.trim() && !newModel.trim() && !newVisionModel.trim()} onClick={saveAiKey}>
+              Simpan
+            </button>
             {keyMsg && <div className={keyMsg.startsWith("✓") ? "wms-ok" : "wms-err"} style={{ marginTop: 8 }}>{keyMsg}</div>}
-            <p className="wms-note small">Dapatkan key di <b>ollama.com</b>. Satu key ini berlaku untuk seluruh dashboard + auto-reply WhatsApp.</p>
+            <p className="wms-note small">
+              Satu <b>key</b> untuk semua. <b>Model Umum</b> untuk teks (asisten/WA); <b>Model Perencanaan</b> harus model{" "}
+              <b>vision</b> (baca gambar). Dapatkan key di <b>ollama.com</b>.
+            </p>
           </div>
         </div>
       )}
