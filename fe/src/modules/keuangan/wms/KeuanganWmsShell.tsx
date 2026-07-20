@@ -4,6 +4,7 @@ import { WmsShell } from "@/components/wms/WmsShell";
 import type { WmsNavGroup } from "@/components/wms/WmsShell";
 import { AiGenerateButton } from "@/ai/AiGenerate";
 import { KeuanganOverviewWms } from "./KeuanganOverviewWms";
+import { KeuanganPurchasingShell } from "./KeuanganPurchasingShell";
 import { ARView } from "../ARView";
 import { ImportPanel } from "../components/admin/ImportPanel";
 import "../keuangan.css"; // AR view + import panel keep their .kc-scope styling (embed = transparent, no fixed canvas)
@@ -20,6 +21,9 @@ type Tab = "dash" | "ar" | "sync";
  */
 export function KeuanganWmsShell() {
   const { user } = useAuth();
+  // Dedicated purchasing account: a purchasing-only Ops-Console (no akad / AR /
+  // sync). Purchasing still lives inside the Keuangan division.
+  if (user?.role === "purchasing") return <KeuanganPurchasingShell />;
   const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
   const [tab, setTab] = useState<Tab>("dash");
   const active: Tab = tab === "sync" && !canManage ? "dash" : tab;
