@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { useRev } from "@/lib/realtime";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
@@ -14,6 +14,7 @@ const roleLabel: Record<string, string> = {
 
 const NAV = [
   { to: "/permit", label: "Dashboard", end: true },
+  { to: "/permit/board", label: "Papan Tugas" },
   { to: "/permit/pt", label: "Master PT" },
   { to: "/permit/vendors", label: "Vendor" },
   { to: "/permit/spk", label: "SPK" },
@@ -42,8 +43,12 @@ function Clock() {
 export function Layout() {
   const { user, logout } = useAuth();
   const rev = useRev(); // realtime data revision — bumps on any backend write
-  // All-access directors (CEO/Dirops) only need the dashboard, not the menus.
-  const nav = user?.allAccess ? NAV.filter((n) => n.to === "/permit") : NAV;
+  const loc = useLocation();
+  // The shared Papan Tugas board refreshes in place via its own socket — keep it
+  // mounted across realtime pushes so an open card modal survives.
+  const onBoard = loc.pathname.startsWith("/permit/board");
+  // All-access directors (CEO/Dirops) only need the dashboard + shared board.
+  const nav = user?.allAccess ? NAV.filter((n) => n.to === "/permit" || n.to === "/permit/board") : NAV;
   return (
     <div className="app pm-scope">
       <header className="hdr">
@@ -83,8 +88,9 @@ export function Layout() {
       </DivisionTabBar>
 
       {/* key={rev} remounts the active page on each realtime push so every
-          permit page (which loads its own data) refetches live. */}
-      <main className="content" key={rev}>
+          permit page (which loads its own data) refetches live. The Papan Tugas
+          board is excluded — it refetches in place with its own socket. */}
+      <main className="content" key={onBoard ? "board" : rev}>
         <Outlet />
       </main>
     </div>

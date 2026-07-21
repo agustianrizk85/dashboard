@@ -20,13 +20,15 @@ import { MasterView } from "./views/MasterView";
 import { SkillView } from "./views/SkillView";
 import { AiGenerateButton } from "@/ai/AiGenerate";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
+import { BoardView } from "@/components/board/BoardView";
 
-type Tab = "summary" | "projects" | "tasks" | "outputs" | "workdrawings" | "staff" | "master" | "pembelian" | "skill";
+type Tab = "summary" | "projects" | "tasks" | "board" | "outputs" | "workdrawings" | "staff" | "master" | "pembelian" | "skill";
 
 const TABS: { key: Tab; label: string; icon: string; tip: string }[] = [
   { key: "summary", label: "Ringkasan", icon: "grid", tip: "PROSES · Snapshot portfolio: progress rata-rata, beban tiap author, kesiapan output divisi, dan ringkasan alert." },
   { key: "projects", label: "Proyek", icon: "layers", tip: "PROSES · Pohon deliverable per proyek — ubah status tugas (Belum/Proses/Review/Selesai). Tambah proyek master di sini." },
   { key: "tasks", label: "Tugas Saya", icon: "list", tip: "PROSES · Pembagian tugas berdasarkan akun PIC — semua deliverable yang ditugaskan kepada Anda lintas proyek." },
+  { key: "board", label: "Papan Tugas", icon: "layers", tip: "Papan tugas ala Trello — list & kartu dengan anggota, label, tanggal, ceklis, lampiran, dan komentar." },
   { key: "outputs", label: "Output Divisi", icon: "flag", tip: "PROSES · Deliverable yang dialirkan ke Legal, Marketing, Teknik, Konsumen, dan CEO beserta kesiapannya." },
   { key: "workdrawings", label: "Gambar Kerja", icon: "home", tip: "PROSES · Flow gambar kerja per konsumen: SLA 15 hk (konsumen) & 5 hk (kontraktor), alert, dan revisi AI." },
   { key: "staff", label: "Tim", icon: "user", tip: "Daftar staf departemen dan beban kerja tiap author." },
@@ -167,7 +169,7 @@ export function Dashboard() {
       </header>
 
       <DivisionTabBar>
-        {(allAccess ? TABS.filter((t) => t.key === "summary") : TABS).map((tabItem) => (
+        {(allAccess ? TABS.filter((t) => t.key === "summary" || t.key === "board") : TABS).map((tabItem) => (
           <Tooltip key={tabItem.key} tip={tabItem.tip} pos="bottom">
             <button
               className={`tab ${tab === tabItem.key ? "on" : ""}`}
@@ -184,7 +186,7 @@ export function Dashboard() {
           load their own data (Tim, Master) refetch live. Tugas & Gambar Kerja are
           EXCLUDED — they refresh in place via a `rev` prop instead, so an open
           Deep Analisis / Deep Revisi AI modal isn't unmounted mid-run. */}
-      <main className="content" key={tab === "tasks" || tab === "workdrawings" ? tab : rev}>
+      <main className="content" key={tab === "tasks" || tab === "workdrawings" || tab === "board" ? tab : rev}>
         {err && <div className="empty-note error">{err}</div>}
         {tab === "summary" && (summary ? <SummaryView summary={summary} /> : <Loading />)}
         {tab === "projects" && (
@@ -200,6 +202,7 @@ export function Dashboard() {
             rev={rev}
           />
         )}
+        {tab === "board" && <BoardView boardName="Departemen Perencanaan" />}
         {tab === "outputs" && (outputs.length ? <OutputsView outputs={outputs} /> : <Loading />)}
         {tab === "workdrawings" && <WorkDrawingsView projects={projects} pics={pics} rev={rev} />}
         {tab === "staff" && <StaffView />}

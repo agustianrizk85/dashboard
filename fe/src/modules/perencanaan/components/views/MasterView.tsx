@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
+import type { MasterKind } from "../../api/client";
 import type { AccountInfo, BuildingType, Division, DivisionInfo, GP, MasterData, MasterProjectInfo, ProjectDetail, Task } from "../../types";
 import { picName } from "../../lib/format";
 import { InfoTip } from "../ui";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Modal } from "../Modal";
+import { MasterImportModal } from "../MasterImportModal";
 import { AddProjectModal } from "../AddProjectModal";
+import { ProjectImportModal } from "../ProjectImportModal";
 import { KavlingEditor } from "./KavlingEditor";
 import { DataTable } from "../DataTable";
 import { SearchSelect } from "../SearchSelect";
@@ -38,6 +41,7 @@ export function MasterView({
   const [data, setData] = useState<MasterData | null>(null);
   const [err, setErr] = useState("");
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   // Tab + selected project live in the URL (?tab=&proj=) so they SURVIVE the
   // realtime remount (the layout re-keys on every backend write). Component
@@ -104,6 +108,43 @@ export function MasterView({
     { accessorKey: "units", header: "Unit", size: 62, cell: (i) => <span className="num">{i.getValue<number>()}</span> },
     { accessorKey: "tasks", header: "Tugas", size: 62, cell: (i) => <span className="num">{i.getValue<number>()}</span> },
   ];
+  if (canManage) {
+    projectCols.push({
+      id: "act",
+      header: "",
+      size: 76,
+      enableSorting: false,
+      cell: (i) => {
+        const p = i.row.original;
+        return (
+          <button
+            type="button"
+            className="rv-btn reject"
+            title="Hapus proyek beserta semua tugas, kavling & blok"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (
+                !window.confirm(
+                  `Hapus proyek "${p.name}"?\n\nSemua tugas, kavling, blok & lampiran proyek ini ikut TERHAPUS PERMANEN dan tidak bisa dikembalikan.`,
+                )
+              )
+                return;
+              api
+                .deleteProject(p.id)
+                .then(() => {
+                  if (selectedId === p.id) setSelectedId(null);
+                  setErr("");
+                  load();
+                })
+                .catch((e2) => setErr(e2 instanceof Error ? e2.message : String(e2)));
+            }}
+          >
+            Hapus
+          </button>
+        );
+      },
+    });
+  }
 
   const accountCols: ColumnDef<AccountInfo, unknown>[] = [
     {
@@ -156,6 +197,11 @@ export function MasterView({
           <h2 className="panel-title">
             Proyek Master · {data.projects.length}
             <InfoTip tip="Klik satu proyek untuk memilihnya, lalu buka tab Kavling atau Deliverable. Kolom Unit dihitung dari kavling; Tugas = jumlah deliverable." />
+            {canManage && (
+              <button type="button" className="acct-refresh" title="Impor proyek dari spreadsheet" onClick={() => setImporting(true)}>
+                ⇪ Import
+              </button>
+            )}
           </h2>
           <div className="panel-pad">
             <DataTable
@@ -182,8 +228,8 @@ export function MasterView({
           <div className="master-products-grid">
             <GPMaster gps={data.gps} canManage={canManage} onChanged={load} />
             <TypeMaster types={data.types} canManage={canManage} onChanged={load} />
-            <SimpleMaster title="Lebar Kavling" tip="Kategori lebar (L3.5, L4, L5). Kavling memilih dari sini." placeholder="mis. L4" items={data.lebars} canManage={canManage} save={(v) => api.saveLebar(v).then(load)} del={(id) => api.deleteLebar(id).then(load)} />
-            <SimpleMaster title="Lokasi" tip="Master lokasi. Proyek memilih dari sini (bukan ketik bebas)." placeholder="mis. Leuwinanggung" items={data.lokasis} canManage={canManage} save={(v) => api.saveLokasi(v).then(load)} del={(id) => api.deleteLokasi(id).then(load)} />
+            <SimpleMaster title="Lebar Kavling" importKind="lebar" tip="Kategori lebar (L3.5, L4, L5). Kavling memilih dari sini." placeholder="mis. L4" items={data.lebars} canManage={canManage} reload={load} save={(v) => api.saveLebar(v).then(load)} del={(id) => api.deleteLebar(id).then(load)} />
+            <SimpleMaster title="Lokasi" importKind="lokasi" tip="Master lokasi. Proyek memilih dari sini (bukan ketik bebas)." placeholder="mis. Leuwinanggung" items={data.lokasis} canManage={canManage} reload={load} save={(v) => api.saveLokasi(v).then(load)} del={(id) => api.deleteLokasi(id).then(load)} />
           </div>
         </>
       )}
@@ -276,6 +322,16 @@ export function MasterView({
           }}
         />
       )}
+
+      {importing && (
+        <ProjectImportModal
+          onClose={() => setImporting(false)}
+          onDone={() => {
+            load();
+            onChanged();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -285,6 +341,7 @@ function GPMaster({ gps, canManage, onChanged }: { gps: GP[]; canManage: boolean
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [err, setErr] = useState("");
+  const [importing, setImporting] = useState(false);
   const run = (p: Promise<unknown>) =>
     p.then(() => {
       setErr("");
@@ -326,6 +383,11 @@ function GPMaster({ gps, canManage, onChanged }: { gps: GP[]; canManage: boolean
       <h2 className="panel-title">
         Grup (GP) · {gps.length}
         <InfoTip tip="Master grup/cluster. Proyek memilih GP dari sini (bukan ketik bebas)." />
+        {canManage && (
+          <button type="button" className="acct-refresh" title="Impor GP dari spreadsheet" onClick={() => setImporting(true)}>
+            ⇪ Import
+          </button>
+        )}
       </h2>
       {canManage && (
         <div className="me-addbar">
@@ -338,6 +400,7 @@ function GPMaster({ gps, canManage, onChanged }: { gps: GP[]; canManage: boolean
         <DataTable columns={cols} data={gps} pageSize={6} searchable={gps.length > 6} searchPlaceholder="Cari GP…" empty="Belum ada GP." />
       </div>
       {err && <div className="review-err">{err}</div>}
+      {importing && <MasterImportModal kind="gp" title="Grup (GP)" onClose={() => setImporting(false)} onDone={onChanged} />}
     </section>
   );
 }
@@ -348,6 +411,7 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
   const [lb, setLb] = useState("");
   const [lt, setLt] = useState("");
   const [err, setErr] = useState("");
+  const [importing, setImporting] = useState(false);
   const run = (p: Promise<unknown>) =>
     p.then(() => {
       setErr("");
@@ -402,6 +466,11 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
       <h2 className="panel-title">
         Tipe Bangunan · {types.length}
         <InfoTip tip="Master tipe rumah (mis. Garnet 42/32). Dipakai ulang antar proyek; kavling mengacu ke sini." />
+        {canManage && (
+          <button type="button" className="acct-refresh" title="Impor tipe dari spreadsheet" onClick={() => setImporting(true)}>
+            ⇪ Import
+          </button>
+        )}
       </h2>
       {canManage && (
         <div className="me-addbar">
@@ -415,6 +484,7 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
         <DataTable columns={cols} data={types} pageSize={6} searchable={types.length > 6} searchPlaceholder="Cari tipe…" empty="Belum ada tipe." />
       </div>
       {err && <div className="review-err">{err}</div>}
+      {importing && <MasterImportModal kind="tipe" title="Tipe Bangunan" onClose={() => setImporting(false)} onDone={onChanged} />}
     </section>
   );
 }
@@ -422,23 +492,28 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
 /** Generic single-field ({id,name}) master — used by Lebar + Lokasi. */
 function SimpleMaster<T extends { id: string; name: string }>({
   title,
+  importKind,
   tip,
   placeholder,
   items,
   canManage,
+  reload,
   save,
   del,
 }: {
   title: string;
+  importKind: MasterKind;
   tip: string;
   placeholder: string;
   items: T[];
   canManage: boolean;
+  reload: () => void;
   save: (v: Partial<T>) => Promise<unknown>;
   del: (id: string) => Promise<unknown>;
 }) {
   const [name, setName] = useState("");
   const [err, setErr] = useState("");
+  const [importing, setImporting] = useState(false);
   const run = (p: Promise<unknown>) =>
     p.then(() => {
       setErr("");
@@ -465,6 +540,11 @@ function SimpleMaster<T extends { id: string; name: string }>({
       <h2 className="panel-title">
         {title} · {items.length}
         <InfoTip tip={tip} />
+        {canManage && (
+          <button type="button" className="acct-refresh" title={`Impor ${title} dari spreadsheet`} onClick={() => setImporting(true)}>
+            ⇪ Import
+          </button>
+        )}
       </h2>
       {canManage && (
         <div className="me-addbar">
@@ -476,6 +556,7 @@ function SimpleMaster<T extends { id: string; name: string }>({
         <DataTable columns={cols} data={items} pageSize={6} searchable={items.length > 6} searchPlaceholder="Cari…" empty="Belum ada data." />
       </div>
       {err && <div className="review-err">{err}</div>}
+      {importing && <MasterImportModal kind={importKind} title={title} onClose={() => setImporting(false)} onDone={reload} />}
     </section>
   );
 }

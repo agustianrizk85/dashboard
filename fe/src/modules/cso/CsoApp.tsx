@@ -13,12 +13,14 @@ import { CsoOverviewWms } from "./CsoOverviewWms";
 import "../sales/sales.css"; // shared division chrome (green header + tabs)
 import "./cso.css"; // CSO dashboard content, scoped under .cso-scope
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
+import { BoardView } from "@/components/board/BoardView";
 
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "kurva", label: "Kurva-S" },
   { id: "ranking", label: "Ranking" },
   { id: "tiket", label: "Tiket WA" },
+  { id: "board", label: "Papan Tugas" },
   { id: "pembelian", label: "Pembelian" },
   { id: "sync", label: "Sync Spreadsheet" },
 ];
@@ -39,6 +41,7 @@ const WMS_SECTIONS = [
   { key: "kurva", label: "Kurva-S" },
   { key: "ranking", label: "Ranking" },
   { key: "tiket", label: "Tiket WA" },
+  { key: "board", label: "Papan Tugas" },
   { key: "sync", label: "Sync Spreadsheet" },
 ];
 
@@ -83,7 +86,13 @@ function CsoWms() {
   return (
     <WmsShell brand="CSO" brandSub="Customer Complaint" nav={groups}>
       <div className="cso-scope">
-        {state.status === "loading" ? (
+        {tab === "board" ? (
+          // Papan Tugas is fully self-contained (own fetch client + realtime
+          // socket + CSS scope) — never gated behind the CSO dashboard load.
+          <div className="body">
+            <BoardView boardName="Semua Divisi" />
+          </div>
+        ) : state.status === "loading" ? (
           <div className="body">
             <div className="splash">
               <div className="spinner" />
@@ -176,7 +185,12 @@ function CsoClassic() {
 
         <main className="content">
           <div className="cso-scope">
-            {state.status === "loading" ? (
+            {tab === "board" ? (
+              // Self-contained cross-division board — see note in CsoWms.
+              <div className="body">
+                <BoardView boardName="Semua Divisi" />
+              </div>
+            ) : state.status === "loading" ? (
               <div className="body">
                 <div className="splash">
                   <div className="spinner" />

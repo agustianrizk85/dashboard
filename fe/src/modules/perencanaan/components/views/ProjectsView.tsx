@@ -2,15 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ProjectDetail, ProjectRollup, Task, TaskStatus } from "../../types";
 import { api } from "../../api/client";
 import { STATUS_LABELS, STATUS_ORDER, fmtDate, picName, ragTone } from "../../lib/format";
-import {
-  deadlineSev,
-  daysUntil,
-  getTaskDates,
-  setTaskDates,
-  type TaskDates,
-} from "../../lib/localStore";
+import { deadlineSev, daysUntil } from "../../lib/localStore";
 import { ProgressBar, RagDot } from "../ui";
 import { ReviewControls } from "../ReviewControls";
+import { TaskImportModal } from "../TaskImportModal";
 
 /**
  * Proyek view — the PROCESS side: pick a project and advance the status of each
@@ -108,6 +103,7 @@ function ProjectTree({
 }) {
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
   const [err, setErr] = useState("");
+  const [showImport, setShowImport] = useState(false);
 
   const reload = useCallback(() => {
     api
@@ -138,6 +134,20 @@ function ProjectTree({
     }
   };
 
+  // Persist a single schedule date, then reload so counts / RAG refresh.
+  const saveSchedule = async (
+    task: Task,
+    patch: { start?: string; deadline?: string; finish?: string },
+  ) => {
+    try {
+      await api.setTaskSchedule(projectId, task.id, patch);
+      reload();
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   if (err) return <div className="empty-note error">{err}</div>;
   if (!detail) return <div className="empty-note">Memuat deliverable…</div>;
 
@@ -156,11 +166,33 @@ function ProjectTree({
             {detail.lokasi} · {detail.luas} · {detail.units} unit · {detail.types} tipe
           </div>
         </div>
-        <div className="tree-prog">
-          <div className="tree-prog-num">{detail.progress}%</div>
-          <ProgressBar value={detail.progress} />
+        <div className="tree-hd-actions">
+          {canManage && (
+            <button
+              type="button"
+              className="btn-ghost sm kav-import-btn"
+              title="Isi status & tanggal task massal dari spreadsheet / XLSX / CSV"
+              onClick={() => setShowImport(true)}
+            >
+              ⇪ Import
+            </button>
+          )}
+          <div className="tree-prog">
+            <div className="tree-prog-num">{detail.progress}%</div>
+            <ProgressBar value={detail.progress} />
+          </div>
         </div>
       </header>
+
+      {showImport && (
+        <TaskImportModal
+          projectId={projectId}
+          projectName={`${detail.gp} · ${detail.name}`}
+          tasks={detail.tasks}
+          onClose={() => setShowImport(false)}
+          onDone={afterReview}
+        />
+      )}
 
       {detail.categories?.map((cat) => (
         <div className="cat" key={cat.category}>
@@ -186,6 +218,7 @@ function ProjectTree({
                     projectId={projectId}
                     onSet={setStatus}
                     onReview={afterReview}
+                    onSchedule={saveSchedule}
                   />
                 ))}
               </div>
@@ -204,6 +237,7 @@ function TaskRow({
   projectId,
   onSet,
   onReview,
+  onSchedule,
 }: {
   task: Task;
   editable: boolean;
@@ -211,19 +245,29 @@ function TaskRow({
   projectId: string;
   onSet: (t: Task, s: TaskStatus) => void;
   onReview: () => void;
+  onSchedule: (t: Task, patch: { start?: string; deadline?: string; finish?: string }) => void;
 }) {
   const tone = ragTone(task.status === "done" ? "green" : task.status === "todo" ? "grey" : "amber");
 
-  // Schedule dates (mulai / deadline / selesai) — held client-side until the
-  // backend models them. See lib/localStore.ts.
-  const [dates, setDates] = useState<TaskDates>(() => getTaskDates(task.id));
+  // Schedule dates (mulai / deadline / selesai) — server-persisted on the task.
+  // Kept in local state for an optimistic edit; re-synced whenever the task
+  // reloads (saveSchedule reloads the project after the PATCH).
+  type Sched = { start: string; deadline: string; finish: string };
+  const [dates, setDates] = useState<Sched>({
+    start: task.start ?? "",
+    deadline: task.deadline ?? "",
+    finish: task.finish ?? "",
+  });
+  useEffect(() => {
+    setDates({ start: task.start ?? "", deadline: task.deadline ?? "", finish: task.finish ?? "" });
+  }, [task.start, task.deadline, task.finish]);
+
   const done = task.status === "done";
   const sev = deadlineSev(dates.deadline, done);
 
-  const update = (key: keyof TaskDates, value: string) => {
-    const next = { ...dates, [key]: value };
-    setDates(next);
-    setTaskDates(task.id, next);
+  const update = (key: keyof Sched, value: string) => {
+    setDates((prev) => ({ ...prev, [key]: value })); // optimistic
+    onSchedule(task, { [key]: value });
   };
 
   return (
@@ -233,6 +277,9 @@ function TaskRow({
         <span className="task-name">
           {task.name}
           {task.output && <span className="out-tag">{task.output}</span>}
+          {task.attachments && task.attachments.length > 0 && (
+            <span className="attach-chip" title={`${task.attachments.length} lampiran`}>📎 {task.attachments.length}</span>
+          )}
         </span>
         {sev !== "grey" && (
           <span className={`alert-chip ${ragTone(sev)}`} title="Alert deadline deliverable">

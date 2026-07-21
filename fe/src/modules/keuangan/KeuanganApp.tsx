@@ -5,6 +5,7 @@ import { KeuanganView } from "./KeuanganView";
 import { ARView } from "./ARView";
 import { ImportPanel } from "./components/admin/ImportPanel";
 import { KeuanganWmsShell } from "./wms/KeuanganWmsShell";
+import { BoardView } from "@/components/board/BoardView";
 import { PRView } from "./purchasing/PRView";
 import { POView } from "./purchasing/POView";
 import { ApprovalView } from "./purchasing/ApprovalView";
@@ -26,6 +27,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: "dash", label: "Dashboard" },
   { id: "ar", label: "AR / Piutang" },
+  { id: "board", label: "Papan Tugas" },
   { id: "pr", label: "Purchase Request", manage: true, purchasing: true },
   { id: "po", label: "Purchase Order", manage: true, purchasing: true },
   { id: "approval", label: "Approval", manage: true, purchasing: true },
@@ -125,6 +127,8 @@ export default function KeuanganApp() {
         <main className="content">
           {active === "ar" ? (
             <ARView />
+          ) : active === "board" ? (
+            <BoardView boardName="Semua Divisi" />
           ) : active === "sync" ? (
             <div className="kc-scope">
               <div className="body">

@@ -15,10 +15,12 @@ import { DeadlinePage } from "@/modules/permit/pages/DeadlinePage";
 import { SettingsPage } from "@/modules/permit/pages/SettingsPage";
 import { SyncPage } from "@/modules/permit/pages/SyncPage";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
+import { BoardView } from "@/components/board/BoardView";
 import "./permit.css";
 
 const SECTIONS = [
   { key: "", label: "Dashboard" },
+  { key: "board", label: "Papan Tugas" },
   { key: "pt", label: "Master PT" },
   { key: "vendors", label: "Vendor" },
   { key: "spk", label: "SPK" },
@@ -63,6 +65,7 @@ export default function PermitApp() {
         <Route element={wms ? <PermitWmsLayout /> : <Layout />}>
           <Route index element={wms ? <PermitOverviewWms /> : <DashboardPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="board" element={<BoardView boardName="Semua Divisi" />} />
           <Route path="pt" element={<PTPage />} />
           <Route path="vendors" element={<VendorPage />} />
           <Route path="spk" element={<SPKPage />} />

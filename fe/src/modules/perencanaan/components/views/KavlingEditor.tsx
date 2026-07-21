@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import type { BuildingType, Kavling, Lebar, ProjectDetail } from "../../types";
 import { InfoTip } from "../ui";
 import { DataTable } from "../DataTable";
+import { KavlingImportModal } from "../KavlingImportModal";
 import { SearchSelect, type SelectOption } from "../SearchSelect";
 
 /**
@@ -44,6 +45,7 @@ export function KavlingEditor({
     }).catch((e) => setErr(e instanceof Error ? e.message : String(e)));
 
   const [blokName, setBlokName] = useState("");
+  const [showImport, setShowImport] = useState(false);
   const [draft, setDraft] = useState({ noKav: "", typeId: "", blokId: "", luasBangunan: "", luasKavling: "", lebarKavling: "" });
 
   const typeById = (id: string) => types.find((t) => t.id === id);
@@ -195,7 +197,24 @@ export function KavlingEditor({
             {detail.gp} · {detail.name} · <b>{kavling.length} kavling</b> · {bloks.length} blok · {distinctTypes} tipe
           </div>
         </div>
+        {canManage && (
+          <button type="button" className="btn-ghost sm kav-import-btn" title="Impor kavling massal dari spreadsheet / XLSX / CSV" onClick={() => setShowImport(true)}>
+            ⇪ Import
+          </button>
+        )}
       </div>
+
+      {showImport && (
+        <KavlingImportModal
+          projectId={projectId}
+          onClose={() => setShowImport(false)}
+          onDone={() => {
+            setErr("");
+            reload();
+            onChanged?.();
+          }}
+        />
+      )}
 
       {/* Blok master */}
       <div className="kav-blok-bar">

@@ -133,6 +133,90 @@ export interface CreateWorkDrawingInput {
 
 export type WorkDrawingAction = "konsumen-selesai" | "ttd-konsumen" | "kontraktor-selesai";
 
+/** One row to bulk-import into a project's kavling. Names only — the backend
+ *  resolves Blok/Tipe by NAME and creates any missing (plus the Lebar master). */
+export interface KavlingImportRow {
+  noKav: string;
+  tipe: string; // BuildingType name
+  blok: string; // Blok name
+  bangunan: number; // luas bangunan (0 if unknown)
+  kavling: number; // luas kavling / tanah (0 if unknown)
+  lebar: string; // Lebar name
+}
+
+/** A row the backend refused (e.g. blank No. Kav), with a human reason. */
+export interface KavlingImportSkip {
+  row: number;
+  noKav: string;
+  reason: string;
+}
+
+/** Result of POST /projects/{id}/kavling/import. */
+export interface KavlingImportResult {
+  created: number;
+  updated: number;
+  bloksCreated: string[];
+  typesCreated: string[];
+  lebarsCreated: string[];
+  skipped: KavlingImportSkip[];
+}
+
+/** One row to bulk-import task schedule/status into a project. Matched to an
+ *  existing task BY NAME (case-insensitive); blank fields are left unchanged. */
+export interface TaskImportRow {
+  name: string;
+  status: string;
+  start: string;
+  deadline: string;
+  finish: string;
+}
+
+/** Result of POST /projects/{id}/tasks/import. Import only fills existing tasks
+ *  (never creates); rows whose name matches no task are reported in `skipped`. */
+export interface TaskImportResult {
+  updated: number;
+  skipped: { row: number; key: string; reason: string }[];
+}
+
+/** The four Master Produk targets for bulk import. */
+export type MasterKind = "gp" | "tipe" | "lebar" | "lokasi";
+
+/** One row to bulk-import into a produk master. Only the fields relevant to the
+ *  kind are sent (gp: code+name; tipe: name+bangunan+tanah; lebar/lokasi: name). */
+export interface MasterImportRow {
+  code?: string;
+  name?: string;
+  bangunan?: number;
+  tanah?: number;
+}
+
+/** Result of POST /master/import. */
+export interface MasterImportResult {
+  created: number;
+  updated: number;
+  skipped: { row: number; key: string; reason: string }[];
+}
+
+/** One row to bulk-import into the project portfolio. Only these four fields are
+ *  sent; `luas` stays a STRING (e.g. "4.653 m²"). The backend resolves/creates
+ *  any missing GP + Lokasi masters and creates projects (no update). */
+export interface ProjectImportRow {
+  name: string;
+  gp: string;
+  luas: string;
+  lokasi: string;
+}
+
+/** Result of POST /projects/import. Projects are create-only, so `updated` is
+ *  always 0; `skipped` reports rows with a blank name or an existing name. */
+export interface ProjectImportResult {
+  created: number;
+  updated: number;
+  gpsCreated: string[];
+  lokasiCreated: string[];
+  skipped: { row: number; key: string; reason: string }[];
+}
+
 interface LoginResponse {
   token: string;
   user: AuthUser;
@@ -171,15 +255,76 @@ export const api = {
   // --- Portfolio overview ---
   summary: () => request<Summary>("GET", "/summary"),
 
-  // --- Full cicle Kanban board mirror ---
-  cicleBoard: () => request<unknown>("GET", "/cicle-board"),
+  // NOTE: the Papan Tugas board client lives in the SHARED package at
+  // src/components/board/boardApi.ts (works from any module via the SSO token).
 
   // --- Projects + deliverable tree ---
   projects: () => request<ProjectRollup[]>("GET", "/projects"),
   project: (id: string) => request<ProjectDetail>("GET", `/projects/${id}`),
   addProject: (input: AddProjectInput) => request<ProjectDetail>("POST", "/projects", input),
+  deleteProject: (id: string) => request<void>("DELETE", `/projects/${id}`),
   updateTask: (projectId: string, taskId: string, status: TaskStatus) =>
     request<ProjectDetail>("PATCH", `/projects/${projectId}/tasks/${taskId}`, { status }),
+  // Save one or more of a task's schedule dates. Each field is OPTIONAL: a
+  // present field is saved (""=clear), an absent field is left unchanged.
+  setTaskSchedule: (
+    projectId: string,
+    taskId: string,
+    patch: { start?: string; deadline?: string; finish?: string },
+  ) => request<{ status: string }>("PATCH", `/projects/${projectId}/tasks/${taskId}/schedule`, patch),
+  // Bulk-fill existing tasks' status + dates from a spreadsheet, matched BY NAME.
+  importTasks: (projectId: string, rows: TaskImportRow[]) =>
+    request<TaskImportResult>("POST", `/projects/${projectId}/tasks/import`, { rows }),
+
+  // Attach ANY file (≤1 GiB) to a task; multipart XHR so callers get progress.
+  // Hits the SAME board task-attachments endpoint the Papan Tugas card uses, so
+  // uploaded files show up on the task card (and via task.attachments). Rejects
+  // locally for files over 1 GiB before touching the network.
+  uploadTaskAttachment: (
+    projectId: string,
+    taskId: string,
+    file: File,
+    onProgress?: (pct: number) => void,
+  ): Promise<{ id: string; name: string; size: number; mime: string; by: string; at: string }> =>
+    new Promise((resolve, reject) => {
+      if (file.size > 1 << 30) {
+        reject(new ApiError("Maksimal 1GB", 413));
+        return;
+      }
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${BASE}/board/task/${projectId}/${taskId}/attachments`);
+      if (token) xhr.setRequestHeader("Authorization", "Bearer " + token);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status === 401) {
+          setToken("");
+          onUnauthorized();
+          reject(new ApiError("Sesi berakhir — silakan login kembali.", 401));
+          return;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText) as { id: string; name: string; size: number; mime: string; by: string; at: string });
+          } catch {
+            reject(new ApiError("Respons server tidak valid.", xhr.status));
+          }
+          return;
+        }
+        let detail = "";
+        try {
+          detail = (JSON.parse(xhr.responseText) as { error?: string }).error ?? "";
+        } catch {
+          /* no JSON body */
+        }
+        reject(new ApiError(detail || `HTTP ${xhr.status}`, xhr.status));
+      };
+      xhr.onerror = () => reject(new ApiError("Gagal mengunggah — jaringan bermasalah.", 0));
+      const fd = new FormData();
+      fd.append("file", file);
+      xhr.send(fd);
+    }),
 
   // --- Dynamic deliverable structure editing (CEO/Kadep) ---
   addTask: (projectId: string, input: AddTaskInput) =>
@@ -372,6 +517,19 @@ export const api = {
       : request<Kavling>("POST", `/projects/${projectId}/kavling`, k),
   deleteKavling: (projectId: string, id: string) =>
     request<{ status: string }>("DELETE", `/projects/${projectId}/kavling/${id}`),
+  // Bulk-create/update kavling from a pasted spreadsheet or an uploaded file.
+  importKavling: (projectId: string, rows: KavlingImportRow[], upsert: boolean) =>
+    request<KavlingImportResult>("POST", `/projects/${projectId}/kavling/import`, { rows, upsert }),
+  // Bulk-create/update a produk master (gp/tipe/lebar/lokasi) from paste/file.
+  importMaster: (kind: MasterKind, rows: MasterImportRow[], upsert: boolean) =>
+    request<MasterImportResult>("POST", "/master/import", { kind, rows, upsert }),
+  // Bulk-create projects from a pasted spreadsheet or an uploaded file. One
+  // shared deliverable template (sitePlans/includeUnit/includeKawasan) applies
+  // to every imported project; missing GP + Lokasi masters are auto-created.
+  importProjects: (
+    rows: ProjectImportRow[],
+    opts: { sitePlans: number; includeUnit: boolean; includeKawasan: boolean; skipExisting: boolean },
+  ) => request<ProjectImportResult>("POST", "/projects/import", { rows, ...opts }),
 
   // --- Admin (CEO & Kadep only) ---
   seed: () => request<{ status: string }>("POST", "/admin/seed"),

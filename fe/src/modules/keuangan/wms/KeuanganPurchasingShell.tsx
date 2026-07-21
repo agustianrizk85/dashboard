@@ -2,6 +2,7 @@ import { useState } from "react";
 import { WmsShell } from "@/components/wms/WmsShell";
 import type { WmsNavGroup } from "@/components/wms/WmsShell";
 import { AiGenerateButton } from "@/ai/AiGenerate";
+import { BoardView } from "@/components/board/BoardView";
 import { PurchasingDashboard } from "../purchasing/PurchasingDashboard";
 import { PRView } from "../purchasing/PRView";
 import { POView } from "../purchasing/POView";
@@ -10,7 +11,7 @@ import { MasterDataView } from "../purchasing/MasterDataView";
 import "../keuangan.css"; // purchasing views keep their .kc-scope styling (embed = transparent)
 import "./keuanganWms.css";
 
-type Tab = "dash" | "pr" | "po" | "approval" | "master";
+type Tab = "dash" | "board" | "pr" | "po" | "approval" | "master";
 
 /**
  * Ops-Console shell for the dedicated Purchasing account (role "purchasing").
@@ -24,6 +25,7 @@ export function KeuanganPurchasingShell() {
 
   const sections: { key: Tab; label: string }[] = [
     { key: "dash", label: "Dashboard" },
+    { key: "board", label: "Papan Tugas" },
     { key: "pr", label: "Purchase Request" },
     { key: "po", label: "Purchase Order" },
     { key: "approval", label: "Approval" },
@@ -38,7 +40,9 @@ export function KeuanganPurchasingShell() {
 
   return (
     <WmsShell brand="Keuangan" brandSub="Purchasing" nav={nav} toolbar={<AiGenerateButton division="keuangan" />}>
-      {tab === "pr" ? (
+      {tab === "board" ? (
+        <BoardView boardName="Semua Divisi" />
+      ) : tab === "pr" ? (
         <div className="kc-scope embed">
           <PRView />
         </div>

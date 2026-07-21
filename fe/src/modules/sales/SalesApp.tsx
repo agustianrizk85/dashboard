@@ -7,6 +7,7 @@ import { AiGenerateButton } from "@/ai/AiGenerate";
 import { DeepAnalysisButton } from "@/ai/DeepAnalysis";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 import { SalesWmsShell } from "./wms/SalesWmsShell";
+import { BoardView } from "@/components/board/BoardView";
 import "./sales.css";
 
 // Monev bundles xlsx + chart.js — code-split so they only load when its tab opens.
@@ -15,7 +16,7 @@ const MonevView = lazy(() => import("./monev/MonevView"));
 const ScreeningView = lazy(() => import("./staff/ScreeningView"));
 const CreditSimView = lazy(() => import("./staff/CreditSimView"));
 
-type Tab = "tower" | "screening" | "kredit" | "monev" | "master" | "pembelian";
+type Tab = "tower" | "board" | "screening" | "kredit" | "monev" | "master" | "pembelian";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -87,6 +88,9 @@ export default function SalesApp() {
           <button className={`tab ${active === "tower" ? "on" : ""}`} onClick={() => setTab("tower")}>
             Control Tower
           </button>
+          <button className={`tab ${active === "board" ? "on" : ""}`} onClick={() => setTab("board")}>
+            Papan Tugas
+          </button>
           <button className={`tab ${active === "screening" ? "on" : ""}`} onClick={() => setTab("screening")}>
             Screening Konsumen
           </button>
@@ -109,6 +113,8 @@ export default function SalesApp() {
         <main className="content">
           {active === "master" ? (
             <AdminView />
+          ) : active === "board" ? (
+            <BoardView boardName="Semua Divisi" />
           ) : active === "pembelian" ? (
             <PurchasingInbox />
           ) : active === "screening" ? (

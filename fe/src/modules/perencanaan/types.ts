@@ -26,6 +26,16 @@ export interface TaskDoc {
   uploadedAt: string;
 }
 
+/** A file attached to a task (Papan Tugas / imported). ANY type, ≤1 GiB. */
+export interface TaskAttachment {
+  id: string;
+  name: string;
+  size: number;
+  mime: string;
+  by: string;
+  at: string;
+}
+
 export interface Task {
   id: string;
   category: string;
@@ -36,7 +46,13 @@ export interface Task {
   weighted: boolean;
   status: TaskStatus;
   updatedAt: string;
+  /** Server-persisted schedule dates ("YYYY-MM-DD"; omitted when empty). */
+  start?: string; // tanggal mulai
+  deadline?: string; // batas waktu
+  finish?: string; // tanggal selesai
   doc?: TaskDoc;
+  /** Files attached to the task (visible in the Papan Tugas card + imported). */
+  attachments?: TaskAttachment[];
   approvedBy?: string;
   approvedAt?: string;
   /** Revision instruction recorded when a reviewer sends the task back (Revisi). */
@@ -310,6 +326,9 @@ export interface MasterData {
   lokasis: Lokasi[];
   seedCount: number;
 }
+
+/* NOTE: the Papan Tugas board DTO types moved to the SHARED package at
+ * src/components/board/types.ts (the board is cross-module now). */
 
 /* ---- Staff / team ------------------------------------------------------ */
 

@@ -11,12 +11,12 @@ import { PerencanaanDataContext } from "./PerencanaanWmsData";
 import type { PerencanaanData } from "./PerencanaanWmsData";
 import { usePerencanaanData } from "./PerencanaanWmsData";
 import { ProjectsView } from "./components/views/ProjectsView";
-import { MyTasksView } from "./components/views/MyTasksView";
 import { OutputsView } from "./components/views/OutputsView";
 import { WorkDrawingsView } from "./components/views/WorkDrawingsView";
 import { StaffView } from "./components/views/StaffView";
 import { MasterView } from "./components/views/MasterView";
 import { SkillView } from "./components/views/SkillView";
+import { BoardView } from "@/components/board/BoardView";
 import { ChatView } from "@/messaging/ChatView";
 import { MessagesPane } from "@/messaging/MessagesPane";
 import { chatApi, subscribeChat } from "@/messaging/api";
@@ -29,7 +29,9 @@ import "./perencanaan.css";
 const SECTIONS = [
   { key: "", label: "Ringkasan" },
   { key: "projects", label: "Proyek" },
-  { key: "tasks", label: "Tugas Saya" },
+  // "Tugas Saya" is now folded into the unified board: the caller's formal
+  // deliverable tasks appear as cards on "Papan Tugas" (status columns).
+  { key: "board", label: "Papan Tugas" },
   { key: "outputs", label: "Output Divisi" },
   { key: "workdrawings", label: "Gambar Kerja" },
   { key: "staff", label: "Tim" },
@@ -39,7 +41,9 @@ const SECTIONS = [
 
 // Staff (arsitek/drafter, i.e. non-Kadep) get a deliberately minimal menu: their
 // own tasks plus the two communication tools. Everything else is manager-only.
-const STAFF_SECTIONS = [{ key: "tasks", label: "Tugas Saya" }];
+const STAFF_SECTIONS = [
+  { key: "board", label: "Papan Tugas" },
+];
 
 function Loading() {
   return (
@@ -136,12 +140,18 @@ function PerencanaanWmsLayout() {
       <PerencanaanDataContext.Provider value={data}>
         {/* key={rev} remounts the active view on each realtime push so the
             self-loading views (Papan, Tim) refetch. EXCLUDED from the remount:
-            Data Master (self-reloads on its own edits) and Tugas / Gambar Kerja
+            Data Master (self-reloads on its own edits), Tugas / Gambar Kerja
             (they refetch in place via a `rev` prop instead — so an open Deep
-            Analisis / Deep Revisi AI modal isn't unmounted mid-run). */}
+            Analisis / Deep Revisi AI modal isn't unmounted mid-run) and the
+            Papan Tugas board (refetches in place via useRev, so an open card
+            modal survives realtime pushes). */}
         <div
           className="pr-scope"
-          key={active === "master" || active === "tasks" || active === "workdrawings" ? active : rev}
+          key={
+            active === "master" || active === "workdrawings" || active === "board"
+              ? active
+              : rev
+          }
         >
           {err && <div className="empty-note error" style={{ marginBottom: 12 }}>{err}</div>}
           <ErrorBoundary key={active}>
@@ -158,20 +168,6 @@ function PerencanaanWmsLayout() {
 function ProjectsSection() {
   const d = usePerencanaanData();
   return <ProjectsView projects={d.projects} canManage={d.canManage} canEdit={d.canEdit} onChanged={d.reload} />;
-}
-function TasksSection() {
-  const d = usePerencanaanData();
-  const rev = useRev();
-  return (
-    <MyTasksView
-      username={d.username}
-      canManage={d.canManage}
-      canEdit={d.canEdit}
-      pics={d.roster.filter((r) => r.isPic)}
-      onChanged={d.reload}
-      rev={rev}
-    />
-  );
 }
 function OutputsSection() {
   const d = usePerencanaanData();
@@ -218,7 +214,9 @@ export default function PerencanaanApp() {
               <>
                 <Route index element={<PerencanaanOverviewWms />} />
                 <Route path="projects" element={<ProjectsSection />} />
-                <Route path="tasks" element={<TasksSection />} />
+                {/* Tugas Saya melebur ke Papan Tugas — jaga bookmark lama. */}
+                <Route path="tasks" element={<Navigate to="/perencanaan/board" replace />} />
+                <Route path="board" element={<BoardView boardName="Departemen Perencanaan" />} />
                 <Route path="outputs" element={<OutputsSection />} />
                 <Route path="workdrawings" element={<WorkDrawingsSection />} />
                 <Route path="staff" element={<StaffView />} />
@@ -227,15 +225,17 @@ export default function PerencanaanApp() {
               </>
             ) : (
               <>
-                {/* Staff: only their own tasks — everything else is manager-only. */}
-                <Route index element={<Navigate to="/perencanaan/tasks" replace />} />
-                <Route path="tasks" element={<TasksSection />} />
+                {/* Staff: the unified board is their primary work view (their formal
+                    tasks appear as cards there). Everything else is manager-only. */}
+                <Route index element={<Navigate to="/perencanaan/board" replace />} />
+                <Route path="tasks" element={<Navigate to="/perencanaan/board" replace />} />
+                <Route path="board" element={<BoardView boardName="Departemen Perencanaan" />} />
               </>
             )}
             {/* Communication tools available to everyone. */}
             <Route path="chat" element={<ChatView />} />
             <Route path="inbox" element={<MessagesPane mode="dms" />} />
-            <Route path="*" element={<Navigate to={canManage ? "/perencanaan" : "/perencanaan/tasks"} replace />} />
+            <Route path="*" element={<Navigate to={canManage ? "/perencanaan" : "/perencanaan/board"} replace />} />
           </Route>
         </Routes>
       ) : (

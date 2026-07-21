@@ -7,6 +7,7 @@ import { DeepAnalysisButton } from "@/ai/DeepAnalysis";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
 import { ControlTowerView } from "../controltower/ControlTower";
 import { AdminView } from "../AdminView";
+import { BoardView } from "@/components/board/BoardView";
 import { SalesOverviewWms } from "./SalesOverviewWms";
 import "../sales.css"; // Control Tower keeps its .ct-scope styling (embed = natural height, no fixed canvas)
 import "./saleswms.css";
@@ -18,7 +19,7 @@ const MonevView = lazy(() => import("../monev/MonevView"));
 const ScreeningView = lazy(() => import("../staff/ScreeningView"));
 const CreditSimView = lazy(() => import("../staff/CreditSimView"));
 
-type Tab = "ringkasan" | "tower" | "screening" | "kredit" | "monev" | "pembelian" | "master";
+type Tab = "ringkasan" | "tower" | "board" | "screening" | "kredit" | "monev" | "pembelian" | "master";
 
 /**
  * WMS "Ops Console" chrome for non-all-access Sales staff/kadep — left sidebar +
@@ -53,6 +54,7 @@ export function SalesWmsShell() {
     {
       heading: "Operasional",
       items: [
+        { label: "Papan Tugas", active: active === "board", onClick: () => setTab("board") },
         { label: "Pembelian", active: active === "pembelian", onClick: () => setTab("pembelian") },
         ...(canManage ? [{ label: "Master Data", active: active === "master", onClick: () => setTab("master") }] : []),
       ],
@@ -74,6 +76,8 @@ export function SalesWmsShell() {
       <Suspense fallback={<div className="wms-empty">Memuat…</div>}>
         {active === "tower" ? (
           <ControlTowerView />
+        ) : active === "board" ? (
+          <BoardView boardName="Semua Divisi" />
         ) : active === "screening" ? (
           <ScreeningView />
         ) : active === "kredit" ? (

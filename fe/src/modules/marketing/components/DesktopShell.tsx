@@ -12,8 +12,9 @@ import { AccountsView } from "../meta/AccountsView";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
 import { AiGenerateButton } from "@/ai/AiGenerate";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
+import { BoardView } from "@/components/board/BoardView";
 
-type Tab = "ringkasan" | "alur" | "tugas" | "ads" | "wa" | "ig" | "akun" | "pembelian";
+type Tab = "ringkasan" | "alur" | "tugas" | "board" | "ads" | "wa" | "ig" | "akun" | "pembelian";
 
 const roleLabel: Record<string, string> = {
   kadep: "Kepala Departemen",
@@ -76,6 +77,7 @@ export function DesktopShell({ user }: { user: User }) {
     { key: "ringkasan", label: "Ringkasan" },
     { key: "alur", label: "Alur Kerja" },
     { key: "tugas", label: "Tugas Saya" },
+    { key: "board", label: "Papan Tugas" },
     { key: "ads", label: "Iklan (Ads)" },
     { key: "wa", label: "WhatsApp" },
     { key: "ig", label: "Instagram" },
@@ -85,7 +87,7 @@ export function DesktopShell({ user }: { user: User }) {
   // Directors get the overview + live Meta tabs, no operational task tabs and no
   // "Akun Meta" account-connect tab (managed by the marketing team).
   const visibleTabs = allAccess
-    ? TABS.filter((t) => t.key === "ringkasan" || t.key === "ads" || t.key === "wa" || t.key === "ig")
+    ? TABS.filter((t) => t.key === "ringkasan" || t.key === "board" || t.key === "ads" || t.key === "wa" || t.key === "ig")
     : TABS;
 
   return (
@@ -125,8 +127,9 @@ export function DesktopShell({ user }: { user: User }) {
         </DivisionTabBar>
 
         {/* key={rev} remounts the active view on each realtime push so the
-            self-loading "Tugas Saya" board also refetches live. */}
-        <main className="content" key={rev}>
+            self-loading "Tugas Saya" board also refetches live. EXCLUDED:
+            Papan Tugas — BoardView refetches in place via its own socket. */}
+        <main className="content" key={tab === "board" ? "board" : rev}>
           {err && <div className="empty-note error">{err}</div>}
           {inactive && (tab === "ringkasan" || tab === "alur" || tab === "tugas") && (
             <div className="empty-note">
@@ -143,6 +146,7 @@ export function DesktopShell({ user }: { user: User }) {
             />
           )}
           {tab === "tugas" && <TugasSayaView user={user} canEdit={user.role !== "viewer"} onChanged={reload} />}
+          {tab === "board" && <BoardView boardName="Semua Divisi" />}
           {tab === "ads" && <AdsView />}
           {tab === "wa" && <WhatsAppView />}
           {tab === "ig" && <InstagramView />}

@@ -11,14 +11,16 @@ import { TugasSayaView } from "./views/TugasSayaView";
 import { PerformaView } from "../performa/PerformaView";
 import { AdsView, WhatsAppView, InstagramView } from "../meta/MetaViews";
 import { AccountsView } from "../meta/AccountsView";
+import { BoardView } from "@/components/board/BoardView";
 
-type Tab = "overview" | "performa" | "alur" | "tugas" | "ads" | "wa" | "ig" | "akun";
+type Tab = "overview" | "performa" | "alur" | "tugas" | "board" | "ads" | "wa" | "ig" | "akun";
 
 const SECTIONS: { key: Tab; label: string; group: string }[] = [
   { key: "overview", label: "Ringkasan", group: "Operasional" },
   { key: "performa", label: "Performa Iklan", group: "Operasional" },
   { key: "alur", label: "Alur Kerja", group: "Operasional" },
   { key: "tugas", label: "Tugas Saya", group: "Operasional" },
+  { key: "board", label: "Papan Tugas", group: "Operasional" },
   { key: "ads", label: "Iklan (Ads)", group: "Meta" },
   { key: "wa", label: "WhatsApp", group: "Meta" },
   { key: "ig", label: "Instagram", group: "Meta" },
@@ -81,8 +83,10 @@ export function MarketingWmsShell({ user }: { user: User }) {
   return (
     <WmsShell brand="Marketing" brandSub="Departemen Marketing" nav={groups}>
       {/* key={rev} remounts the active view on each realtime push so the
-          self-loading views (Tugas Saya, Meta tabs) also refetch live. */}
-      <div className="mk-scope" key={rev}>
+          self-loading views (Tugas Saya, Meta tabs) also refetch live.
+          EXCLUDED: Papan Tugas — BoardView refreshes in place via its own
+          realtime socket, so an open card modal survives pushes. */}
+      <div className="mk-scope" key={tab === "board" ? "board" : rev}>
         {err && <div className="empty-note error">{err}</div>}
         {inactive && (tab === "overview" || tab === "alur" || tab === "tugas") && (
           <div className="empty-note">
@@ -96,6 +100,7 @@ export function MarketingWmsShell({ user }: { user: User }) {
         {tab === "performa" && <PerformaView items={items} warnings={warnings} />}
         {tab === "alur" && <AlurKerjaView items={items} canEdit={canEdit} canReset={canReset} onChanged={reload} />}
         {tab === "tugas" && <TugasSayaView user={user} canEdit={canEdit} onChanged={reload} />}
+        {tab === "board" && <BoardView boardName="Semua Divisi" />}
         {tab === "ads" && <AdsView />}
         {tab === "wa" && <WhatsAppView />}
         {tab === "ig" && <InstagramView />}

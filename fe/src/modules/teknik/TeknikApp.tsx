@@ -19,6 +19,7 @@ import "../sales/sales.css"; // shared division shell chrome (green header + tab
 import "./teknik.css"; // teknik dashboard content, scoped under .tk-scope
 import { AiGenerateButton } from "@/ai/AiGenerate";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
+import { BoardView } from "@/components/board/BoardView";
 
 interface TabDef {
   id: string;
@@ -31,6 +32,7 @@ const TABS: TabDef[] = [
   { id: "kpi", label: "KPI Direksi" },
   { id: "rab", label: "Kalkulator RAB" },
   { id: "pembelian", label: "Pembelian" },
+  { id: "board", label: "Papan Tugas" },
   { id: "sync", label: "Sync Spreadsheet" },
   { id: "master", label: "Master Data" },
 ];
@@ -97,7 +99,13 @@ export default function TeknikApp() {
   // staff/kadep. For staff the index/overview becomes the WMS Ops-Console view;
   // every other section keeps its existing sub-view unchanged.
   const body =
-    state.status === "loading" ? (
+    tab === "board" ? (
+      // Papan Tugas is fully self-contained (own fetch client + realtime
+      // socket + CSS scope) — never gated behind the teknik dashboard load.
+      <div className="body">
+        <BoardView boardName="Semua Divisi" />
+      </div>
+    ) : state.status === "loading" ? (
       <div className="body">
         <div className="splash">
           <div className="spinner" />
