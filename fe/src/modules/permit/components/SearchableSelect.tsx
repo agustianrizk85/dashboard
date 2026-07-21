@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export interface SSOption {
-  value: number;
+export interface SSOption<T extends string | number = number> {
+  value: T;
   label: string;
   sub?: string;
 }
 
 /**
  * Searchable single-select dropdown for "acuan"/relation fields (Vendor, Lahan,
- * PT, …): type to filter, click to pick. Falls back to the standard `.field`
+ * PT, Proyek Perencanaan, …): type to filter, click to pick. Generic over the
+ * option value type so it works for numeric ids (Vendor/PT) and string ids
+ * (perencanaan projects like "gp-001"). Falls back to the standard `.field`
  * input look so it blends with the rest of the forms.
  */
-export function SearchableSelect({
+export function SearchableSelect<T extends string | number = number>({
   options,
   value,
   onChange,
@@ -19,9 +21,9 @@ export function SearchableSelect({
   allowClear = true,
   emptyText = "Tidak ada hasil",
 }: {
-  options: SSOption[];
-  value: number | "";
-  onChange: (v: number | "") => void;
+  options: SSOption<T>[];
+  value: T | "";
+  onChange: (v: T | "") => void;
   placeholder?: string;
   allowClear?: boolean;
   emptyText?: string;
@@ -51,7 +53,7 @@ export function SearchableSelect({
     );
   }, [options, query]);
 
-  const pick = (o: SSOption) => {
+  const pick = (o: SSOption<T>) => {
     onChange(o.value);
     setOpen(false);
     setQuery("");
@@ -93,7 +95,7 @@ export function SearchableSelect({
             filtered.map((o) => (
               <button
                 type="button"
-                key={o.value}
+                key={String(o.value)}
                 className={`ss-option ${o.value === value ? "on" : ""}`}
                 onClick={() => pick(o)}
               >

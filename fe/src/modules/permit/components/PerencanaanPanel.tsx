@@ -7,6 +7,7 @@ import {
   type XdivDeliverable,
   type XdivProject,
 } from "@/modules/permit/services/perencanaan.service";
+import { SearchableSelect } from "@/modules/permit/components/SearchableSelect";
 
 // Perencanaan task statuses → Indonesian labels + badge classes.
 const statusMeta: Record<string, { label: string; cls: string }> = {
@@ -152,19 +153,15 @@ export function PerencanaanPanel({
         </div>
       ) : (
         <div className="pr-picker">
-          <select
-            className="pr-select"
-            value={linkedId}
-            disabled={linking}
-            onChange={(e) => onPick(e.target.value)}
-          >
-            <option value="">— Tidak ditautkan —</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.gp} · {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="pr-select-wrap">
+            <SearchableSelect<string>
+              options={projects.map((p) => ({ value: p.id, label: `${p.gp} · ${p.name}` }))}
+              value={linkedId}
+              onChange={(v) => onPick(v)}
+              placeholder="Cari & pilih proyek Perencanaan…"
+              emptyText="Proyek tidak ditemukan"
+            />
+          </div>
           {linking && <span className="muted small">Menyimpan…</span>}
           {hint && projects.length === 0 && <span className="muted small">{hint}</span>}
         </div>

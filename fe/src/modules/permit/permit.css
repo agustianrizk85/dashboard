@@ -354,6 +354,16 @@ body {
 }
 .pm-scope .ss-option:hover { background: var(--green-light); }
 .pm-scope .ss-option.on { background: var(--green-light); }
+/* Searchable link picker in the Perencanaan panel */
+.pm-scope .pr-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pm-scope .pr-select-wrap { min-width: 260px; flex: 1 1 300px; max-width: 460px; }
+.pm-scope .pr-select-wrap .ss-input {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--border, #d5dbd5); border-radius: 8px;
+  padding: 0.5rem 2.2rem 0.5rem 0.7rem;
+  background: var(--surface, #fff); color: inherit; font-size: 0.9rem;
+}
+.pm-scope .pr-select-wrap .ss-input:focus { outline: none; border-color: var(--green, #1f6f52); }
 .pm-scope .ss-option-label { font-size: 0.85rem; color: var(--green-dark); font-weight: 500; }
 .pm-scope .ss-option-sub { font-size: 0.72rem; color: var(--muted); }
 .pm-scope .ss-empty { padding: 0.6rem 0.7rem; color: var(--muted); font-size: 0.8rem; }

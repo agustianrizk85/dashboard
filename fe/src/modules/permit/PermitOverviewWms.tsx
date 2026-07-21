@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/modules/permit/models";
 import { projectService } from "@/modules/permit/services/project.service";
@@ -10,14 +10,50 @@ export function PermitOverviewWms() {
   const nav = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: "", location: "", owner_name: "", pt_name: "" });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     projectService
       .list()
       .then(setProjects)
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+  useEffect(load, [load]);
+
+  const submitLahan = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || saving) return;
+    setSaving(true);
+    setErr("");
+    try {
+      await projectService.create({
+        name: form.name.trim(),
+        location: form.location.trim(),
+        owner_name: form.owner_name.trim(),
+        pt_name: form.pt_name.trim(),
+      });
+      setAdding(false);
+      setForm({ name: "", location: "", owner_name: "", pt_name: "" });
+      load();
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "Gagal menyimpan");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const inputStyle = {
+    padding: "8px 10px",
+    border: "1px solid var(--wms-border, #d5dbd5)",
+    borderRadius: 8,
+    fontSize: 13,
+    background: "var(--wms-surface, #fff)",
+    color: "inherit",
+  } as const;
 
   const stages = useMemo(() => {
     const m = new Map<string, number>();
@@ -35,9 +71,24 @@ export function PermitOverviewWms() {
     <div className="wms-grid">
       {/* Left: project list / notifications */}
       <div className="wms-card wms-col-5" style={{ display: "flex", flexDirection: "column" }}>
-        <div className="wms-noti-h">
+        <div className="wms-noti-h" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <h2>{total} Lahan</h2>
+          <button className="wms-btn ghost" type="button" onClick={() => { setAdding((v) => !v); setErr(""); }} style={{ padding: "6px 12px" }}>
+            {adding ? "Batal" : "+ Lahan Baru"}
+          </button>
         </div>
+        {adding && (
+          <form onSubmit={submitLahan} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 0 12px" }}>
+            <input style={inputStyle} placeholder="Nama Lahan / Proyek *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required autoFocus />
+            <input style={inputStyle} placeholder="Lokasi" value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} />
+            <input style={inputStyle} placeholder="Pemilik Lahan" value={form.owner_name} onChange={(e) => setForm((f) => ({ ...f, owner_name: e.target.value }))} />
+            <input style={inputStyle} placeholder="PT yang Dipakai" value={form.pt_name} onChange={(e) => setForm((f) => ({ ...f, pt_name: e.target.value }))} />
+            {err && <div className="wms-card-sub" style={{ color: "var(--wms-danger)" }}>{err}</div>}
+            <button className="wms-btn" type="submit" disabled={saving || !form.name.trim()}>
+              {saving ? "Menyimpan…" : "Simpan & Buat Proses A–H"}
+            </button>
+          </form>
+        )}
         <div className="wms-noti-list">
           {loading ? (
             <div className="wms-empty">Memuat…</div>
