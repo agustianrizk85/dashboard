@@ -6,6 +6,12 @@ import type { BoardCard, BoardData, BoardTaskCard, BoardTaskStatus } from "./typ
 import { isTaskCard } from "./types";
 import { CardModal } from "./CardModal";
 import { TaskCardModal } from "./TaskCardModal";
+import { PermitSummaryModal } from "./PermitSummaryModal";
+import {
+  loadPermitSummaries,
+  permitBridgeAvailable,
+  type PermitLahanSummary,
+} from "./permitBoard";
 import {
   avatarBg,
   checklistAgg,
@@ -56,6 +62,13 @@ export function BoardView({
   const [err, setErr] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // Legal Permit steps folded into ONE read-only summary card per lahan (cross-
+  // backend: legalpermit :8081). Never blocks the board — resolves to [] when
+  // permit is down or the SSO token is absent. openPermit holds the drilled-in
+  // lahan (projectId) for the read-only checklist modal.
+  const [permit, setPermit] = useState<PermitLahanSummary[]>([]);
+  const [openPermit, setOpenPermit] = useState<number | null>(null);
+
   // Only operational directors (Dirops / CEO / all-access / super admin) may
   // browse the board ACROSS divisions. Everyone else (kadep, staff) is scoped
   // to their own division. The board `me.role` is collapsed to "kadep" by the
@@ -64,6 +77,13 @@ export function BoardView({
   const canAllDivisions = !!user && (
     user.allAccess || user.super || user.role === "dirops" || user.role === "ceo"
   );
+
+  // Legal Permit summary cards are cross-division content, so they follow the
+  // same scoping as the division dropdown: directors (all divisions) always see
+  // them; other users only when their OWN division is Legal Permit. Also requires
+  // the dashboard SSO token (the only credential legalpermit accepts).
+  const showPermit =
+    permitBridgeAvailable() && (canAllDivisions || board?.me.division === "legalpermit");
 
   // Toolbar filters.
   const [q, setQ] = useState("");
@@ -88,6 +108,9 @@ export function BoardView({
         setErr("");
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+    // Cross-backend, best-effort: folds permit steps into per-lahan summaries.
+    // loadPermitSummaries never rejects, so this can't break the board.
+    loadPermitSummaries().then(setPermit);
   }, []);
   useEffect(reload, [reload]);
 
@@ -101,6 +124,15 @@ export function BoardView({
       setOpenId(null);
     }
   }, [board, openId]);
+
+  // Close the permit drill-down if its lahan vanished from the latest fetch.
+  useEffect(() => {
+    if (openPermit != null && !permit.some((s) => s.projectId === openPermit)) {
+      setOpenPermit(null);
+    }
+  }, [permit, openPermit]);
+
+  const openedPermit = openPermit != null ? permit.find((s) => s.projectId === openPermit) ?? null : null;
 
   const users = board?.users ?? [];
   const labels = board?.labels ?? [];
@@ -150,6 +182,19 @@ export function BoardView({
     if (canAllDivisions && fDivision && c.division !== fDivision) return false;
     return true;
   };
+
+  // Permit summary cards obey the same search box + division dropdown. They live
+  // in the "legalpermit" division, so a director filtering to another division
+  // hides them.
+  const permitVisible = (s: PermitLahanSummary): boolean => {
+    if (!showPermit) return false;
+    const needle = q.trim().toLowerCase();
+    if (needle && !s.projectName.toLowerCase().includes(needle)) return false;
+    if (canAllDivisions && fDivision && fDivision !== "legalpermit") return false;
+    return true;
+  };
+  const permitFor = (status: BoardTaskStatus): PermitLahanSummary[] =>
+    permit.filter((s) => s.column === status && permitVisible(s));
 
   /* ---- Local (optimistic) helpers --------------------------------------- */
 
@@ -349,13 +394,16 @@ export function BoardView({
         <div className="cyb-board">
           {lists.map((l) => {
             const cards = l.cards ?? [];
+            // Read-only Legal Permit summary cards that belong in this column.
+            const status = statusOf(l.id);
+            const pCards = status ? permitFor(status) : [];
             return (
               <div className="cyb-col" key={l.id}>
                 {/* Fixed system column — header is just title + count (no
                     rename/delete/reorder; the four lists are immutable). */}
                 <div className="cyb-col-hd">
                   <span className="cyb-col-title">{l.title}</span>
-                  <span className="cyb-col-count">{cards.length}</span>
+                  <span className="cyb-col-count">{cards.length + pCards.length}</span>
                   <span className="cyb-sp" />
                 </div>
 
@@ -375,6 +423,17 @@ export function BoardView({
                     setDropHint(null);
                   }}
                 >
+                  {/* Legal Permit summaries — read-only, not draggable, always
+                      pinned above the free/task cards of this column. */}
+                  {pCards.map((s) => (
+                    <div
+                      key={`permit-${s.projectId}`}
+                      className="cyb-card cyb-permit-card"
+                      onClick={() => setOpenPermit(s.projectId)}
+                    >
+                      {renderPermitTile(s)}
+                    </div>
+                  ))}
                   {cards.map((c, i) => {
                     if (!cardVisible(c)) return null;
                     return (
@@ -427,7 +486,9 @@ export function BoardView({
                   {dropHint && dropHint.listId === l.id && dropHint.index >= cards.length && (
                     <div className="cyb-drop-line" />
                   )}
-                  {cards.length === 0 && !dropHint && <div className="cyb-col-empty">Belum ada tugas</div>}
+                  {cards.length === 0 && pCards.length === 0 && !dropHint && (
+                    <div className="cyb-col-empty">Belum ada tugas</div>
+                  )}
                 </div>
 
                 <div className="cyb-col-foot">
@@ -493,6 +554,10 @@ export function BoardView({
               />
             );
           })()}
+
+        {openedPermit && (
+          <PermitSummaryModal summary={openedPermit} onClose={() => setOpenPermit(null)} />
+        )}
       </div>
     </div>
   );
@@ -568,6 +633,31 @@ export function BoardView({
               )}
             </span>
           )}
+        </div>
+      </>
+    );
+  }
+
+  function renderPermitTile(s: PermitLahanSummary) {
+    const pct = s.total ? Math.round((s.done / s.total) * 100) : 0;
+    return (
+      <>
+        <div className="cyb-task-head">
+          <span className="cyb-permit-pill">🏛 LEGAL PERMIT</span>
+          <span className="cyb-sp" />
+          {s.overdue > 0 && <span className="cyb-task-revisi">⚠ {s.overdue}</span>}
+        </div>
+        <div className="cyb-card-title">{s.projectName}</div>
+        <div className="cyb-permit-bar" title={`${s.done}/${s.total} langkah selesai`}>
+          <span className="cyb-permit-bar-fill" style={{ width: pct + "%" }} />
+        </div>
+        <div className="cyb-card-meta">
+          <span className="cyb-permit-count">
+            {s.done}/{s.total} selesai
+          </span>
+          {s.progress > 0 && <span className="cyb-mi">▶ {s.progress}</span>}
+          <span className="cyb-sp" />
+          <span className="cyb-permit-open">Lihat langkah →</span>
         </div>
       </>
     );
