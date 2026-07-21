@@ -3,7 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import type { ProcessStep, Project } from "@/modules/permit/models";
 import { projectService } from "@/modules/permit/services/project.service";
 import { StepCard } from "@/modules/permit/components/StepCard";
+import { PerencanaanPanel } from "@/modules/permit/components/PerencanaanPanel";
+import { PksBankPanel } from "@/modules/permit/components/PksBankPanel";
 import { categoryLabels } from "@/modules/permit/lib/processCatalog";
+import { PERMIT_LEGACY_ENABLED } from "@/modules/permit/services/features";
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -78,6 +81,14 @@ export function ProjectDetailPage() {
           </p>
         </div>
       </div>
+
+      {PERMIT_LEGACY_ENABLED && (
+        <PerencanaanPanel project={project} onProjectChange={setProject} />
+      )}
+
+      {/* Berkas Acuan (F) — auto-aggregated PKS Bank; self-gated behind the
+          legacy flag and never crashes on fetch error. */}
+      <PksBankPanel projectId={project.id} />
 
       <div className="progress-bar-wrap">
         <div className="progress-bar">

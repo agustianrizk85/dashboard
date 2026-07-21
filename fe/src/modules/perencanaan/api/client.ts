@@ -535,4 +535,5 @@ export const api = {
   seed: () => request<{ status: string }>("POST", "/admin/seed"),
   resetProses: () => request<{ status: string }>("POST", "/admin/reset-proses"),
   resetMaster: () => request<{ status: string }>("POST", "/admin/reset-master"),
+  emptyAll: () => request<{ status: string }>("POST", "/admin/empty-all"),
 };

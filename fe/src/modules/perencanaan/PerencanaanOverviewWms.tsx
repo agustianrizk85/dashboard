@@ -23,8 +23,8 @@ export function PerencanaanOverviewWms() {
   const { summary, projects, reload, canManage } = usePerencanaanData();
 
   // Admin data actions (seed / reset) — preserved for managers (Kadep).
-  const [confirm, setConfirm] = useState<null | "proses" | "master">(null);
-  const [busy, setBusy] = useState<"" | "seed" | "proses" | "master">("");
+  const [confirm, setConfirm] = useState<null | "proses" | "master" | "kosong">(null);
+  const [busy, setBusy] = useState<"" | "seed" | "proses" | "master" | "kosong">("");
   const [adminErr, setAdminErr] = useState("");
 
   const runSeed = async () => {
@@ -39,11 +39,11 @@ export function PerencanaanOverviewWms() {
       setBusy("");
     }
   };
-  const runReset = async (kind: "proses" | "master") => {
+  const runReset = async (kind: "proses" | "master" | "kosong") => {
     setBusy(kind);
     setAdminErr("");
     try {
-      await (kind === "proses" ? api.resetProses() : api.resetMaster());
+      await (kind === "proses" ? api.resetProses() : kind === "master" ? api.resetMaster() : api.emptyAll());
       setConfirm(null);
       reload();
     } catch (e) {
@@ -196,6 +196,9 @@ export function PerencanaanOverviewWms() {
             <button className="wms-btn" onClick={() => setConfirm("master")} disabled={busy !== ""} type="button" style={{ background: "var(--wms-danger)", borderColor: "var(--wms-danger)" }}>
               Reset Master
             </button>
+            <button className="wms-btn" onClick={() => setConfirm("kosong")} disabled={busy !== ""} type="button" style={{ background: "#7f1d1d", borderColor: "#7f1d1d" }}>
+              Kosongkan Semua
+            </button>
           </div>
         </div>
       )}
@@ -229,6 +232,26 @@ export function PerencanaanOverviewWms() {
             </button>
             <button className="btn-danger" onClick={() => runReset("master")} disabled={busy !== ""}>
               {busy === "master" ? "Mereset…" : "Ya, Reset Master"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {confirm === "kosong" && (
+        <Modal title="Kosongkan Semua Data" sub="Benar-benar kosong — tidak ada sama sekali" onClose={() => setConfirm(null)}>
+          <p className="modal-text">
+            Menghapus <b>SEMUA</b> data secara permanen dan <b>tidak dapat dibatalkan</b>:
+            seluruh <b>proyek &amp; deliverable</b>, semua <b>master</b> (GP, Tipe Bangunan, Lebar, Lokasi),
+            serta <b>Blok &amp; Kavling</b> dan file lampiran. Portfolio jadi <b>benar-benar kosong</b> —
+            tanpa data contoh apa pun (tidak ikut di-isi ulang). Roster tim &amp; papan tugas tidak terpengaruh.
+            Lanjutkan?
+          </p>
+          <div className="modal-actions">
+            <button className="btn-ghost" onClick={() => setConfirm(null)} disabled={busy !== ""}>
+              Batal
+            </button>
+            <button className="btn-danger" onClick={() => runReset("kosong")} disabled={busy !== ""}>
+              {busy === "kosong" ? "Mengosongkan…" : "Ya, Kosongkan Semua"}
             </button>
           </div>
         </Modal>

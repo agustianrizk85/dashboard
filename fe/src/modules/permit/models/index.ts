@@ -20,6 +20,9 @@ export interface Project {
   owner_name: string;
   pt_name: string;
   stage: ProjectStage;
+  // Link to a Perencanaan project (id like "gp-001") so Permit can pull its
+  // Siteplan / IMB deliverables cross-module. "" = not linked yet.
+  perencanaan_project_id: string;
   created_by: number;
   created_at: string;
   updated_at: string;
@@ -262,4 +265,33 @@ export interface OCRResult {
   fields: Record<string, string>;
   confidence: number;
   provider: string;
+}
+
+// --- PKS Bank / Berkas Acuan (Proses F) ---
+
+/** A single acuan document aggregated into the F package. */
+export interface PKSDoc {
+  id: number;
+  doc_type: string;
+  original_name: string;
+  confidential: boolean;
+}
+
+/** One acuan source group (A6/A7/B4/C10) with its documents. */
+export interface PKSSource {
+  code: string;
+  label: string;
+  step_status?: string;
+  documents: PKSDoc[];
+}
+
+/** Auto-aggregated PKS Bank package for a project (Berkas Acuan F). */
+export interface PKSPackage {
+  project_id: number;
+  project_name: string;
+  pt_name: string;
+  perencanaan_project_id: string;
+  gdrive_folder_link: string;
+  ready: boolean;
+  sources: PKSSource[];
 }
