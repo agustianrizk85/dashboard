@@ -1537,3 +1537,15 @@ body {
 .pr-scope .pr-modelpick .field select { width: 100%; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #d5dbd5); border-radius: 8px; background: #fff; }
 .pr-scope .pr-modelpick .field small { display: block; margin-top: 0.25rem; }
 .pr-scope .pr-modelpick .btn-ai { flex: 0 0 auto; }
+
+/* AI › Model — dropdown search (pilih model divisi) */
+.pr-scope .pr-ss { position: relative; }
+.pr-scope .pr-ss-input { width: 100%; box-sizing: border-box; padding: 0.5rem 2rem 0.5rem 0.6rem; border: 1px solid var(--border, #d5dbd5); border-radius: 8px; background: #fff; font-size: 0.9rem; }
+.pr-scope .pr-ss-input:focus { outline: none; border-color: var(--green, #1f6f52); box-shadow: 0 0 0 3px #e6f6ee; }
+.pr-scope .pr-ss-caret { position: absolute; right: 0.7rem; top: 1.15rem; pointer-events: none; color: #64748b; font-size: 0.7rem; }
+.pr-scope .pr-ss-menu { position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 28px rgba(15,23,42,.16); padding: 4px; }
+.pr-scope .pr-ss-opt { display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left; background: none; border: none; padding: 0.45rem 0.55rem; border-radius: 6px; cursor: pointer; }
+.pr-scope .pr-ss-opt:hover, .pr-scope .pr-ss-opt.on { background: #eef6f0; }
+.pr-scope .pr-ss-opt-label { font-size: 0.88rem; font-weight: 600; color: #14361f; }
+.pr-scope .pr-ss-opt-sub { font-size: 0.74rem; color: #6b7280; }
+.pr-scope .pr-ss-empty { padding: 0.6rem; color: #9ca3af; font-size: 0.85rem; }

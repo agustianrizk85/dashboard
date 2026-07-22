@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /* AI › Model — pilih model AI yang dipakai DIVISI ini (teks + vision) dari
- * katalog pusat, lalu fitur AI divisi (Asisten, Deep Revisi gambar kerja) pakai
- * model itu. Katalog master dikelola superadmin di Panel Admin › Model AI; di
- * sini Kadep divisi memilih mana yang dipakai. Data via auth (SSO token). */
+ * katalog pusat via dropdown-search, lalu fitur AI divisi (Asisten, Deep Revisi)
+ * pakai model itu. Katalog master dikelola superadmin di Panel Admin › Model AI. */
 
 const AUTH = ((import.meta.env.VITE_AUTH_API as string) ?? "/api").replace(/\/$/, "");
 
@@ -28,9 +27,88 @@ interface DivChoice {
   effectiveText: string;
   effectiveVision: string;
 }
+interface Opt {
+  value: string;
+  label: string;
+  sub?: string;
+}
 
 function scoreColor(s: number): string {
   return s >= 80 ? "#15803d" : s >= 50 ? "#b45309" : "#64748b";
+}
+
+/** Dropdown-search: ketik untuk memfilter, klik untuk pilih. */
+function SearchSelect({
+  options,
+  value,
+  onChange,
+  placeholder = "— Pilih —",
+}: {
+  options: Opt[];
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value) ?? null;
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQ("");
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return options;
+    return options.filter((o) => (o.label + " " + (o.sub ?? "")).toLowerCase().includes(n));
+  }, [options, q]);
+
+  return (
+    <div className={`pr-ss ${open ? "open" : ""}`} ref={ref}>
+      <input
+        className="pr-ss-input"
+        value={open ? q : selected?.label ?? ""}
+        placeholder={selected ? selected.label : placeholder}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      <span className="pr-ss-caret">▾</span>
+      {open && (
+        <div className="pr-ss-menu">
+          {filtered.length === 0 ? (
+            <div className="pr-ss-empty">Tidak ada</div>
+          ) : (
+            filtered.map((o) => (
+              <button
+                type="button"
+                key={o.value || "__default__"}
+                className={`pr-ss-opt ${o.value === value ? "on" : ""}`}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQ("");
+                }}
+              >
+                <span className="pr-ss-opt-label">{o.label}</span>
+                {o.sub && <span className="pr-ss-opt-sub">{o.sub}</span>}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ModelView({ division = "perencanaan" }: { division?: string }) {
@@ -87,7 +165,22 @@ export function ModelView({ division = "perencanaan" }: { division?: string }) {
     }
   };
 
-  const opts = (catalog ?? []).map((m) => m.name);
+  const toOpt = (m: AIModel): Opt => ({
+    value: m.name,
+    label: m.name,
+    sub: `score ${m.score} · ${m.useCase}`,
+  });
+  const textOpts: Opt[] = useMemo(
+    () => [{ value: "", label: "— Default global —" }, ...(catalog ?? []).map(toOpt)],
+    [catalog],
+  );
+  const visionOpts: Opt[] = useMemo(
+    () => [
+      { value: "", label: "— Default global —" },
+      ...(catalog ?? []).filter((m) => /vision/i.test(m.useCase)).map(toOpt),
+    ],
+    [catalog],
+  );
 
   return (
     <div className="pr-panel">
@@ -109,34 +202,25 @@ export function ModelView({ division = "perencanaan" }: { division?: string }) {
       ) : (
         <>
           <div className="pr-modelpick">
-            <label className="field">
+            <div className="field">
               <span>Model Teks (Asisten / Generate)</span>
-              <select value={text} onChange={(e) => setText(e.target.value)}>
-                <option value="">— Default global —</option>
-                {opts.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
+              <SearchSelect options={textOpts} value={text} onChange={setText} placeholder="Cari model teks…" />
               <small className="muted">
                 Aktif: <b>{choice?.effectiveText || "—"}</b>
               </small>
-            </label>
-            <label className="field">
+            </div>
+            <div className="field">
               <span>Model Vision (Deep Revisi)</span>
-              <select value={vision} onChange={(e) => setVision(e.target.value)}>
-                <option value="">— Default global —</option>
-                {opts.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
+              <SearchSelect
+                options={visionOpts}
+                value={vision}
+                onChange={setVision}
+                placeholder="Cari model vision…"
+              />
               <small className="muted">
                 Aktif: <b>{choice?.effectiveVision || "—"}</b>
               </small>
-            </label>
+            </div>
             <button className="btn-ai" disabled={busy} onClick={save}>
               {busy ? "Menyimpan…" : "Simpan pilihan"}
             </button>
