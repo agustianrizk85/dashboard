@@ -16,6 +16,7 @@ import { WorkDrawingsView } from "./components/views/WorkDrawingsView";
 import { StaffView } from "./components/views/StaffView";
 import { MasterView } from "./components/views/MasterView";
 import { SkillView } from "./components/views/SkillView";
+import { ModelView } from "./components/views/ModelView";
 import { BoardView } from "@/components/board/BoardView";
 import { ChatView } from "@/messaging/ChatView";
 import { MessagesPane } from "@/messaging/MessagesPane";
@@ -36,7 +37,12 @@ const SECTIONS = [
   { key: "workdrawings", label: "Gambar Kerja" },
   { key: "staff", label: "Tim" },
   { key: "master", label: "Data Master" },
-  { key: "skill", label: "Skill AI" },
+];
+
+// AI tools (Kadep/CEO only) — grouped under an "AI" heading in the sidebar.
+const AI_SECTIONS = [
+  { key: "skill", label: "Skill" },
+  { key: "model", label: "Model" },
 ];
 
 // Staff (arsitek/drafter, i.e. non-Kadep) get a deliberately minimal menu: their
@@ -126,6 +132,18 @@ function PerencanaanWmsLayout() {
         onClick: () => nav(`/perencanaan/${s.key}`),
       })),
     },
+    ...(canManage
+      ? [
+          {
+            heading: "AI",
+            items: AI_SECTIONS.map((s) => ({
+              label: s.label,
+              active: active === s.key,
+              onClick: () => nav(`/perencanaan/${s.key}`),
+            })),
+          },
+        ]
+      : []),
     {
       heading: "Komunikasi",
       items: [
@@ -222,6 +240,7 @@ export default function PerencanaanApp() {
                 <Route path="staff" element={<StaffView />} />
                 <Route path="master" element={<MasterSection />} />
                 <Route path="skill" element={<SkillSection />} />
+                <Route path="model" element={<ModelView />} />
               </>
             ) : (
               <>
