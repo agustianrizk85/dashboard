@@ -7,7 +7,21 @@
 import type { BoardTaskStatus } from "./types";
 
 /** legalpermit base — override with VITE_LEGALPERMIT_API at build/dev time. */
-const LP_BASE = (import.meta.env.VITE_LEGALPERMIT_API ?? "http://localhost:8081") + "/api";
+const LP_RAW = import.meta.env.VITE_LEGALPERMIT_API ?? "http://localhost:8081";
+const LP_BASE = LP_RAW + "/api";
+
+/** Whether the configured permit API is actually reachable from this page. In
+ *  production the app is served from a real host but VITE_LEGALPERMIT_API may be
+ *  unset (falls back to localhost:8081) — fetching localhost from a real origin
+ *  only yields noisy CORS/ERR_FAILED, so skip it entirely. Local dev (page on
+ *  localhost) still hits the local permit backend; production only fetches once
+ *  VITE_LEGALPERMIT_API is wired to a real path like /be/permit. */
+function permitReachable(): boolean {
+  if (typeof window === "undefined") return false;
+  const baseLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(LP_RAW);
+  const pageLocal = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(window.location.hostname);
+  return !baseLocal || pageLocal;
+}
 
 /** legalpermit only accepts the master-auth SSO token (or its own native permit
  *  JWT). The perencanaan module token is NOT valid there, so read the dashboard
@@ -16,10 +30,10 @@ function ssoToken(): string {
   return localStorage.getItem("gp_dashboard_token") ?? "";
 }
 
-/** True when a dashboard SSO token exists — the board only attempts the permit
- *  fetch (and shows the "Legal Permit" summary cards) when this holds. */
+/** True when the permit bridge should run: a dashboard SSO token exists AND the
+ *  configured permit API is reachable from this page (not localhost-in-prod). */
 export function permitBridgeAvailable(): boolean {
-  return ssoToken() !== "";
+  return permitReachable() && ssoToken() !== "";
 }
 
 /** Raw card as served by GET /api/xdiv/board-steps (snake_case, mirrors the Go
@@ -78,6 +92,7 @@ function boardStatusOf(raw: string): BoardTaskStatus {
 /** Fetch every permit step across every lahan. Never rejects: any failure
  *  (offline, 401, permit backend down, no token) resolves to []. */
 async function fetchPermitSteps(): Promise<PermitStepWithLahan[]> {
+  if (!permitReachable()) return []; // localhost-in-prod → skip (no CORS noise)
   const token = ssoToken();
   if (!token) return [];
   try {
