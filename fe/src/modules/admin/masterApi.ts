@@ -78,3 +78,40 @@ export async function deleteRole(value: string): Promise<void> {
   });
   if (!r.ok && r.status !== 204) await readJson(r);
 }
+
+/* ---- Katalog Model AI (nama · kepintaran · kegunaan · score) ---------------- */
+
+/** One curated AI model. Mirrors auth `ai.AIModel`. */
+export interface AIModel {
+  name: string;
+  intelligence: string; // kepintaran
+  useCase: string; // kegunaan
+  score: number; // 0..100
+}
+
+/** GET the model catalogue (sorted by score desc on the server). */
+export async function getModels(): Promise<AIModel[]> {
+  const r = await fetch(`${AUTH}/admin/models`, { headers: authHeaders() });
+  const j = await readJson(r);
+  return Array.isArray(j) ? (j as AIModel[]) : [];
+}
+
+/** POST upsert one model (matched by name). Returns the updated catalogue. */
+export async function saveModel(m: AIModel): Promise<AIModel[]> {
+  const r = await fetch(`${AUTH}/admin/models`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(m),
+  });
+  const j = await readJson(r);
+  return Array.isArray(j) ? (j as AIModel[]) : [];
+}
+
+/** DELETE a model by name. */
+export async function deleteModel(name: string): Promise<void> {
+  const r = await fetch(`${AUTH}/admin/models/${encodeURIComponent(name)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!r.ok && r.status !== 204) await readJson(r);
+}

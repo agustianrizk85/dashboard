@@ -5,6 +5,7 @@ import { ProjectsPanel } from "./ProjectsPanel";
 import { CreateAccountForm } from "./CreateAccountForm";
 import { UsersTable } from "./UsersTable";
 import { MasterPanel, type MasterRow } from "./MasterPanel";
+import { AiModelsPanel } from "./AiModelsPanel";
 import { AUTH, authHeaders, type User } from "./adminApi";
 import { getDepartments, saveDepartment, deleteDepartment, getRoles, saveRole, deleteRole } from "./masterApi";
 import "./admin.css";
@@ -15,7 +16,7 @@ const loadDepts = async (): Promise<MasterRow[]> => (await getDepartments()).map
 const loadRoles = async (): Promise<MasterRow[]> => (await getRoles()).map((r) => ({ k: r.value, v: r.label }));
 
 export default function AdminApp() {
-  const [tab, setTab] = useState<"users" | "projects" | "divisi" | "roles" | "ai">("users");
+  const [tab, setTab] = useState<"users" | "projects" | "divisi" | "roles" | "ai" | "aimodels">("users");
 
   const [users, setUsers] = useState<User[]>([]);
   const [uErr, setUErr] = useState("");
@@ -104,6 +105,7 @@ export default function AdminApp() {
         { label: "Master Divisi", active: tab === "divisi", onClick: () => setTab("divisi") },
         { label: "Master Role", active: tab === "roles", onClick: () => setTab("roles") },
         { label: "Kunci AI", active: tab === "ai", onClick: () => setTab("ai") },
+        { label: "Model AI", active: tab === "aimodels", onClick: () => setTab("aimodels") },
       ],
     },
   ];
@@ -198,6 +200,8 @@ export default function AdminApp() {
           </div>
         </div>
       )}
+
+      {tab === "aimodels" && <AiModelsPanel />}
     </WmsShell>
   );
 }
