@@ -19,6 +19,7 @@ const NAV = [
   { to: "/permit/vendors", label: "Vendor" },
   { to: "/permit/spk", label: "SPK" },
   { to: "/permit/deadline", label: "Deadline" },
+  { to: "/permit/outputs", label: "Output Divisi" },
   { to: "/permit/pembelian", label: "Pembelian" },
   { to: "/permit/sync", label: "Sync Sheet" },
   { to: "/permit/settings", label: "Setting" },
@@ -48,7 +49,9 @@ export function Layout() {
   // mounted across realtime pushes so an open card modal survives.
   const onBoard = loc.pathname.startsWith("/permit/board");
   // All-access directors (CEO/Dirops) only need the dashboard + shared board.
-  const nav = user?.allAccess ? NAV.filter((n) => n.to === "/permit" || n.to === "/permit/board") : NAV;
+  const nav = user?.allAccess
+    ? NAV.filter((n) => n.to === "/permit" || n.to === "/permit/board" || n.to === "/permit/outputs")
+    : NAV;
   return (
     <div className="app pm-scope">
       <header className="hdr">

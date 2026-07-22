@@ -12,6 +12,7 @@ import { PTPage } from "@/modules/permit/pages/PTPage";
 import { VendorPage } from "@/modules/permit/pages/VendorPage";
 import { SPKPage } from "@/modules/permit/pages/SPKPage";
 import { DeadlinePage } from "@/modules/permit/pages/DeadlinePage";
+import { OutputsPage } from "@/modules/permit/pages/OutputsPage";
 import { SettingsPage } from "@/modules/permit/pages/SettingsPage";
 import { SyncPage } from "@/modules/permit/pages/SyncPage";
 import { PurchasingInbox } from "@/purchasing/PurchasingInbox";
@@ -25,6 +26,7 @@ const SECTIONS = [
   { key: "vendors", label: "Vendor" },
   { key: "spk", label: "SPK" },
   { key: "deadline", label: "Deadline" },
+  { key: "outputs", label: "Output Divisi" },
   { key: "sync", label: "Sync Sheet" },
   { key: "settings", label: "Setting" },
 ];
@@ -70,6 +72,7 @@ export default function PermitApp() {
           <Route path="vendors" element={<VendorPage />} />
           <Route path="spk" element={<SPKPage />} />
           <Route path="deadline" element={<DeadlinePage />} />
+          <Route path="outputs" element={<OutputsPage />} />
           <Route path="pembelian" element={<PurchasingInbox />} />
           <Route path="sync" element={<SyncPage />} />
           <Route path="settings" element={<SettingsPage />} />

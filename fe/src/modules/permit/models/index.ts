@@ -225,6 +225,29 @@ export interface Warning {
   due_date: string | null;
 }
 
+// --- Output Divisi (keluar): permit deliverables routed to consuming divisions ---
+
+/** One Legal Permit deliverable routed OUT to a consuming division. */
+export interface DivOutputItem {
+  project_id: number;
+  project_name: string;
+  step_id: number;
+  code: string; // "C10"
+  name: string;
+  status: StepStatus;
+  confidential: boolean; // watermark output (Sales)
+  has_doc: boolean;
+}
+
+/** Every permit output feeding one division (Perencanaan / Teknik / Sales). */
+export interface DivOutputs {
+  division: string; // "perencanaan"
+  label: string; // "Perencanaan"
+  total: number;
+  ready: number; // items already Selesai
+  items: DivOutputItem[];
+}
+
 // --- Settings (DACI / Notification) ---
 
 export interface DACIDriver {

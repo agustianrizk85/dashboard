@@ -89,6 +89,13 @@ export const perencanaanService = {
     return data.items ?? [];
   },
 
+  /** EVERY perencanaan deliverable routed to Legal Permit (all projects) — feeds
+   *  the "Output Divisi" page (what Perencanaan's Papan Tugas sends to Permit). */
+  async allDeliverables(): Promise<XdivDeliverable[]> {
+    const data = await xget<{ items: XdivDeliverable[] }>("/xdiv/deliverables?division=legalpermit");
+    return data.items ?? [];
+  },
+
   /** Inline-PDF URL for a deliverable's document (reuses the board task-doc
    *  endpoint; token in the query string so it works in a new tab / iframe). */
   docUrl: (projectId: string, taskId: string): string =>
