@@ -104,7 +104,7 @@ const SECTIONS: { key: string; group: string; title: string; render: () => React
 
 /** Master-data workspace: a resource picker on the left, its CRUD table on the right. */
 export function MasterData() {
-  const [activeKey, setActiveKey] = useState(RESOURCES[0].key);
+  const [activeKey, setActiveKey] = useState("sync-sheet");
   const [busy, setBusy] = useState<"seed" | "clear" | null>(null);
   const active = RESOURCES.find((r) => r.key === activeKey);
   const section = SECTIONS.find((s) => s.key === activeKey);
@@ -131,22 +131,10 @@ export function MasterData() {
     <div className="master">
       <aside className="master-nav">
         <div className="master-nav-title">Master Data</div>
-        {RESOURCES.map((r, i) => {
-          const prev = i > 0 ? RESOURCES[i - 1].group : undefined;
-          const showHeader = r.group && r.group !== prev;
-          return (
-            <div key={r.key}>
-              {showHeader && <div className="master-nav-group">{r.group}</div>}
-              <button
-                className={`master-nav-item ${r.key === activeKey ? "active" : ""}`}
-                onClick={() => setActiveKey(r.key)}
-              >
-                {r.title}
-              </button>
-            </div>
-          );
-        })}
-        {SECTIONS.map((s) => (
+        {/* Menu diringkas ke HANYA "Sync Spreadsheet" (sumber data utama).
+            RESOURCES + section lain (Cek List, AI Model) disembunyikan — kode
+            tetap ada, ubah filter di bawah untuk memunculkannya lagi. */}
+        {SECTIONS.filter((s) => s.key === "sync-sheet").map((s) => (
           <div key={s.key}>
             <div className="master-nav-group">{s.group}</div>
             <button
