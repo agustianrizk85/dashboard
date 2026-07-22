@@ -213,7 +213,14 @@ export function Dashboard() {
           />
         )}
         {tab === "board" && <BoardView boardName="Departemen Perencanaan" />}
-        {tab === "outputs" && (outputs.length ? <OutputsView outputs={outputs} /> : <Loading />)}
+        {tab === "outputs" &&
+          (outputs.length ? (
+            <OutputsView outputs={outputs} />
+          ) : summary ? (
+            <div className="empty-note">Belum ada deliverable yang dialirkan ke divisi lain.</div>
+          ) : (
+            <Loading />
+          ))}
         {tab === "workdrawings" && <WorkDrawingsView projects={projects} pics={pics} rev={rev} />}
         {tab === "staff" && <StaffView />}
         {tab === "master" && <MasterView canManage={canManage} onChanged={reload} />}
