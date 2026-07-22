@@ -115,7 +115,9 @@ export function PerencanaanPanel({
     }
   };
 
-  // Group deliverables by category; Site Plan first (key relation for C10/C12).
+  // Group deliverables by category, preserving the order they arrive in (the
+  // backend already returns them in template order) — no hardcoded category
+  // priority, so ANY routed category renders generically.
   const grouped = useMemo(() => {
     const map = new Map<string, XdivDeliverable[]>();
     for (const d of deliverables) {
@@ -124,11 +126,7 @@ export function PerencanaanPanel({
       list.push(d);
       map.set(cat, list);
     }
-    return Array.from(map.entries()).sort(([a], [b]) => {
-      if (a === "Site Plan") return -1;
-      if (b === "Site Plan") return 1;
-      return a.localeCompare(b);
-    });
+    return Array.from(map.entries());
   }, [deliverables]);
 
   return (
@@ -137,7 +135,7 @@ export function PerencanaanPanel({
         <div>
           <h3>🔗 Tautkan ke Proyek Perencanaan</h3>
           <p className="muted small">
-            Tarik Siteplan &amp; dokumen Perencanaan (Output legalpermit) ke proyek ini.
+            Tarik deliverable Perencanaan yang Output-nya dirutekan ke Legal Permit ke proyek ini.
           </p>
         </div>
         {linkedId && (
@@ -171,7 +169,8 @@ export function PerencanaanPanel({
       {linkedId && hasSso && (
         <div className="pr-deliverables">
           <div className="pr-cap muted small">
-            Siteplan &amp; dokumen ini milik Departemen Perencanaan — ditarik otomatis (C10/C12).
+            Deliverable ini milik Departemen Perencanaan — ditarik otomatis mengikuti Output divisi ke
+            Legal Permit.
           </div>
 
           {delivLoading ? (
@@ -182,21 +181,12 @@ export function PerencanaanPanel({
             <div className="muted small">Belum ada deliverable yang dirutekan ke Legal Permit.</div>
           ) : (
             grouped.map(([cat, list]) => {
-              const isSiteplan = cat === "Site Plan";
               return (
-                <section
-                  key={cat}
-                  className={`pr-group ${isSiteplan ? "pr-group-siteplan" : ""}`}
-                >
+                <section key={cat} className="pr-group">
                   <div className="pr-group-title">
-                    <span>{isSiteplan ? "📐 Site Plan" : cat}</span>
+                    <span>📁 {cat}</span>
                     <span className="pr-group-count">{list.length}</span>
                   </div>
-                  {isSiteplan && (
-                    <p className="pr-note small">
-                      Relasi kunci C10/C12. D1/D2 (Pemecahan SHM/PBB) bergantung pada Siteplan ini.
-                    </p>
-                  )}
                   <div className="pr-rows">
                     {list.map((d) => (
                       <div key={d.taskId} className="pr-row">
