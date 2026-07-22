@@ -1,0 +1,177 @@
+/* Master Klausul + Buat Dokumen — self-contained styles (.klx- namespace) so the
+   feature looks consistent in any division module. Green-tinted neutral to match
+   the WMS dashboards. */
+
+.klx {
+  --klx-ink: #14231a;
+  --klx-ink-2: #5b6b60;
+  --klx-line: #d9e2db;
+  --klx-bg: #f4f7f4;
+  --klx-card: #ffffff;
+  --klx-green: #15803d;
+  --klx-green-d: #0f6a32;
+  --klx-red: #b91c1c;
+  color: var(--klx-ink);
+  font-size: 14px;
+}
+
+.klx * { box-sizing: border-box; }
+
+.klx-head { margin-bottom: 14px; }
+.klx-head h2 { margin: 0 0 4px; font-size: 20px; font-weight: 800; }
+.klx-sub { margin: 0; color: var(--klx-ink-2); line-height: 1.5; max-width: 70ch; }
+.klx-sub code,
+.klx code { background: #eaf2ec; color: var(--klx-green-d); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+
+.klx-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 900px) { .klx-grid { grid-template-columns: 1fr; } }
+
+.klx-card {
+  background: var(--klx-card);
+  border: 1px solid var(--klx-line);
+  border-radius: 14px;
+  padding: 16px;
+}
+.klx-card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.klx-card-h.wrap { flex-wrap: wrap; }
+.klx-card-h h3 { margin: 0; font-size: 15px; font-weight: 700; }
+
+.klx-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.klx-field > span { font-size: 12px; font-weight: 600; color: var(--klx-ink-2); }
+.klx-field input,
+.klx-field textarea,
+.klx-field select {
+  border: 1px solid var(--klx-line);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font: inherit;
+  color: var(--klx-ink);
+  background: #fff;
+  width: 100%;
+}
+.klx-field textarea { resize: vertical; line-height: 1.55; font-family: ui-monospace, "Cascadia Code", Menlo, monospace; font-size: 13px; }
+.klx-field input:focus,
+.klx-field textarea:focus,
+.klx-field select:focus { outline: 2px solid #86efac; border-color: var(--klx-green); }
+
+.klx-row2 { display: flex; gap: 10px; }
+.klx-row2 .klx-field { flex: 1; }
+.klx-w-code { max-width: 88px; }
+
+/* Placeholder chips */
+.klx-ph { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -2px 0 10px; }
+.klx-ph-label { font-size: 12px; color: var(--klx-ink-2); }
+.klx-chip { background: #eaf2ec; color: var(--klx-green-d); border: 1px solid #cfe6d6; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; }
+
+.klx-form-actions { display: flex; align-items: center; gap: 12px; }
+.klx-ok { color: var(--klx-green); font-weight: 600; font-size: 13px; }
+.klx-check { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: var(--klx-ink-2); cursor: pointer; }
+.klx-check input { width: 16px; height: 16px; accent-color: var(--klx-green); }
+
+/* Buttons */
+.klx-btn {
+  background: var(--klx-green);
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.klx-btn:hover { background: var(--klx-green-d); }
+.klx-btn:disabled { opacity: .5; cursor: not-allowed; }
+.klx-btn.wide { width: 100%; }
+.klx-btn.ghost { background: #fff; color: var(--klx-green-d); border: 1px solid var(--klx-line); }
+.klx-btn.ghost:hover { background: #f0f6f1; }
+.klx-btn.sm { padding: 5px 11px; font-size: 12px; }
+
+.klx-icon { background: none; border: 1px solid var(--klx-line); border-radius: 7px; width: 28px; height: 28px; cursor: pointer; color: var(--klx-ink-2); font-size: 13px; }
+.klx-icon:hover { background: #f0f6f1; color: var(--klx-ink); }
+.klx-icon.del:hover { background: #fef2f2; color: var(--klx-red); border-color: #fecaca; }
+
+/* Search + filters */
+.klx-tools { display: flex; gap: 8px; }
+.klx-search { border: 1px solid var(--klx-line); border-radius: 9px; padding: 7px 11px; font: inherit; min-width: 180px; }
+.klx-search:focus { outline: 2px solid #86efac; border-color: var(--klx-green); }
+.klx-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.klx-fchip { border: 1px solid var(--klx-line); background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 600; color: var(--klx-ink-2); cursor: pointer; }
+.klx-fchip.on { background: var(--klx-green); color: #fff; border-color: var(--klx-green); }
+
+/* Table */
+.klx-tablewrap { overflow-x: auto; }
+.klx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.klx-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--klx-ink-2); padding: 6px 8px; border-bottom: 2px solid var(--klx-line); }
+.klx-table td { padding: 8px; border-bottom: 1px solid #eef3ef; vertical-align: middle; }
+.klx-table tbody tr { cursor: pointer; }
+.klx-table tbody tr:hover { background: #f6faf7; }
+.klx-table tbody tr.sel { background: #eaf7ee; }
+.klx-c-dok { width: 74px; } .klx-c-code { width: 56px; } .klx-c-ord { width: 52px; } .klx-c-act { width: 74px; }
+.klx-code { font-weight: 700; color: var(--klx-ink-2); }
+.klx-title { font-weight: 600; }
+.klx-ord { text-align: center; color: var(--klx-ink-2); font-variant-numeric: tabular-nums; }
+.klx-act { display: flex; gap: 5px; }
+.klx-badge { background: #eaf2ec; color: var(--klx-green-d); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+.klx-empty { text-align: center; color: var(--klx-ink-2); padding: 26px 8px !important; }
+
+.klx-pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding-top: 12px; }
+.klx-pager button { background: #fff; border: 1px solid var(--klx-line); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 600; color: var(--klx-green-d); }
+.klx-pager button:disabled { opacity: .4; cursor: not-allowed; }
+.klx-pager span { font-size: 13px; font-weight: 700; color: var(--klx-ink-2); }
+
+.klx-alert { border-radius: 10px; padding: 12px 14px; background: #eef6f0; color: var(--klx-green-d); border: 1px solid #d3e8d9; margin-bottom: 12px; }
+.klx-alert.err { background: #fef2f2; color: var(--klx-red); border-color: #fecaca; }
+.klx-loading { padding: 30px; color: var(--klx-ink-2); }
+
+/* ---------- Buat Dokumen ---------- */
+.klx-build { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 960px) { .klx-build { grid-template-columns: 1fr; } }
+
+.klx-clauselist { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; padding-right: 2px; }
+.klx-clause { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border: 1px solid var(--klx-line); border-radius: 8px; cursor: pointer; }
+.klx-clause.on { background: #f2fbf5; border-color: #bfe6cb; }
+.klx-clause input { width: 16px; height: 16px; accent-color: var(--klx-green); }
+.klx-clause-code { font-weight: 800; color: var(--klx-green-d); min-width: 18px; }
+.klx-clause-title { font-size: 13px; }
+.klx-kt-pick { background: #eef7f0; border: 1px solid #cfe6d6; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.klx-kt-pick > span { color: var(--klx-green-d); }
+.klx-fill { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+@media (max-width: 520px) { .klx-fill { grid-template-columns: 1fr; } }
+
+/* Document preview (paper) */
+.klx-preview-wrap { background: #eef1ee; border: 1px solid var(--klx-line); border-radius: 14px; padding: 20px; overflow-x: auto; }
+.klx-doc {
+  background: #fff;
+  color: #111;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.klx-doc h1 { text-align: center; font-size: 18px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 4px; }
+.klx-doc-no { text-align: center; font-size: 13px; margin: 0 0 22px; }
+.klx-doc section { margin: 0 0 14px; }
+.klx-doc h2 { font-size: 14px; text-transform: uppercase; margin: 0 0 4px; }
+.klx-doc-body p { margin: 0 0 2px; text-align: justify; white-space: pre-wrap; }
+.klx-doc-empty { color: #888; text-align: center; }
+
+/* Baris terstruktur di dokumen (hanging indent, label:nilai, dua kolom). */
+.klx-doc .dl-item { display: flex; gap: 8px; margin: 0 0 3px; }
+.klx-doc .dl-item .dl-mk { flex: none; min-width: 20px; }
+.klx-doc .dl-item .dl-tx { flex: 1; text-align: justify; }
+.klx-doc .dl-kv { display: flex; gap: 6px; margin: 0 0 2px; }
+.klx-doc .dl-kv .dl-k { flex: none; min-width: 96px; }
+.klx-doc .dl-kv .dl-v { flex: 1; }
+.klx-doc .dl-cols { display: flex; gap: 24px; margin: 4px 0; }
+.klx-doc .dl-cols > span { flex: 1; }
+.klx-doc .dl-p { margin: 0 0 3px; text-align: justify; }
+.klx-doc .dl-blank { height: 9px; }

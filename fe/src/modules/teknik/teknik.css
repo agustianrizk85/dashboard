@@ -607,6 +607,11 @@
 
 /* ---- Master data ------------------------------------------------------ */
 .tk-scope .master { flex: 1; display: flex; gap: 14px; min-height: 0; }
+/* Master Data mode WMS: tanpa sidebar-dalam (dropdown ada di sidebar utama). */
+.tk-scope .master-embed { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.tk-scope .master-embed .master-content { flex: 1; min-height: 0; display: block; }
+.tk-scope .master-tools-row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.tk-scope .master-tools-row .master-tool { width: auto; }
 .tk-scope .master-nav {
   width: 210px; flex: none; background: var(--panel);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
@@ -628,6 +633,17 @@
 }
 .tk-scope .master-nav-item:hover { background: var(--panel-2); }
 .tk-scope .master-nav-item.active { background: var(--navy-800); color: #fff; }
+
+/* Dropdown di sidebar untuk grup ber-entri banyak (mis. Dokumen). */
+.tk-scope .master-nav-select {
+  width: 100%; font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 11px; cursor: pointer;
+}
+.tk-scope .master-nav-select:hover { background: var(--panel-2); border-color: var(--navy-800); }
+.tk-scope .master-nav-select.active { background: var(--navy-800); color: #fff; border-color: var(--navy-800); }
+.tk-scope .master-nav-select.active option { color: var(--ink-1); }
+.tk-scope .master-nav-select:focus { outline: 2px solid var(--navy-800); outline-offset: 1px; }
 
 .tk-scope .master-tools {
   margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line);

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import { navIcon } from "./wmsNavIcons";
 import "./wms.css";
@@ -10,6 +10,10 @@ export interface WmsNavItem {
   onClick?: () => void;
   /** Optional unread/pending count shown as a pill on the right of the item. */
   badge?: number;
+  /** Optional node at the right edge of the item (e.g. a collapse caret). */
+  trailing?: ReactNode;
+  /** Optional node rendered directly under the item (e.g. a collapsible submenu). */
+  sub?: ReactNode;
 }
 export interface WmsNavGroup {
   heading?: string;
@@ -70,11 +74,15 @@ export function WmsShell({
             {group.heading && <div className="wms-navgroup-h">{group.heading}</div>}
             <div className="wms-nav">
               {group.items.map((it, ii) => (
-                <button key={ii} className={it.active ? "on" : ""} onClick={it.onClick} type="button">
-                  <span className="ic">{it.icon ?? navIcon(it.label)}</span>
-                  <span className="lbl">{it.label}</span>
-                  {it.badge ? <span className="wms-nav-badge">{it.badge > 99 ? "99+" : it.badge}</span> : null}
-                </button>
+                <Fragment key={ii}>
+                  <button className={it.active ? "on" : ""} onClick={it.onClick} type="button">
+                    <span className="ic">{it.icon ?? navIcon(it.label)}</span>
+                    <span className="lbl">{it.label}</span>
+                    {it.badge ? <span className="wms-nav-badge">{it.badge > 99 ? "99+" : it.badge}</span> : null}
+                    {it.trailing}
+                  </button>
+                  {it.sub}
+                </Fragment>
               ))}
             </div>
           </div>

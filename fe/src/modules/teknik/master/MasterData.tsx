@@ -4,6 +4,11 @@ import { RESOURCES } from "./schema";
 import { ResourceManager } from "./ResourceManager";
 import { ProgressChecklist } from "../components/ProgressChecklist";
 import { SyncSpreadsheet } from "./SyncSpreadsheet";
+import { MasterKlausulPanel } from "@/components/klausul/MasterKlausulPanel";
+import { MasterKontraktorPanel } from "@/components/kontraktor/MasterKontraktorPanel";
+import { MasterSeksiPanel } from "./MasterSeksiPanel";
+import { MasterBobotPanel } from "./MasterBobotPanel";
+import { TeknikDocBuilder } from "./TeknikDocBuilder";
 import { api } from "../api/client";
 import type { ConstructionStage, ProgressUnit } from "../types";
 
@@ -99,12 +104,47 @@ function AiModelSection() {
 const SECTIONS: { key: string; group: string; title: string; render: () => ReactNode }[] = [
   { key: "checklist", group: "Operasional", title: "Cek List Progress", render: () => <ChecklistSection /> },
   { key: "sync-sheet", group: "Data", title: "Sync Spreadsheet", render: () => <SyncSpreadsheet /> },
+  { key: "master-kontraktor", group: "Master", title: "Master Kontraktor", render: () => <MasterKontraktorPanel /> },
+  { key: "master-seksi", group: "Master", title: "Master Seksi", render: () => <MasterSeksiPanel /> },
+  { key: "master-bobot", group: "Master", title: "Master Item Bobot", render: () => <MasterBobotPanel /> },
+  { key: "master-klausul", group: "Dokumen", title: "Master Klausul (pustaka)", render: () => <MasterKlausulPanel division="teknik" /> },
+  { key: "doc-builder", group: "Dokumen", title: "Buat Dokumen (SPK)", render: () => <TeknikDocBuilder /> },
   { key: "ai-model", group: "Pengaturan", title: "AI Model", render: () => <AiModelSection /> },
 ];
 
-/** Master-data workspace: a resource picker on the left, its CRUD table on the right. */
-export function MasterData() {
-  const [activeKey, setActiveKey] = useState("sync-sheet");
+/** Sub-view Master Data (Sync Spreadsheet TIDAK di sini — sudah jadi menu utama
+ *  sendiri, biar tak dobel). Sisanya disembunyikan; kode tetap ada. */
+const VISIBLE = ["master-kontraktor", "master-seksi", "master-bobot", "master-klausul", "doc-builder"];
+
+/** VISIBLE sections grouped by `group`, preserving first-seen order. */
+const visibleGroups: { name: string; items: typeof SECTIONS }[] = (() => {
+  const out: { name: string; items: typeof SECTIONS }[] = [];
+  SECTIONS.filter((s) => VISIBLE.includes(s.key)).forEach((s) => {
+    let g = out.find((x) => x.name === s.group);
+    if (!g) {
+      g = { name: s.group, items: [] };
+      out.push(g);
+    }
+    g.items.push(s);
+  });
+  return out;
+})();
+
+/** Sub-view Master Data untuk dropdown di sidebar utama (WMS). */
+export const MASTER_VIEWS = SECTIONS.filter((s) => VISIBLE.includes(s.key)).map((s) => ({
+  key: s.key,
+  label: s.title,
+}));
+
+/** Master-data workspace. Dua mode:
+ *  - uncontrolled (CEO/Dirops): sidebar-dalam ala lama.
+ *  - controlled `view`/`onView` (WMS staff/kadep): TANPA sidebar-dalam — pemilih
+ *    sub-view berupa dropdown yang menempel di item "Master Data" sidebar utama. */
+export function MasterData({ view, onView }: { view?: string; onView?: (v: string) => void } = {}) {
+  const embedded = view !== undefined;
+  const [localKey, setLocalKey] = useState("master-klausul");
+  const activeKey = embedded ? (view as string) : localKey;
+  const setActiveKey = embedded ? onView ?? (() => {}) : setLocalKey;
   const [busy, setBusy] = useState<"seed" | "clear" | null>(null);
   const active = RESOURCES.find((r) => r.key === activeKey);
   const section = SECTIONS.find((s) => s.key === activeKey);
@@ -127,22 +167,61 @@ export function MasterData() {
   const clearAll = () =>
     run("clear", () => api.clearData(), "Hapus SEMUA data? Tindakan ini tidak bisa dibatalkan.");
 
+  // WMS: sidebar-dalam dihapus — dropdown ada di sidebar utama (WmsShell item.sub).
+  // Di sini cukup render panel terpilih full-width + alat data ringkas di bawah.
+  if (embedded) {
+    return (
+      <div className="master-embed">
+        <section className="master-content">
+          {section ? section.render() : active ? <ResourceManager key={active.key} config={active} /> : null}
+        </section>
+        <div className="master-tools-row">
+          <button className="master-tool" onClick={reseed} disabled={busy !== null}>
+            {busy === "seed" ? "Memproses…" : "↻ Seed data migrasi"}
+          </button>
+          <button className="master-tool danger" onClick={clearAll} disabled={busy !== null}>
+            {busy === "clear" ? "Memproses…" : "🗑 Hapus semua data"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="master">
       <aside className="master-nav">
         <div className="master-nav-title">Master Data</div>
-        {/* Menu diringkas ke HANYA "Sync Spreadsheet" (sumber data utama).
-            RESOURCES + section lain (Cek List, AI Model) disembunyikan — kode
-            tetap ada, ubah filter di bawah untuk memunculkannya lagi. */}
-        {SECTIONS.filter((s) => s.key === "sync-sheet").map((s) => (
-          <div key={s.key}>
-            <div className="master-nav-group">{s.group}</div>
-            <button
-              className={`master-nav-item ${s.key === activeKey ? "active" : ""}`}
-              onClick={() => setActiveKey(s.key)}
-            >
-              {s.title}
-            </button>
+        {/* Menu diringkas (Cek List, AI Model, RESOURCES disembunyikan — kode
+            tetap ada, ubah VISIBLE untuk memunculkannya lagi). Grup 1 entri =
+            tombol; grup banyak entri (Dokumen) = SATU dropdown di sidebar. */}
+        {visibleGroups.map((g) => (
+          <div key={g.name}>
+            <div className="master-nav-group">{g.name}</div>
+            {g.items.length === 1 ? (
+              <button
+                className={`master-nav-item ${g.items[0].key === activeKey ? "active" : ""}`}
+                onClick={() => setActiveKey(g.items[0].key)}
+              >
+                {g.items[0].title}
+              </button>
+            ) : (
+              <select
+                className={`master-nav-select ${g.items.some((it) => it.key === activeKey) ? "active" : ""}`}
+                value={g.items.some((it) => it.key === activeKey) ? activeKey : ""}
+                onChange={(e) => setActiveKey(e.target.value)}
+              >
+                {!g.items.some((it) => it.key === activeKey) && (
+                  <option value="" disabled>
+                    Pilih…
+                  </option>
+                )}
+                {g.items.map((it) => (
+                  <option key={it.key} value={it.key}>
+                    {it.title}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         ))}
 

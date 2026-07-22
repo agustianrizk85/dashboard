@@ -16,6 +16,14 @@ export interface ConstructionStage {
   name: string;
   weight: number;
   termin: string; // T1 | T2 | T3 | T4
+  seksi: string; // kode Seksi (I..XIII) — relasi ke master Seksi
+}
+
+export interface Seksi {
+  id: string;
+  no: number;
+  kode: string; // I..XIII
+  nama: string;
 }
 
 export interface ProgressUnit {

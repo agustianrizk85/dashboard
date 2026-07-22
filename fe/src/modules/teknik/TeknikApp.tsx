@@ -8,7 +8,8 @@ import { Bar, Kpi, Panel, Pill } from "./components/ui";
 import { INFO } from "./components/infoTips";
 import { useAuth } from "@/auth/AuthContext";
 import { DivisionTabBar } from "@/components/DivisionTabBar";
-import { MasterData } from "./master/MasterData";
+import { MasterData, MASTER_VIEWS } from "./master/MasterData";
+import { MasterUnitPerencanaan } from "./master/MasterUnitPerencanaan";
 import { SyncSpreadsheet } from "./master/SyncSpreadsheet";
 import { RabAtapBajaRingan } from "./rab/RabAtapBajaRingan";
 import { AiInsight } from "./components/AiInsight";
@@ -34,6 +35,7 @@ const TABS: TabDef[] = [
   { id: "pembelian", label: "Pembelian" },
   { id: "board", label: "Papan Tugas" },
   { id: "sync", label: "Sync Spreadsheet" },
+  { id: "master-unit", label: "Master Unit" },
   { id: "master", label: "Master Data" },
 ];
 
@@ -81,9 +83,13 @@ export default function TeknikApp() {
   const [state, reload] = useDashboard();
   const [rawTab, setRawTab] = useState<string>(() => localStorage.getItem("gp_tab") ?? "overview");
   const [sel, setSel] = useState<ProyekMetric | null>(null);
+  // Master Data = menu collapsible di sidebar utama (WMS). `masterView` = sub-view
+  // aktif; `masterOpen` = terbuka/tertutupnya sub-menu.
+  const [masterView, setMasterView] = useState<string>("master-klausul");
+  const [masterOpen, setMasterOpen] = useState(true);
 
   // Never land a non-manager on an admin tab (e.g. a remembered "master"/"sync").
-  const tab = !canManage && (rawTab === "master" || rawTab === "sync") ? "overview" : rawTab;
+  const tab = !canManage && (rawTab === "master" || rawTab === "sync" || rawTab === "master-unit") ? "overview" : rawTab;
   const setTab = (t: string) => {
     setRawTab(t);
     try {
@@ -92,7 +98,7 @@ export default function TeknikApp() {
       /* ignore */
     }
   };
-  const visible = TABS.filter((t) => canManage || (t.id !== "sync" && t.id !== "master"));
+  const visible = TABS.filter((t) => canManage || (t.id !== "sync" && t.id !== "master" && t.id !== "master-unit"));
 
   // Shared dashboard body — the loading/error splash + the active view. Rendered
   // inside the original `.tk-scope` chrome for CEO, or inside the WMS shell for
@@ -126,7 +132,9 @@ export default function TeknikApp() {
     ) : (
       <div className="body">
         {tab === "master" ? (
-          <MasterData />
+          wms ? <MasterData view={masterView} onView={setMasterView} /> : <MasterData />
+        ) : tab === "master-unit" ? (
+          <MasterUnitPerencanaan />
         ) : tab === "sync" ? (
           <SyncSpreadsheet />
         ) : tab === "rab" ? (
@@ -149,7 +157,15 @@ export default function TeknikApp() {
   // Staff / kadep → new WMS "Ops Console" shell (sidebar = the same sections).
   if (wms) {
     return (
-      <TeknikWmsLayout sections={visible} tab={tab} onTab={setTab}>
+      <TeknikWmsLayout
+        sections={visible}
+        tab={tab}
+        onTab={setTab}
+        masterView={masterView}
+        onMasterView={setMasterView}
+        masterOpen={masterOpen}
+        setMasterOpen={setMasterOpen}
+      >
         {body}
       </TeknikWmsLayout>
     );
@@ -206,21 +222,65 @@ function TeknikWmsLayout({
   sections,
   tab,
   onTab,
+  masterView,
+  onMasterView,
+  masterOpen,
+  setMasterOpen,
   children,
 }: {
   sections: TabDef[];
   tab: string;
   onTab: (id: string) => void;
+  masterView: string;
+  onMasterView: (v: string) => void;
+  masterOpen: boolean;
+  setMasterOpen: (fn: (o: boolean) => boolean) => void;
   children: ReactNode;
 }) {
   const groups: WmsNavGroup[] = [
     {
       heading: "Menu",
-      items: sections.map((s) => ({
-        label: s.label,
-        active: tab === s.id,
-        onClick: () => onTab(s.id),
-      })),
+      items: sections.map((s) => {
+        if (s.id === "master") {
+          // "Master Data" = menu collapsible: klik → buka/tutup sub-menu.
+          return {
+            label: s.label,
+            active: tab === "master",
+            onClick: () => {
+              if (tab !== "master") {
+                onTab("master");
+                setMasterOpen(() => true);
+              } else {
+                setMasterOpen((o) => !o);
+              }
+            },
+            trailing: <span className={`wms-caret ${tab === "master" && masterOpen ? "open" : ""}`}>▸</span>,
+            sub:
+              tab === "master" && masterOpen ? (
+                <div className="wms-subnav">
+                  {MASTER_VIEWS.map((v) => (
+                    <button
+                      key={v.key}
+                      type="button"
+                      className={`wms-subnav-item ${masterView === v.key ? "on" : ""}`}
+                      onClick={() => {
+                        onTab("master");
+                        onMasterView(v.key);
+                      }}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              ) : undefined,
+          };
+        }
+        return {
+          label: s.label,
+          active: tab === s.id,
+          onClick: () => onTab(s.id),
+        };
+      }),
     },
   ];
   return (
