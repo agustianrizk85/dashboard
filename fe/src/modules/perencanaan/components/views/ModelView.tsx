@@ -119,6 +119,8 @@ export function ModelView({ division = "perencanaan" }: { division?: string }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [catQ, setCatQ] = useState("");
+  const [catPage, setCatPage] = useState(0);
 
   const load = useCallback(async () => {
     if (!ssoToken()) {
@@ -182,6 +184,18 @@ export function ModelView({ division = "perencanaan" }: { division?: string }) {
     [catalog],
   );
 
+  // Katalog: filter (search) + paginasi.
+  const CAT_PAGE = 8;
+  const catFiltered = useMemo(() => {
+    const n = catQ.trim().toLowerCase();
+    const list = catalog ?? [];
+    if (!n) return list;
+    return list.filter((m) => `${m.name} ${m.intelligence} ${m.useCase}`.toLowerCase().includes(n));
+  }, [catalog, catQ]);
+  const catPages = Math.max(1, Math.ceil(catFiltered.length / CAT_PAGE));
+  const catCur = Math.min(catPage, catPages - 1);
+  const catSlice = catFiltered.slice(catCur * CAT_PAGE, catCur * CAT_PAGE + CAT_PAGE);
+
   return (
     <div className="pr-panel">
       <div className="pr-panel-head">
@@ -227,43 +241,71 @@ export function ModelView({ division = "perencanaan" }: { division?: string }) {
             {msg && <div style={{ color: "#15803d", fontWeight: 600, alignSelf: "center" }}>{msg}</div>}
           </div>
 
-          <h3 style={{ margin: "1.4rem 0 0.6rem", fontSize: "1rem", color: "#14361f" }}>
-            Katalog Model AI ({(catalog ?? []).length})
-          </h3>
+          <div className="pr-cat-head">
+            <h3>Katalog Model AI ({(catalog ?? []).length})</h3>
+            <div className="pr-cat-search">
+              <input
+                value={catQ}
+                onChange={(e) => {
+                  setCatQ(e.target.value);
+                  setCatPage(0);
+                }}
+                placeholder="🔎 Cari model / kegunaan…"
+              />
+              {catQ.trim() && <span className="muted small">{catFiltered.length} hasil</span>}
+            </div>
+          </div>
           {catalog.length === 0 ? (
             <div className="empty-note">Belum ada model. Tambahkan di Panel Admin › Model AI.</div>
+          ) : catFiltered.length === 0 ? (
+            <div className="empty-note">Tidak ada yang cocok.</div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="pr-table">
-                <thead>
-                  <tr>
-                    <th>Model</th>
-                    <th>Kepintaran</th>
-                    <th>Kegunaan</th>
-                    <th style={{ textAlign: "right" }}>Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {catalog.map((m) => (
-                    <tr key={m.name}>
-                      <td>
-                        <b>{m.name}</b>
-                      </td>
-                      <td>{m.intelligence || "—"}</td>
-                      <td>{m.useCase || "—"}</td>
-                      <td style={{ textAlign: "right" }}>
-                        <span
-                          className="badge"
-                          style={{ background: scoreColor(m.score) + "22", color: scoreColor(m.score), fontWeight: 700 }}
-                        >
-                          {m.score}
-                        </span>
-                      </td>
+            <>
+              <div style={{ overflowX: "auto" }}>
+                <table className="pr-table">
+                  <thead>
+                    <tr>
+                      <th>Model</th>
+                      <th>Kepintaran</th>
+                      <th>Kegunaan</th>
+                      <th style={{ textAlign: "right" }}>Score</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {catSlice.map((m) => (
+                      <tr key={m.name}>
+                        <td>
+                          <b>{m.name}</b>
+                        </td>
+                        <td>{m.intelligence || "—"}</td>
+                        <td>{m.useCase || "—"}</td>
+                        <td style={{ textAlign: "right" }}>
+                          <span
+                            className="badge"
+                            style={{ background: scoreColor(m.score) + "22", color: scoreColor(m.score), fontWeight: 700 }}
+                          >
+                            {m.score}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {catPages > 1 && (
+                <div className="pr-cat-pager">
+                  <button type="button" disabled={catCur === 0} onClick={() => setCatPage(catCur - 1)}>
+                    ‹ Sebelumnya
+                  </button>
+                  <span>
+                    Hal {catCur + 1} / {catPages}
+                  </span>
+                  <button type="button" disabled={catCur >= catPages - 1} onClick={() => setCatPage(catCur + 1)}>
+                    Berikutnya ›
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

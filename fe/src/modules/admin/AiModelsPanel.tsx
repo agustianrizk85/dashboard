@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getModels, saveModel, deleteModel, type AIModel } from "./masterApi";
 
 /** Panel Admin → Model AI. Katalog model AI yang dikelola admin: nama model,
@@ -13,6 +13,8 @@ export function AiModelsPanel() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
 
   const reload = useCallback(async () => {
     setErr("");
@@ -67,6 +69,17 @@ export function AiModelsPanel() {
   // wms-badge tones: base (green) / warn (amber) / grey.
   const scoreTone = (s: number) => (s >= 80 ? "" : s >= 50 ? "warn" : "grey");
 
+  // Filter (search) + paginasi tabel katalog.
+  const PAGE = 8;
+  const filtered = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return rows;
+    return rows.filter((m) => `${m.name} ${m.intelligence} ${m.useCase}`.toLowerCase().includes(n));
+  }, [rows, q]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const cur = Math.min(page, pages - 1);
+  const slice = filtered.slice(cur * PAGE, cur * PAGE + PAGE);
+
   return (
     <div className="wms-grid">
       <div className="wms-card wms-col-4">
@@ -114,8 +127,18 @@ export function AiModelsPanel() {
       </div>
 
       <div className="wms-card wms-col-8">
-        <div className="wms-card-h">
+        <div className="wms-card-h" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <h3>Katalog Model AI ({rows.length})</h3>
+          <input
+            className="wms-search"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(0);
+            }}
+            placeholder="🔎 Cari model / kegunaan…"
+            style={{ minWidth: 220, padding: "0.4rem 0.7rem", border: "1px solid #d5dbd5", borderRadius: 8 }}
+          />
         </div>
         <div style={{ overflowX: "auto" }}>
           <table className="wms-table">
@@ -133,8 +156,12 @@ export function AiModelsPanel() {
                 <tr>
                   <td colSpan={5} className="wms-empty">Belum ada model.</td>
                 </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="wms-empty">Tidak ada yang cocok.</td>
+                </tr>
               ) : (
-                rows.map((m) => (
+                slice.map((m) => (
                   <tr key={m.name}>
                     <td><span className="wms-badge grey">{m.name}</span></td>
                     <td>{m.intelligence || "—"}</td>
@@ -151,6 +178,19 @@ export function AiModelsPanel() {
             </tbody>
           </table>
         </div>
+        {pages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, paddingTop: 12 }}>
+            <button className="wms-btn ghost" disabled={cur === 0} onClick={() => setPage(cur - 1)}>
+              ‹ Sebelumnya
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#6b7280" }}>
+              Hal {cur + 1} / {pages}
+            </span>
+            <button className="wms-btn ghost" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>
+              Berikutnya ›
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

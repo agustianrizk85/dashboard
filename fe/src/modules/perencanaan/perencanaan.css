@@ -1549,3 +1549,15 @@ body {
 .pr-scope .pr-ss-opt-label { font-size: 0.88rem; font-weight: 600; color: #14361f; }
 .pr-scope .pr-ss-opt-sub { font-size: 0.74rem; color: #6b7280; }
 .pr-scope .pr-ss-empty { padding: 0.6rem; color: #9ca3af; font-size: 0.85rem; }
+
+/* AI › Model — katalog: search + paginasi */
+.pr-scope .pr-cat-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 1.4rem 0 0.6rem; }
+.pr-scope .pr-cat-head h3 { margin: 0; font-size: 1rem; color: #14361f; }
+.pr-scope .pr-cat-search { display: flex; align-items: center; gap: 0.6rem; }
+.pr-scope .pr-cat-search input { min-width: 240px; padding: 0.45rem 0.7rem; border: 1px solid var(--border, #d5dbd5); border-radius: 8px; background: #fff; font-size: 0.88rem; }
+.pr-scope .pr-cat-search input:focus { outline: none; border-color: var(--green, #1f6f52); box-shadow: 0 0 0 3px #e6f6ee; }
+.pr-scope .pr-cat-pager { display: flex; align-items: center; justify-content: center; gap: 0.9rem; padding: 0.8rem 0; }
+.pr-scope .pr-cat-pager button { background: #fff; border: 1px solid var(--border, #d5dbd5); border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.82rem; font-weight: 600; color: #14361f; cursor: pointer; }
+.pr-scope .pr-cat-pager button:hover:not(:disabled) { background: #eef6f0; border-color: var(--green, #1f6f52); }
+.pr-scope .pr-cat-pager button:disabled { opacity: 0.45; cursor: default; }
+.pr-scope .pr-cat-pager span { font-size: 0.82rem; font-weight: 700; color: #6b7280; }
