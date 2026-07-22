@@ -7,7 +7,7 @@ import { UsersTable } from "./UsersTable";
 import { MasterPanel, type MasterRow } from "./MasterPanel";
 import { AiModelsPanel } from "./AiModelsPanel";
 import { AUTH, authHeaders, type User } from "./adminApi";
-import { getDepartments, saveDepartment, deleteDepartment, getRoles, saveRole, deleteRole } from "./masterApi";
+import { getDepartments, saveDepartment, deleteDepartment, getRoles, saveRole, deleteRole, getModels, type AIModel } from "./masterApi";
 import "./admin.css";
 
 // Stable adapters (defined at module scope so their identity never changes —
@@ -32,6 +32,8 @@ export default function AdminApp() {
   const [newModel, setNewModel] = useState("");
   const [newVisionModel, setNewVisionModel] = useState("");
   const [keyMsg, setKeyMsg] = useState("");
+  // Katalog Model AI — jadi saran (datalist) untuk field model di Kunci AI.
+  const [catalog, setCatalog] = useState<AIModel[]>([]);
 
   const loadUsers = useCallback(async () => {
     setUErr("");
@@ -62,6 +64,7 @@ export default function AdminApp() {
   useEffect(() => {
     void loadUsers();
     void loadAiCfg();
+    void getModels().then(setCatalog).catch(() => {});
   }, [loadUsers, loadAiCfg]);
 
   const delUser = async (u: User) => {
@@ -183,12 +186,45 @@ export default function AdminApp() {
             </label>
             <label className="wms-field">
               <span>Model Umum <small>(dashboard · asisten · WA)</small></span>
-              <input value={newModel} onChange={(e) => setNewModel(e.target.value)} placeholder="glm-5.2:cloud" />
+              <input
+                value={newModel}
+                onChange={(e) => setNewModel(e.target.value)}
+                placeholder="glm-5.2:cloud"
+                list="ai-cat-all"
+              />
             </label>
             <label className="wms-field">
               <span>Model Perencanaan <small>(vision · Deep Revisi gambar kerja)</small></span>
-              <input value={newVisionModel} onChange={(e) => setNewVisionModel(e.target.value)} placeholder="qwen3.5:397b" />
+              <input
+                value={newVisionModel}
+                onChange={(e) => setNewVisionModel(e.target.value)}
+                placeholder="qwen3.5:397b"
+                list="ai-cat-vision"
+              />
             </label>
+            {/* Saran dari katalog Model AI (relasi) — tetap bisa ketik tag lengkap (:cloud/:397b). */}
+            <datalist id="ai-cat-all">
+              {catalog.map((m) => (
+                <option key={m.name} value={m.name}>
+                  {`score ${m.score} · ${m.useCase}`}
+                </option>
+              ))}
+            </datalist>
+            <datalist id="ai-cat-vision">
+              {catalog
+                .filter((m) => /vision/i.test(m.useCase))
+                .map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {`score ${m.score} · ${m.useCase}`}
+                  </option>
+                ))}
+            </datalist>
+            {catalog.length > 0 && (
+              <p className="wms-note small" style={{ marginTop: 4 }}>
+                💡 Saran model diambil dari <b>Model AI</b> ({catalog.length} model). Ketik untuk cari;
+                tambahkan tag key-mu bila perlu (mis. <code>:cloud</code>, <code>:397b</code>).
+              </p>
+            )}
             <button className="wms-btn" disabled={!newKey.trim() && !newModel.trim() && !newVisionModel.trim()} onClick={saveAiKey}>
               Simpan
             </button>
