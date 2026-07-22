@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AlertItem, ProjectRollup, StaffMember, WorkDrawing } from "../../types";
 import { api } from "../../api/client";
-import type { CreateWorkDrawingInput, WorkDrawingAction, GkConfig } from "../../api/client";
+import type { CreateWorkDrawingInput, WorkDrawingAction, GkConfig, SkillMeta } from "../../api/client";
 import { fmtDate, fmtDaysLeft, picName, ragTone } from "../../lib/format";
 import {
   getAttachments,
@@ -697,11 +697,26 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
   const [err, setErr] = useState("");
   const [viewing, setViewing] = useState<{ name: string; url: string } | null>(null);
   const [gkCfg, setGkCfg] = useState<GkConfig>({ keyConfigured: false, keyModel: "", visionModel: "" });
+  const [skills, setSkills] = useState<SkillMeta[]>([]);
+  const [sel, setSel] = useState<string[]>([]);
+  const [selInit, setSelInit] = useState(false);
 
   // Central Kunci AI status (key + vision model both managed in Panel Admin).
   useEffect(() => {
     api.gkConfig().then(setGkCfg).catch(() => {});
+    api.skills().then(setSkills).catch(() => {});
   }, []);
+
+  // Default skill selection once the list is known: the GK checklist, else first.
+  useEffect(() => {
+    if (selInit || skills.length === 0) return;
+    const def = "pengecekan-gambar-kerja";
+    setSel(skills.some((s) => s.name === def) ? [def] : [skills[0].name]);
+    setSelInit(true);
+  }, [skills, selInit]);
+
+  const toggleSkill = (name: string) =>
+    setSel((cur) => (cur.includes(name) ? cur.filter((n) => n !== name) : [...cur, name]));
 
   // Poll status while a check is running.
   useEffect(() => {
@@ -730,7 +745,7 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
   const start = async () => {
     setErr("");
     try {
-      await api.startDeepRevisi(wd.id);
+      await api.startDeepRevisi(wd.id, sel);
       setWd(await api.deepRevisiStatus(wd.id));
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -799,6 +814,26 @@ function DeepReviseModal({ drawing, onClose }: { drawing: WorkDrawing; onClose: 
                 : both
                   ? "Mode banding: GK Kontraktor dicek terhadap GK TTD."
                   : "Mode QC 1 gambar: dicek terhadap checklist. Upload keduanya untuk mode banding."}
+            </div>
+            <div className="gk-skillpick">
+              <div className="gk-skillpick-hd">Pilih skill checklist (bisa lebih dari satu)</div>
+              {skills.length === 0 ? (
+                <div className="empty-note">Belum ada skill — buat di menu Skill AI.</div>
+              ) : (
+                <div className="gk-skilllist">
+                  {skills.map((s) => (
+                    <label key={s.name} className={`gk-skillopt ${sel.includes(s.name) ? "on" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={sel.includes(s.name)}
+                        onChange={() => toggleSkill(s.name)}
+                      />
+                      <span className="gk-skillopt-title">{s.title}</span>
+                      <span className="gk-skillopt-name">{s.name}.md</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="form-actions">
               <button type="button" className="btn-ghost" onClick={onClose}>

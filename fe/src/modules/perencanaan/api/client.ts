@@ -453,8 +453,8 @@ export const api = {
     }
     return (await res.json()) as WorkDrawing;
   },
-  startDeepRevisi: (id: string) =>
-    request<{ status: string }>("POST", `/workdrawings/${id}/deep-revisi`),
+  startDeepRevisi: (id: string, skills?: string[]) =>
+    request<{ status: string }>("POST", `/workdrawings/${id}/deep-revisi`, { skills: skills ?? [] }),
   deepRevisiStatus: (id: string) => request<WorkDrawing>("GET", `/workdrawings/${id}/deep-revisi`),
   // Deep Revisi AI status (read-only): central Kunci AI + models from Panel Admin.
   gkConfig: () => request<GkConfig>("GET", "/gk/config"),
