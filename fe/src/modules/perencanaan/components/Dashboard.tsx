@@ -273,7 +273,7 @@ export function Dashboard() {
         <Modal title="Kosongkan Semua Data" sub="Benar-benar kosong — tidak ada sama sekali" onClose={() => setConfirm(null)}>
           <p className="modal-text">
             Menghapus <b>SEMUA</b> data secara permanen: seluruh <b>proyek &amp; deliverable</b>, semua{" "}
-            <b>master</b> (GP, Tipe Bangunan, Lebar, Lokasi), serta <b>Blok &amp; Kavling</b> dan file
+            <b>master</b> (GP, Tipe Bangunan), serta <b>Blok &amp; Kavling</b> dan file
             lampiran. Portfolio jadi <b>benar-benar kosong</b> — tanpa data contoh apa pun (tidak
             di-isi ulang). Roster tim &amp; papan tugas tidak terpengaruh.
             <br />

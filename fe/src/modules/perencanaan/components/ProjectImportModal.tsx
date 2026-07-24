@@ -321,7 +321,6 @@ export function ProjectImportModal({
         <div className="kav-imp-summary">
           {summaryText(result)}
           {result.gpsCreated.length > 0 && <div>GP baru: {result.gpsCreated.join(", ")}</div>}
-          {result.lokasiCreated.length > 0 && <div>Lokasi baru: {result.lokasiCreated.join(", ")}</div>}
           {result.skipped.length > 0 && (
             <div className="kav-imp-skips">
               {result.skipped.map((s, i) => (

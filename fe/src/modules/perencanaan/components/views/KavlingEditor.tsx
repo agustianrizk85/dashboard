@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { api } from "../../api/client";
-import type { BuildingType, Kavling, Lebar, ProjectDetail } from "../../types";
+import type { BuildingType, Kavling, ProjectDetail } from "../../types";
 import { InfoTip } from "../ui";
-import { DataTable } from "../DataTable";
+import { DataTable } from "@/components/DataTable";
 import { KavlingImportModal } from "../KavlingImportModal";
 import { SearchSelect, type SelectOption } from "../SearchSelect";
 
@@ -16,13 +16,11 @@ import { SearchSelect, type SelectOption } from "../SearchSelect";
 export function KavlingEditor({
   projectId,
   types,
-  lebars,
   canManage,
   onChanged,
 }: {
   projectId: string;
   types: BuildingType[];
-  lebars: Lebar[];
   canManage: boolean;
   onChanged?: () => void;
 }) {
@@ -46,7 +44,7 @@ export function KavlingEditor({
 
   const [blokName, setBlokName] = useState("");
   const [showImport, setShowImport] = useState(false);
-  const [draft, setDraft] = useState({ noKav: "", typeId: "", blokId: "", luasBangunan: "", luasKavling: "", lebarKavling: "" });
+  const [draft, setDraft] = useState({ noKav: "", typeId: "", blokId: "", luasBangunan: "", lebarKavling: "" });
 
   const typeById = (id: string) => types.find((t) => t.id === id);
   const num = (v: string) => (v.trim() === "" ? 0 : Number(v) || 0);
@@ -60,12 +58,6 @@ export function KavlingEditor({
 
   const typeOpts: SelectOption[] = types.map((t) => ({ value: t.id, label: t.name, hint: `${t.luasBangunan}/${t.luasTanah}` }));
   const blokOpts: SelectOption[] = bloks.map((b) => ({ value: b.id, label: b.name }));
-  const lebarNames = new Set(lebars.map((l) => l.name));
-  const lebarOpts: SelectOption[] = [
-    ...lebars.map((l) => ({ value: l.name, label: l.name })),
-    ...[...new Set(kavling.map((k) => k.lebarKavling).filter((v) => v && !lebarNames.has(v)))].map((v) => ({ value: v, label: `${v} (lama)` })),
-  ];
-
   const addBlok = () => {
     if (!blokName.trim()) return;
     void run(api.saveBlok(projectId, { name: blokName.trim() })).then(() => setBlokName(""));
@@ -78,10 +70,9 @@ export function KavlingEditor({
         typeId: draft.typeId,
         blokId: draft.blokId,
         luasBangunan: num(draft.luasBangunan),
-        luasKavling: num(draft.luasKavling),
         lebarKavling: draft.lebarKavling.trim(),
       }),
-    ).then(() => setDraft({ noKav: "", typeId: "", blokId: "", luasBangunan: "", luasKavling: "", lebarKavling: "" }));
+    ).then(() => setDraft({ noKav: "", typeId: "", blokId: "", luasBangunan: "", lebarKavling: "" }));
   };
   const draftType = (id: string) => {
     const t = typeById(id);
@@ -137,7 +128,7 @@ export function KavlingEditor({
     },
     {
       accessorKey: "luasBangunan",
-      header: "Bangunan",
+      header: "Luas Bangunan",
       size: 84,
       cell: (i) =>
         canManage ? (
@@ -147,24 +138,17 @@ export function KavlingEditor({
         ),
     },
     {
-      accessorKey: "luasKavling",
-      header: "Kavling",
-      size: 84,
-      cell: (i) =>
-        canManage ? (
-          <input className="me-in me-num" type="number" defaultValue={i.row.original.luasKavling} onBlur={(e) => num(e.target.value) !== i.row.original.luasKavling && void run(api.saveKavling(projectId, { ...i.row.original, luasKavling: num(e.target.value) }))} />
-        ) : (
-          <span className="num">{i.row.original.luasKavling}</span>
-        ),
-    },
-    {
       accessorKey: "lebarKavling",
-      header: "Lebar",
+      header: "Luas Tanah",
       size: 92,
       cell: (i) => {
         const k = i.row.original;
         return canManage ? (
-          <SearchSelect size="sm" value={k.lebarKavling} options={lebarOpts} placeholder="— lebar —" onChange={(v) => void run(api.saveKavling(projectId, { ...k, lebarKavling: v }))} />
+          <input
+            className="me-in me-num"
+            defaultValue={k.lebarKavling}
+            onBlur={(e) => e.target.value.trim() !== k.lebarKavling && void run(api.saveKavling(projectId, { ...k, lebarKavling: e.target.value.trim() }))}
+          />
         ) : (
           k.lebarKavling || "—"
         );
@@ -250,10 +234,7 @@ export function KavlingEditor({
           <div className="kav-add-sel">
             <SearchSelect value={draft.blokId} options={blokOpts} placeholder="— blok —" onChange={(v) => setDraft((d) => ({ ...d, blokId: v }))} />
           </div>
-          <input className="me-in me-num kav-add-num" type="number" placeholder="Luas kav" value={draft.luasKavling} onChange={(e) => setDraft((d) => ({ ...d, luasKavling: e.target.value }))} />
-          <div className="kav-add-lebar">
-            <SearchSelect value={draft.lebarKavling} options={lebarOpts} placeholder="— lebar —" onChange={(v) => setDraft((d) => ({ ...d, lebarKavling: v }))} />
-          </div>
+          <input className="me-in me-num kav-add-num" placeholder="Luas Tanah" value={draft.lebarKavling} onChange={(e) => setDraft((d) => ({ ...d, lebarKavling: e.target.value }))} />
           <button type="button" className="btn-primary sm" disabled={!draft.noKav.trim()} onClick={addKavling}>
             + Tambah
           </button>

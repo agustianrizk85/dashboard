@@ -1,45 +1,6 @@
-/* DataTable + SearchSelect — scoped under .pr-scope to inherit planning tokens
-   and avoid leaking into <head> globally after SPA nav. */
-
-/* ---- DataTable ---- */
-.pr-scope .dt { display: flex; flex-direction: column; gap: 10px; }
-.pr-scope .dt-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.pr-scope .dt-search {
-  flex: 1; min-width: 160px; max-width: 320px;
-  font-family: var(--font-body); font-size: 12.5px; color: var(--ink);
-  border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 11px; background: var(--panel);
-}
-.pr-scope .dt-search:focus { outline: none; border-color: var(--green-600); box-shadow: 0 0 0 3px rgba(14,77,38,.08); }
-.pr-scope .dt-toolbar-slot { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-
-.pr-scope .dt-scroll { overflow-x: auto; }
-.pr-scope .dt-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.pr-scope .dt-table thead th {
-  text-align: left; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
-  font-weight: 700; padding: 8px 10px; border-bottom: 1.5px solid var(--line); white-space: nowrap; user-select: none;
-}
-.pr-scope .dt-th-sort { cursor: pointer; }
-.pr-scope .dt-th-sort:hover { color: var(--ink); }
-.pr-scope .dt-th-inner { display: inline-flex; align-items: center; gap: 5px; }
-.pr-scope .dt-sort { font-size: 9px; color: var(--line-strong); }
-.pr-scope .dt-sort.asc, .pr-scope .dt-sort.desc { color: var(--green-700); }
-.pr-scope .dt-table tbody td { padding: 6px 10px; border-bottom: 1px solid var(--line); color: var(--ink); vertical-align: middle; }
-.pr-scope .dt-table tbody tr:last-child td { border-bottom: 0; }
-.pr-scope .dt-clickable { cursor: pointer; }
-.pr-scope .dt-clickable:hover td { background: var(--panel-2); }
-.pr-scope .dt-on td { background: var(--ok-bg); box-shadow: inset 3px 0 0 var(--green-600); }
-.pr-scope .dt-empty { color: var(--ink-3); font-style: italic; text-align: center; padding: 22px 10px !important; }
-
-.pr-scope .dt-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 2px; }
-.pr-scope .dt-count { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.pr-scope .dt-pager-btns { display: flex; align-items: center; gap: 4px; }
-.pr-scope .dt-pager-btns button {
-  width: 28px; height: 28px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink-2);
-  border-radius: 7px; cursor: pointer; font-size: 13px; display: grid; place-items: center;
-}
-.pr-scope .dt-pager-btns button:hover:not(:disabled) { background: var(--green-700); color: #fff; border-color: var(--green-700); }
-.pr-scope .dt-pager-btns button:disabled { opacity: .4; cursor: default; }
-.pr-scope .dt-page { font-size: 12px; color: var(--ink-2); font-weight: 600; padding: 0 6px; font-variant-numeric: tabular-nums; }
+/* SearchSelect — scoped under .pr-scope to inherit planning tokens and avoid
+   leaking into <head> globally after SPA nav. (DataTable's own styles moved to
+   the shared src/components/datatable.css — this file now only has SearchSelect.) */
 
 /* ---- SearchSelect ---- */
 .pr-scope .ss { position: relative; width: 100%; }

@@ -18,8 +18,11 @@ import "./saleswms.css";
 const MonevView = lazy(() => import("../monev/MonevView"));
 const ScreeningView = lazy(() => import("../staff/ScreeningView"));
 const CreditSimView = lazy(() => import("../staff/CreditSimView"));
+const SkpFormView = lazy(() => import("../skp/SkpFormView").then((m) => ({ default: m.SkpFormView })));
+const SkpProjectsPanel = lazy(() => import("../skp/SkpProjectsPanel").then((m) => ({ default: m.SkpProjectsPanel })));
+const UnitBookingPanel = lazy(() => import("../skp/UnitBookingPanel").then((m) => ({ default: m.UnitBookingPanel })));
 
-type Tab = "ringkasan" | "tower" | "board" | "screening" | "kredit" | "monev" | "pembelian" | "master";
+type Tab = "ringkasan" | "tower" | "board" | "screening" | "kredit" | "monev" | "pembelian" | "master" | "skp" | "skpmaster" | "booking";
 
 /**
  * WMS "Ops Console" chrome for non-all-access Sales staff/kadep — left sidebar +
@@ -31,9 +34,11 @@ type Tab = "ringkasan" | "tower" | "board" | "screening" | "kredit" | "monev" | 
  */
 export function SalesWmsShell() {
   const { user } = useAuth();
-  const canManage = !!user && user.role !== "viewer" && user.role !== "ceo";
+  // Only the Sales kadep manages Master Data — plain "sales" is field staff
+  // (Tim Sales / sales lapangan) and must not see it.
+  const canManage = user?.role === "kadep";
   const [tab, setTab] = useState<Tab>("ringkasan");
-  const active: Tab = tab === "master" && !canManage ? "ringkasan" : tab;
+  const active: Tab = (tab === "master" || tab === "skpmaster") && !canManage ? "ringkasan" : tab;
 
   const nav: WmsNavGroup[] = [
     {
@@ -49,6 +54,8 @@ export function SalesWmsShell() {
         { label: "Screening Konsumen", active: active === "screening", onClick: () => setTab("screening") },
         { label: "Simulasi Kredit", active: active === "kredit", onClick: () => setTab("kredit") },
         { label: "Sales Monev", active: active === "monev", onClick: () => setTab("monev") },
+        { label: "SKP", active: active === "skp", onClick: () => setTab("skp") },
+        { label: "Master Booking", active: active === "booking", onClick: () => setTab("booking") },
       ],
     },
     {
@@ -56,7 +63,12 @@ export function SalesWmsShell() {
       items: [
         { label: "Papan Tugas", active: active === "board", onClick: () => setTab("board") },
         { label: "Pembelian", active: active === "pembelian", onClick: () => setTab("pembelian") },
-        ...(canManage ? [{ label: "Master Data", active: active === "master", onClick: () => setTab("master") }] : []),
+        ...(canManage
+          ? [
+              { label: "Master Proyek SKP", active: active === "skpmaster", onClick: () => setTab("skpmaster") },
+              { label: "Master Data", active: active === "master", onClick: () => setTab("master") },
+            ]
+          : []),
       ],
     },
   ];
@@ -86,6 +98,12 @@ export function SalesWmsShell() {
           <MonevView />
         ) : active === "pembelian" ? (
           <PurchasingInbox />
+        ) : active === "skp" ? (
+          <SkpFormView />
+        ) : active === "booking" ? (
+          <UnitBookingPanel />
+        ) : active === "skpmaster" ? (
+          <SkpProjectsPanel />
         ) : active === "master" ? (
           <AdminView />
         ) : (

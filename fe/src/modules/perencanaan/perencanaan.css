@@ -1188,6 +1188,9 @@ body {
 .pr-scope .mp-note { font-size: 12px; color: var(--ink-3); }
 .pr-scope .master-products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 @media (max-width: 1000px) { .pr-scope .master-products-grid { grid-template-columns: 1fr; } }
+/* Master Produk (Grup GP + Tipe Bangunan) — ditumpuk, bukan berdampingan, biar
+   tabel Tipe Bangunan (kolomnya banyak) tidak sempit. */
+.pr-scope .master-products-stack { display: flex; flex-direction: column; gap: 16px; }
 .pr-scope .tag-added {
   margin-left: 7px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   color: var(--green-700); background: var(--ok-bg); padding: 1px 6px; border-radius: 5px;
@@ -1327,6 +1330,45 @@ body {
 .pr-scope .rv-btn.reject:hover { background: var(--bad); color: #fff; }
 .pr-scope .rv-btn.ai { background: #efeafc; border-color: transparent; color: #5a34c0; }
 .pr-scope .rv-btn.ai:hover { background: linear-gradient(135deg, #6d3fd0, #3f4fd0); color: #fff; }
+
+/* ---- Lampiran (multi-file attachments, separate from the single review Doc) ---- */
+.pr-scope .review-attach { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.pr-scope .review-attach-list { display: inline-flex; flex-wrap: wrap; gap: 5px; list-style: none; margin: 0; padding: 0; }
+.pr-scope .review-attach-list li {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 220px;
+  background: var(--panel); border: 1px solid var(--line-strong); border-radius: 7px;
+  padding: 3px 6px; font-size: 11px; color: var(--ink-2);
+}
+.pr-scope .review-attach-list a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; text-decoration: none; }
+.pr-scope .review-attach-list a:hover { color: var(--ink); text-decoration: underline; }
+.pr-scope .review-attach-size { color: var(--ink-3); font-size: 10px; white-space: nowrap; }
+.pr-scope .review-attach-del {
+  border: none; background: none; cursor: pointer; color: var(--ink-3); font-size: 11px;
+  line-height: 1; padding: 0 0 0 2px;
+}
+.pr-scope .review-attach-del:hover { color: var(--bad); }
+
+/* ---- Tipe Bangunan: reference-photo gallery (multi-upload) ---- */
+.pr-scope .bt-gallery { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.pr-scope .bt-thumb {
+  position: relative; width: 32px; height: 32px; border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--line-strong); flex: none; display: block;
+}
+.pr-scope .bt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pr-scope .bt-thumb-x {
+  position: absolute; top: -1px; right: -1px; width: 14px; height: 14px; line-height: 12px;
+  border: none; border-radius: 0 0 0 6px; background: var(--bad); color: #fff; font-size: 11px;
+  cursor: pointer; padding: 0; opacity: 0; transition: opacity .12s;
+}
+.pr-scope .bt-thumb:hover .bt-thumb-x { opacity: 1; }
+.pr-scope .bt-thumb-add {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px dashed var(--line-strong);
+  background: var(--panel); color: var(--ink-3); font-size: 15px; line-height: 1; cursor: pointer;
+  flex: none; display: flex; align-items: center; justify-content: center;
+}
+.pr-scope .bt-thumb-add:hover { border-color: var(--ok); color: var(--ok); }
+.pr-scope .bt-thumb-add:disabled { opacity: .6; cursor: default; }
+.pr-scope .bt-thumb-err { color: var(--bad); font-size: 13px; font-weight: 700; cursor: help; }
 
 /* ---- Deep Analisis: skill picker + live findings ---- */
 .pr-scope .gk-skillpick { display: flex; flex-direction: column; gap: 8px; }

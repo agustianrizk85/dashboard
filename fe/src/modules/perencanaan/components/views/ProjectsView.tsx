@@ -291,6 +291,7 @@ function TaskRow({
           taskId={task.id}
           status={task.status}
           doc={task.doc}
+          attachments={task.attachments}
           approvedBy={task.approvedBy}
           revisiNote={task.revisiNote}
           canUpload={editable}

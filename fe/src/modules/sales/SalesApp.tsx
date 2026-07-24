@@ -15,8 +15,10 @@ const MonevView = lazy(() => import("./monev/MonevView"));
 // Staff tools (Screening Konsumen + Simulasi Kredit) — code-split too.
 const ScreeningView = lazy(() => import("./staff/ScreeningView"));
 const CreditSimView = lazy(() => import("./staff/CreditSimView"));
+const SkpFormView = lazy(() => import("./skp/SkpFormView").then((m) => ({ default: m.SkpFormView })));
+const UnitBookingPanel = lazy(() => import("./skp/UnitBookingPanel").then((m) => ({ default: m.UnitBookingPanel })));
 
-type Tab = "tower" | "board" | "screening" | "kredit" | "monev" | "master" | "pembelian";
+type Tab = "tower" | "board" | "screening" | "kredit" | "monev" | "master" | "pembelian" | "skp" | "booking";
 
 const roleLabel: Record<string, string> = {
   ceo: "CEO",
@@ -100,6 +102,12 @@ export default function SalesApp() {
           <button className={`tab ${active === "monev" ? "on" : ""}`} onClick={() => setTab("monev")}>
             Sales Monev
           </button>
+          <button className={`tab ${active === "skp" ? "on" : ""}`} onClick={() => setTab("skp")}>
+            SKP
+          </button>
+          <button className={`tab ${active === "booking" ? "on" : ""}`} onClick={() => setTab("booking")}>
+            Master Booking
+          </button>
           <button className={`tab ${active === "pembelian" ? "on" : ""}`} onClick={() => setTab("pembelian")}>
             Pembelian
           </button>
@@ -128,6 +136,14 @@ export default function SalesApp() {
           ) : active === "monev" ? (
             <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Sales Monev…</div>}>
               <MonevView />
+            </Suspense>
+          ) : active === "skp" ? (
+            <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat SKP…</div>}>
+              <SkpFormView />
+            </Suspense>
+          ) : active === "booking" ? (
+            <Suspense fallback={<div style={{ padding: 24, color: "#6b766c" }}>Memuat Master Booking…</div>}>
+              <UnitBookingPanel />
             </Suspense>
           ) : (
             <ControlTowerView />

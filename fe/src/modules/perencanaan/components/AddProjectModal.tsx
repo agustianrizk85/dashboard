@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import type { AddProjectInput } from "../api/client";
-import type { GP, Lokasi } from "../types";
+import type { GP } from "../types";
 import { Modal } from "./Modal";
 import { SearchSelect } from "./SearchSelect";
 
@@ -13,12 +13,10 @@ import { SearchSelect } from "./SearchSelect";
  */
 export function AddProjectModal({
   gps,
-  lokasis,
   onClose,
   onCreated,
 }: {
   gps: GP[];
-  lokasis: Lokasi[];
   onClose: () => void;
   onCreated: (id: string) => void;
 }) {
@@ -79,13 +77,7 @@ export function AddProjectModal({
         </div>
         <label className="form-field">
           <span>Lokasi</span>
-          <SearchSelect
-            value={form.lokasi}
-            options={lokasis.map((l) => ({ value: l.name, label: l.name }))}
-            placeholder="— pilih lokasi —"
-            onChange={(v) => set("lokasi", v)}
-          />
-          {lokasis.length === 0 && <small className="form-hint">Buat Lokasi dulu di tab Master Produk.</small>}
+          <input value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} placeholder="Cileungsi, Bogor" />
         </label>
         <p className="form-note-soft">
           Jumlah Unit &amp; Tipe dihitung <b>otomatis</b> dari kavling — diisi di editor Kavling setelah proyek dibuat.

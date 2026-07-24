@@ -1,0 +1,28 @@
+/* Searchable dropdown for the SKP module (Master Proyek picker) — styled to
+   match the plain .sales-staff text inputs (staff.css). */
+.sales-staff .skp-ss { position: relative; }
+.sales-staff .skp-ss-input {
+  width: 100%; box-sizing: border-box;
+  padding: 9px 30px 9px 11px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--ink); background: #fff;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  outline: none; transition: border-color .12s, box-shadow .12s;
+}
+.sales-staff .skp-ss-input:focus {
+  border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(26, 165, 108, .15);
+}
+.sales-staff .skp-ss-caret { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--ink-3); font-size: 11px; }
+.sales-staff .skp-ss-menu {
+  position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 260px; overflow-y: auto; background: #fff;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .16); padding: 4px;
+}
+.sales-staff .skp-ss-opt {
+  display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left;
+  background: none; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+}
+.sales-staff .skp-ss-opt:hover, .sales-staff .skp-ss-opt.on { background: #eef6f0; }
+.sales-staff .skp-ss-opt-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+.sales-staff .skp-ss-opt-sub { font-size: 11.5px; color: var(--ink-3); }
+.sales-staff .skp-ss-empty { padding: 10px; color: var(--ink-3); font-size: 12.5px; }

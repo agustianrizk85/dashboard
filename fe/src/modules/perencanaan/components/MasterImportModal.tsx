@@ -5,8 +5,8 @@ import type { MasterImportResult, MasterImportRow, MasterKind } from "../api/cli
 import { Modal } from "./Modal";
 
 /**
- * MasterImportModal — generalized bulk-import for the four Master Produk targets
- * (GP, Tipe Bangunan, Lebar Kavling, Lokasi). Flow mirrors KavlingImportModal:
+ * MasterImportModal — generalized bulk-import for the Master Produk targets
+ * (GP, Tipe Bangunan). Flow mirrors KavlingImportModal:
  * paste OR upload XLSX/CSV → auto-detect an editable column mapping → preview →
  * commit via api.importMaster. Only the fields relevant to the kind are sent;
  * the backend matches by KEY (gp→code, others→name) and upserts or skips.
@@ -50,30 +50,16 @@ const CONFIGS: Record<MasterKind, KindConfig> = {
   tipe: {
     fields: [
       { field: "name", label: "Nama", kind: "text", keywords: ["nama", "name", "tipe", "type"] },
-      { field: "bangunan", label: "Bangunan", kind: "number", keywords: ["luasbangunan", "bangunan", "lb", "building"] },
-      { field: "tanah", label: "Tanah", kind: "number", keywords: ["luastanah", "tanah", "lt", "land"] },
+      { field: "bangunan", label: "Luas Bangunan", kind: "number", keywords: ["luasbangunan", "bangunan", "lb", "building"] },
+      { field: "tanah", label: "Luas Tanah", kind: "number", keywords: ["luastanah", "tanah", "lt", "land"] },
     ],
     keyField: "name",
     keyLabel: "Nama",
-    sampleHeader: ["Nama", "Bangunan", "Tanah"],
+    sampleHeader: ["Nama", "Luas Bangunan", "Luas Tanah"],
     sampleRows: [
       ["Garnet", 42, 32],
       ["Ruby", 42, 33],
     ],
-  },
-  lebar: {
-    fields: [{ field: "name", label: "Nama", kind: "text", keywords: ["nama", "name", "lebar", "width"] }],
-    keyField: "name",
-    keyLabel: "Nama",
-    sampleHeader: ["Nama"],
-    sampleRows: [["L4"], ["L5"], ["L3.5"]],
-  },
-  lokasi: {
-    fields: [{ field: "name", label: "Nama", kind: "text", keywords: ["nama", "name", "lokasi", "location"] }],
-    keyField: "name",
-    keyLabel: "Nama",
-    sampleHeader: ["Nama"],
-    sampleRows: [["Leuwinanggung"], ["Curug"]],
   },
 };
 

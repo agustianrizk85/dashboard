@@ -8,20 +8,20 @@ import { Modal } from "./Modal";
  * KavlingImportModal — bulk-create kavling from a pasted spreadsheet OR an
  * uploaded XLSX/CSV. Flow: parse → auto-detect column mapping (editable) →
  * preview → commit via api.importKavling. Only names are sent; the backend
- * resolves/creates Blok, Tipe and Lebar masters and upserts by No. Kav.
+ * resolves/creates Blok and Tipe masters and upserts by No. Kav.
  */
 
-/** The six importable targets, plus "" = abaikan (ignore this column). */
-type Field = "noKav" | "tipe" | "blok" | "bangunan" | "kavling" | "lebar" | "";
+/** The five importable targets, plus "" = abaikan (ignore this column). Lebar
+ *  is the plot size — it absorbed the old separate "Kavling (luas)" target. */
+type Field = "noKav" | "tipe" | "blok" | "bangunan" | "lebar" | "";
 
 const FIELD_OPTS: { value: Field; label: string }[] = [
   { value: "", label: "(abaikan)" },
   { value: "noKav", label: "No. Kav" },
   { value: "tipe", label: "Tipe" },
   { value: "blok", label: "Blok" },
-  { value: "bangunan", label: "Bangunan" },
-  { value: "kavling", label: "Kavling (luas)" },
-  { value: "lebar", label: "Lebar" },
+  { value: "bangunan", label: "Luas Bangunan" },
+  { value: "lebar", label: "Luas Tanah" },
 ];
 
 /** Normalize a header for keyword matching: lowercase, alphanumerics only. */
@@ -29,8 +29,8 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
  * Guess the target field for a header. Priority order matters so the ambiguous
- * "kavling" resolves right: the unit *number* (noKav) is matched before the plot
- * *area* (kavling luas).
+ * "kavling" resolves right: the unit *number* (noKav) is matched before the
+ * plot *size* (kavling luas / lebar — same target now).
  */
 function detect(header: string): Field {
   const n = norm(header);
@@ -39,7 +39,7 @@ function detect(header: string): Field {
   if (n.includes("tipe") || n.includes("type")) return "tipe";
   if (n.includes("blok") || n.includes("block") || n.includes("cluster")) return "blok";
   if (n.includes("luasbangunan") || n.includes("bangunan") || n === "lb" || n.includes("building")) return "bangunan";
-  if (n.includes("luaskavling") || n.includes("luastanah") || n === "lt" || n === "kavling" || n === "kav" || n === "luas") return "kavling";
+  if (n.includes("luaskavling") || n.includes("luastanah") || n === "lt" || n === "kavling" || n === "kav" || n === "luas") return "lebar";
   if (n.includes("lebar") || n.includes("width") || n.includes("frontage")) return "lebar";
   return "";
 }
@@ -63,6 +63,10 @@ const toInt = (s: string) => {
   return d ? parseInt(d, 10) : 0;
 };
 
+/** Fallback when the sheet has no Blok column: derive it from No Kav's letter
+ *  prefix ("A1" → "A", "B12" → "B"). Only used when Blok wasn't mapped/filled. */
+const blokFromNoKav = (noKav: string): string => (noKav.match(/^[A-Za-z]+/) ?? [""])[0];
+
 /** Split a raw matrix into header (first non-blank row) + the data rows after it. */
 function splitMatrix(m: string[][]): { header: string[]; data: string[][] } {
   let i = 0;
@@ -82,7 +86,6 @@ function summaryText(r: KavlingImportResult): string {
   const parts = [`✓ ${r.created} dibuat`, `${r.updated} diperbarui`];
   if (r.bloksCreated.length) parts.push(`blok baru: ${r.bloksCreated.join(", ")}`);
   if (r.typesCreated.length) parts.push(`tipe baru: ${r.typesCreated.join(", ")}`);
-  if (r.lebarsCreated.length) parts.push(`lebar baru: ${r.lebarsCreated.join(", ")}`);
   if (r.skipped.length) parts.push(`dilewati: ${r.skipped.length}`);
   return parts.join(" · ");
 }
@@ -166,12 +169,14 @@ export function KavlingImportModal({
     for (const r of data) {
       const noKav = get(r, "noKav");
       const tipe = get(r, "tipe");
-      const blok = get(r, "blok");
       const lebar = get(r, "lebar");
       const bg = get(r, "bangunan");
-      const kv = get(r, "kavling");
-      if (!noKav && !tipe && !blok && !lebar && !bg && !kv) continue; // fully blank
-      out.push({ noKav, tipe, blok, bangunan: toInt(bg), kavling: toInt(kv), lebar });
+      const blokRaw = get(r, "blok");
+      if (!noKav && !tipe && !blokRaw && !lebar && !bg) continue; // fully blank
+      // No Blok column mapped/found → fall back to No Kav's letter prefix so
+      // rows still land in the right blok instead of "unassigned".
+      const blok = blokRaw || blokFromNoKav(noKav);
+      out.push({ noKav, tipe, blok, bangunan: toInt(bg), lebar });
     }
     return out;
   }, [data, fieldCol]);
@@ -183,14 +188,14 @@ export function KavlingImportModal({
   // "Persentase" column is included on purpose to show it is ignored on import.
   const downloadTemplate = () => {
     const sample = [
-      ["No Kav", "Tipe", "Blok", "Bangunan", "Kavling", "Lebar", "Persentase"],
-      ["A1", "Garnet", "C", 42, 50, "L4", "100%"],
-      ["A2", "Garnet", "C", 42, 35, "L4", "80%"],
-      ["A3", "Ruby", "B", 42, 39, "L3.5", "60%"],
-      ["A4", "Ruby", "B", 42, 33, "L4", "40%"],
+      ["No Kav", "Tipe", "Blok", "Luas Bangunan", "Luas Tanah", "Persentase"],
+      ["A1", "Garnet", "C", 42, 50, "100%"],
+      ["A2", "Garnet", "C", 42, 35, "80%"],
+      ["A3", "Ruby", "B", 42, 39, "60%"],
+      ["A4", "Ruby", "B", 42, 33, "40%"],
     ];
     const ws = XLSX.utils.aoa_to_sheet(sample);
-    ws["!cols"] = [{ wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 11 }];
+    ws["!cols"] = [{ wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 11 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Kavling");
     XLSX.writeFile(wb, "contoh-import-kavling.xlsx");
@@ -230,7 +235,7 @@ export function KavlingImportModal({
       {mode === "paste" ? (
         <textarea
           className="kav-imp-ta"
-          placeholder={"Tempel dari Excel/Sheets (dengan baris judul).\nContoh:\nNo Kav\tTipe\tBlok\tLB\tLT\tLebar\nA1\tGarnet\tA\t36\t72\tL6"}
+          placeholder={"Tempel dari Excel/Sheets (dengan baris judul).\nContoh:\nNo Kav\tTipe\tBlok\tLuas Bangunan\tLuas Tanah\nA1\tGarnet\tA\t36\t72"}
           value={paste}
           onChange={(e) => onPaste(e.target.value)}
         />
@@ -271,9 +276,8 @@ export function KavlingImportModal({
                   <th>No Kav</th>
                   <th>Tipe</th>
                   <th>Blok</th>
-                  <th>Bangunan</th>
-                  <th>Kavling</th>
-                  <th>Lebar</th>
+                  <th>Luas Bangunan</th>
+                  <th>Luas Tanah</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,12 +287,11 @@ export function KavlingImportModal({
                     <td>{r.tipe}</td>
                     <td>{r.blok}</td>
                     <td className="num">{r.bangunan}</td>
-                    <td className="num">{r.kavling}</td>
                     <td>{r.lebar}</td>
                   </tr>
                 ))}
                 {preview.length === 0 && (
-                  <tr><td colSpan={6} className="note">Belum ada baris data.</td></tr>
+                  <tr><td colSpan={5} className="note">Belum ada baris data.</td></tr>
                 )}
               </tbody>
             </table>

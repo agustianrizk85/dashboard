@@ -1,9 +1,16 @@
 import { useRef, useState } from "react";
 import { api } from "../api/client";
-import type { TaskDoc, TaskStatus } from "../types";
+import type { TaskAttachment, TaskDoc, TaskStatus } from "../types";
 import { picName } from "../lib/format";
 import { PdfViewerModal } from "./PdfViewerModal";
 import { TaskDeepAnalisisModal } from "./TaskDeepAnalisisModal";
+
+/** "2.4 MB" / "312 KB" / "980 B". */
+function fmtSize(n: number): string {
+  if (n >= 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + " MB";
+  if (n >= 1024) return (n / 1024).toFixed(1) + " KB";
+  return n + " B";
+}
 
 /**
  * ReviewControls renders the review document workflow for a single task:
@@ -18,6 +25,7 @@ export function ReviewControls({
   taskId,
   status,
   doc,
+  attachments,
   approvedBy,
   revisiNote,
   canUpload,
@@ -29,6 +37,8 @@ export function ReviewControls({
   taskId: string;
   status: TaskStatus;
   doc?: TaskDoc;
+  /** Extra files beyond the single review Doc — any type, multiple at once. */
+  attachments?: TaskAttachment[];
   approvedBy?: string;
   revisiNote?: string;
   canUpload: boolean;
@@ -37,10 +47,42 @@ export function ReviewControls({
   onDone: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const multiRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [view, setView] = useState<{ url: string; name: string } | null>(null);
   const [analisis, setAnalisis] = useState(false);
+  const [uploadingMulti, setUploadingMulti] = useState(0); // count still in flight, for the button label
+
+  const onPickMulti = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ""; // allow re-picking the same file(s)
+    if (files.length === 0) return;
+    setErr("");
+    setUploadingMulti(files.length);
+    for (const f of files) {
+      try {
+        await api.uploadTaskAttachment(projectId, taskId, f);
+        setUploadingMulti((n) => Math.max(0, n - 1));
+      } catch (e2) {
+        setErr(e2 instanceof Error ? e2.message : String(e2));
+        setUploadingMulti(0);
+        break;
+      }
+    }
+    onDone();
+  };
+
+  const delAttachment = async (attId: string) => {
+    if (!window.confirm("Hapus lampiran ini?")) return;
+    setErr("");
+    try {
+      await api.deleteTaskAttachment(projectId, taskId, attId);
+      onDone();
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : String(e2));
+    }
+  };
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(label);
@@ -99,9 +141,10 @@ export function ReviewControls({
 
   const showUpload = canUpload && status !== "done" && status !== "todo";
   const showApprove = canApprove && status === "review" && !!doc;
+  const hasAttachments = !!attachments && attachments.length > 0;
 
-  // Nothing to show (e.g. a todo task for a non-uploader).
-  if (!doc && !showUpload) return null;
+  // Nothing to show (e.g. a todo task for a non-uploader with no files).
+  if (!doc && !showUpload && !hasAttachments) return null;
 
   return (
     <div className="review">
@@ -129,6 +172,38 @@ export function ReviewControls({
       {/* Always available to uploaders so re-upload works even from the viewer
           when the task is already Selesai (which re-opens Review). */}
       {canUpload && <input ref={fileRef} type="file" accept="application/pdf" hidden onChange={onPick} />}
+
+      {/* Lampiran — any type, multiple files at once, separate from the single
+          review Doc above. */}
+      {(hasAttachments || canUpload) && (
+        <div className="review-attach">
+          {hasAttachments && (
+            <ul className="review-attach-list">
+              {attachments!.map((a) => (
+                <li key={a.id}>
+                  <a href={api.taskAttachmentUrl(projectId, taskId, a.id)} target="_blank" rel="noreferrer" title={`diunggah ${picName(a.by)}`}>
+                    📎 {a.name}
+                  </a>
+                  <span className="review-attach-size">{fmtSize(a.size)}</span>
+                  {canUpload && (
+                    <button type="button" className="review-attach-del" title="Hapus lampiran" onClick={() => void delAttachment(a.id)}>
+                      ✕
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {canUpload && (
+            <>
+              <input ref={multiRef} type="file" multiple hidden onChange={onPickMulti} />
+              <button type="button" className="rv-btn" disabled={uploadingMulti > 0} onClick={() => multiRef.current?.click()}>
+                {uploadingMulti > 0 ? `Mengunggah… (${uploadingMulti} lagi)` : "+ Lampiran"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="review-btns">
         {(canUpload || canApprove) && (

@@ -104,7 +104,8 @@ export interface Blok {
   name: string;
 }
 
-/** One unit/plot: sits in a Blok, built to a BuildingType. */
+/** One unit/plot: sits in a Blok, built to a BuildingType. lebarKavling is the
+ *  plot size (absorbed the old separate "Luas Kavling" number field). */
 export interface Kavling {
   id: string;
   projectId: string;
@@ -112,7 +113,6 @@ export interface Kavling {
   noKav: string;
   typeId: string;
   luasBangunan: number;
-  luasKavling: number;
   lebarKavling: string;
 }
 
@@ -295,24 +295,23 @@ export interface GP {
   name: string;
 }
 
+/** A reference photo attached to a house-type master (denah / contoh rumah). */
+export interface BuildingTypeImage {
+  id: string;
+  name: string;
+  size: number;
+  mime: string;
+  by: string;
+  at: string;
+}
+
 /** Reusable house-type master (Garnet, Ruby, …) with standard building + land area. */
 export interface BuildingType {
   id: string;
   name: string;
   luasBangunan: number;
   luasTanah: number;
-}
-
-/** Kavling frontage category master (L3.5, L4, L5). */
-export interface Lebar {
-  id: string;
-  name: string;
-}
-
-/** Location master (Leuwinanggung, Curug, …) reused across projects. */
-export interface Lokasi {
-  id: string;
-  name: string;
+  images?: BuildingTypeImage[];
 }
 
 export interface MasterData {
@@ -322,8 +321,6 @@ export interface MasterData {
   divisions: DivisionInfo[];
   gps: GP[];
   types: BuildingType[];
-  lebars: Lebar[];
-  lokasis: Lokasi[];
   seedCount: number;
 }
 

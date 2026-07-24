@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -38,12 +38,16 @@ interface Sales {
   email: string;
   name: string;
 }
+interface MasterNameLink {
+  name: string;
+}
 interface Project {
   id: number;
   name: string;
   note: string;
   accounts: Acct[] | null;
   sales: Sales[] | null;
+  masterNames: MasterNameLink[] | null;
 }
 interface Opt {
   ref: string;
@@ -60,8 +64,8 @@ interface MasterProj {
   lokasi: string;
 }
 
-const emptyDraft = { id: 0, name: "", note: "", wa: new Set<string>(), ig: new Set<string>(), ad: new Set<string>(), sales: new Set<string>() };
-type Draft = { id: number; name: string; note: string; wa: Set<string>; ig: Set<string>; ad: Set<string>; sales: Set<string> };
+const emptyDraft = { id: 0, name: "", note: "", wa: new Set<string>(), ig: new Set<string>(), ad: new Set<string>(), sales: new Set<string>(), masterNames: new Set<string>() };
+type Draft = { id: number; name: string; note: string; wa: Set<string>; ig: Set<string>; ad: Set<string>; sales: Set<string>; masterNames: Set<string> };
 
 export function ProjectsPanel() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -158,6 +162,7 @@ export function ProjectsPanel() {
       ig: new Set((p.accounts ?? []).filter((a) => a.kind === "ig").map((a) => a.ref)),
       ad: new Set((p.accounts ?? []).filter((a) => a.kind === "ad").map((a) => a.ref)),
       sales: new Set((p.sales ?? []).map((s) => s.email)),
+      masterNames: new Set((p.masterNames ?? []).map((m) => m.name)),
     });
   };
 
@@ -175,11 +180,12 @@ export function ProjectsPanel() {
       ...[...draft.ad].map((ref) => ({ kind: "ad" as const, ref, label: adOpts.find((o) => o.ref === ref)?.label ?? ref })),
     ];
     const sales: Sales[] = [...draft.sales].map((email) => ({ email, name: users.find((u) => u.email === email)?.name ?? email }));
+    const masterNames: MasterNameLink[] = [...draft.masterNames].map((name) => ({ name }));
     try {
       const r = await fetch(`${META}/meta/projects`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ id: draft.id, name: draft.name.trim(), note: draft.note.trim(), accounts, sales }),
+        body: JSON.stringify({ id: draft.id, name: draft.name.trim(), note: draft.note.trim(), accounts, sales, masterNames }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
       setMsg(draft.id ? "Proyek diperbarui." : "Proyek dibuat.");
@@ -239,25 +245,37 @@ export function ProjectsPanel() {
         {/* ── Editor ── */}
         <div className="wms-card wms-col-5">
           <div className="wms-card-h"><h3>{draft.id ? "Edit Proyek" : "Proyek Baru"}</h3></div>
-          <div className="wms-field">
-            <span>Nama Proyek <small>(dari master Perencanaan)</small></span>
-            {masterProjects.length === 0 ? (
-              <>
-                <input value={draft.name} placeholder="mis. Green Park Serua" onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-                <div className="wms-note small">Master proyek Perencanaan tidak tersedia — ketik manual.</div>
-              </>
-            ) : (
-              <ProjectCombobox
-                projects={masterProjects}
-                value={draft.name}
-                onSelect={(m) => setDraft((d) => ({ ...d, name: m.name, note: d.note.trim() ? d.note : m.lokasi }))}
-              />
-            )}
-          </div>
+          <label className="wms-field">
+            <span>Nama Proyek <small>(label bebas, mis. "Team GP 1")</small></span>
+            <input value={draft.name} placeholder="mis. Team GP 1" onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+          </label>
           <label className="wms-field">
             <span>Catatan <small>(opsional)</small></span>
             <input value={draft.note} placeholder="lokasi / keterangan" onChange={(e) => setDraft({ ...draft, note: e.target.value })} />
           </label>
+
+          <div className="wms-field">
+            <span>
+              Proyek Perencanaan Terkait <small>(opsional, bisa lebih dari satu)</small>{" "}
+              {masterProjects.length > 0 && <small>({draft.masterNames.size}/{masterProjects.length} dipilih)</small>}
+            </span>
+            {masterProjects.length === 0 ? (
+              <div className="wms-note small">Master proyek Perencanaan tidak tersedia.</div>
+            ) : (
+              <PickerTable
+                items={masterProjects}
+                getKey={(m) => m.name}
+                columns={[
+                  { id: "name", header: "Nama Proyek", value: (m) => (m.gp ? `${m.gp} · ${m.name}` : m.name) },
+                  { id: "lokasi", header: "Lokasi", value: (m) => m.lokasi, muted: true },
+                ]}
+                selected={draft.masterNames}
+                onChange={(next) => setDraft((d) => ({ ...d, masterNames: next }))}
+                searchPlaceholder="Cari proyek Perencanaan…"
+                emptyText="Tidak ada yang cocok."
+              />
+            )}
+          </div>
 
           {checkGroup("Nomor WhatsApp", waOpts, "Belum ada nomor WA terhubung.", "wa", "Nomor WA", "Cari nomor WA…")}
           {checkGroup("Akun Instagram", igOpts, "Belum ada akun IG terhubung.", "ig", "Akun IG", "Cari akun IG…")}
@@ -308,6 +326,11 @@ export function ProjectsPanel() {
                   </div>
                 </div>
                 {p.note && <div className="wms-note small" style={{ margin: "2px 0 0" }}>{p.note}</div>}
+                {(p.masterNames ?? []).length > 0 && (
+                  <div className="wms-note small" style={{ margin: "2px 0 0" }}>
+                    Perencanaan: {(p.masterNames ?? []).map((m) => m.name).join(", ")}
+                  </div>
+                )}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                   {(p.accounts ?? []).map((a, i) => (
                     <span key={i} className="wms-badge grey">
@@ -396,9 +419,9 @@ function PickerTable<T>({
           id: c.id,
           header: c.header,
           accessorFn: (item) => c.value(item),
-          cell: c.muted
-            ? ({ row }) => <span style={{ color: "var(--wms-muted)" }}>{c.value(row.original)}</span>
-            : undefined,
+          cell: ({ row }) => (
+            <span style={c.muted ? { color: "var(--wms-muted)" } : undefined}>{c.value(row.original)}</span>
+          ),
         }),
       ),
     ],
@@ -474,133 +497,6 @@ function PickerTable<T>({
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-/* ── Project combobox: type-to-search over the Perencanaan master list. ──
- * Dropdown height is capped at ~4 rows (scroll for the rest). Selecting only
- * happens via a list pick, so a legacy name that isn't in the master survives
- * until the user deliberately replaces it. */
-const CB_ROW = 44; // approx px per option → 4 rows visible before scroll
-function ProjectCombobox({
-  projects,
-  value,
-  onSelect,
-}: {
-  projects: MasterProj[];
-  value: string;
-  onSelect: (p: MasterProj) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-
-  const q = query.trim().toLowerCase();
-  const filtered = useMemo(
-    () => (q ? projects.filter((p) => `${p.gp} ${p.name} ${p.lokasi}`.toLowerCase().includes(q)) : projects),
-    [projects, q],
-  );
-
-  // Close when clicking outside.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  // Keep the highlighted row in range and scrolled into view (keyboard nav).
-  useEffect(() => {
-    if (active > filtered.length - 1) setActive(Math.max(0, filtered.length - 1));
-  }, [filtered.length, active]);
-  useEffect(() => {
-    if (open) (listRef.current?.children[active] as HTMLElement | undefined)?.scrollIntoView({ block: "nearest" });
-  }, [active, open]);
-
-  const choose = (p: MasterProj) => {
-    onSelect(p);
-    setQuery("");
-    setOpen(false);
-  };
-
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setOpen(true);
-      setActive((a) => Math.min(a + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActive((a) => Math.max(a - 1, 0));
-    } else if (e.key === "Enter") {
-      if (open && filtered[active]) {
-        e.preventDefault();
-        choose(filtered[active]);
-      }
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  };
-
-  return (
-    <div ref={boxRef} style={{ position: "relative" }}>
-      <input
-        value={open ? query : value}
-        placeholder={value || "Cari / pilih proyek…"}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); setActive(0); }}
-        onFocus={() => { setOpen(true); setQuery(""); setActive(0); }}
-        onKeyDown={onKey}
-        role="combobox"
-        aria-expanded={open}
-        aria-controls="proj-cb-list"
-        autoComplete="off"
-        style={{ width: "100%" }}
-      />
-      {open && (
-        <ul
-          id="proj-cb-list"
-          ref={listRef}
-          role="listbox"
-          style={{
-            position: "absolute", zIndex: 30, top: "calc(100% + 4px)", left: 0, right: 0,
-            margin: 0, padding: 4, listStyle: "none",
-            maxHeight: CB_ROW * 4, overflowY: "auto",
-            background: "var(--wms-panel)", border: "1px solid var(--wms-line)",
-            borderRadius: "var(--wms-radius-sm)", boxShadow: "0 8px 24px rgba(0,0,0,.12)",
-          }}
-        >
-          {filtered.length === 0 ? (
-            <li style={{ padding: "10px 10px", color: "var(--wms-muted)", fontSize: 12.5 }}>Tidak ada proyek cocok.</li>
-          ) : (
-            filtered.map((p, i) => {
-              const selected = p.name === value;
-              return (
-                <li
-                  key={p.id}
-                  role="option"
-                  aria-selected={selected}
-                  onMouseDown={(e) => { e.preventDefault(); choose(p); }}
-                  onMouseEnter={() => setActive(i)}
-                  style={{
-                    padding: "7px 10px", borderRadius: 6, cursor: "pointer",
-                    background: i === active ? "var(--wms-green-50)" : "transparent",
-                    display: "flex", flexDirection: "column", gap: 1,
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: selected ? 700 : 500, color: "var(--wms-ink)" }}>
-                    {p.gp ? `${p.gp} · ` : ""}{p.name}{selected ? " ✓" : ""}
-                  </span>
-                  {p.lokasi && <span style={{ fontSize: 11.5, color: "var(--wms-muted)" }}>{p.lokasi}</span>}
-                </li>
-              );
-            })
-          )}
-        </ul>
-      )}
     </div>
   );
 }

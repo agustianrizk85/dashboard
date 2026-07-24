@@ -4,13 +4,12 @@ import type {
   AuthUser,
   Blok,
   BuildingType,
+  BuildingTypeImage,
   Division,
   DivisionOutputs,
   GKFinding,
   GP,
   Kavling,
-  Lebar,
-  Lokasi,
   MasterData,
   ProjectDetail,
   ProjectRollup,
@@ -140,8 +139,7 @@ export interface KavlingImportRow {
   tipe: string; // BuildingType name
   blok: string; // Blok name
   bangunan: number; // luas bangunan (0 if unknown)
-  kavling: number; // luas kavling / tanah (0 if unknown)
-  lebar: string; // Lebar name
+  lebar: string; // plot size — absorbed the old separate "Kavling" (luas) column
 }
 
 /** A row the backend refused (e.g. blank No. Kav), with a human reason. */
@@ -157,7 +155,6 @@ export interface KavlingImportResult {
   updated: number;
   bloksCreated: string[];
   typesCreated: string[];
-  lebarsCreated: string[];
   skipped: KavlingImportSkip[];
 }
 
@@ -178,11 +175,11 @@ export interface TaskImportResult {
   skipped: { row: number; key: string; reason: string }[];
 }
 
-/** The four Master Produk targets for bulk import. */
-export type MasterKind = "gp" | "tipe" | "lebar" | "lokasi";
+/** The Master Produk targets for bulk import. */
+export type MasterKind = "gp" | "tipe";
 
 /** One row to bulk-import into a produk master. Only the fields relevant to the
- *  kind are sent (gp: code+name; tipe: name+bangunan+tanah; lebar/lokasi: name). */
+ *  kind are sent (gp: code+name; tipe: name+bangunan+tanah). */
 export interface MasterImportRow {
   code?: string;
   name?: string;
@@ -199,7 +196,8 @@ export interface MasterImportResult {
 
 /** One row to bulk-import into the project portfolio. Only these four fields are
  *  sent; `luas` stays a STRING (e.g. "4.653 m²"). The backend resolves/creates
- *  any missing GP + Lokasi masters and creates projects (no update). */
+ *  any missing GP master and creates projects (no update); `lokasi` is stored
+ *  as free text directly on the project. */
 export interface ProjectImportRow {
   name: string;
   gp: string;
@@ -213,7 +211,6 @@ export interface ProjectImportResult {
   created: number;
   updated: number;
   gpsCreated: string[];
-  lokasiCreated: string[];
   skipped: { row: number; key: string; reason: string }[];
 }
 
@@ -325,6 +322,14 @@ export const api = {
       fd.append("file", file);
       xhr.send(fd);
     }),
+
+  /** Direct URL to stream/download one task attachment (self-validated ?token=). */
+  taskAttachmentUrl: (projectId: string, taskId: string, attId: string, download?: boolean): string =>
+    `${BASE}/board/task/${projectId}/${taskId}/attachments/${attId}?token=${encodeURIComponent(token)}` +
+    (download ? "&download=1" : ""),
+
+  deleteTaskAttachment: (projectId: string, taskId: string, attId: string) =>
+    request<{ status: string }>("DELETE", `/board/task/${projectId}/${taskId}/attachments/${attId}`),
 
   // --- Dynamic deliverable structure editing (CEO/Kadep) ---
   addTask: (projectId: string, input: AddTaskInput) =>
@@ -498,11 +503,55 @@ export const api = {
       : request<BuildingType>("POST", "/building-types", t),
   deleteBuildingType: (id: string) => request<{ status: string }>("DELETE", `/building-types/${id}`),
 
-  // --- Lebar + Lokasi masters ---
-  saveLebar: (l: Partial<Lebar>) => (l.id ? request<Lebar>("PATCH", `/lebars/${l.id}`, l) : request<Lebar>("POST", "/lebars", l)),
-  deleteLebar: (id: string) => request<{ status: string }>("DELETE", `/lebars/${id}`),
-  saveLokasi: (l: Partial<Lokasi>) => (l.id ? request<Lokasi>("PATCH", `/lokasis/${l.id}`, l) : request<Lokasi>("POST", "/lokasis", l)),
-  deleteLokasi: (id: string) => request<{ status: string }>("DELETE", `/lokasis/${id}`),
+  // Reference-photo gallery per house-type master (multi-file, ≤1 GiB each).
+  // Multipart XHR so callers get progress; rejects locally for files over 1 GiB.
+  uploadBuildingTypeImage: (typeId: string, file: File, onProgress?: (pct: number) => void): Promise<BuildingTypeImage> =>
+    new Promise((resolve, reject) => {
+      if (file.size > 1 << 30) {
+        reject(new ApiError("Maksimal 1GB", 413));
+        return;
+      }
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${BASE}/building-types/${typeId}/images`);
+      if (token) xhr.setRequestHeader("Authorization", "Bearer " + token);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status === 401) {
+          setToken("");
+          onUnauthorized();
+          reject(new ApiError("Sesi berakhir — silakan login kembali.", 401));
+          return;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText) as BuildingTypeImage);
+          } catch {
+            reject(new ApiError("Respons server tidak valid.", xhr.status));
+          }
+          return;
+        }
+        let detail = "";
+        try {
+          detail = (JSON.parse(xhr.responseText) as { error?: string }).error ?? "";
+        } catch {
+          /* no JSON body */
+        }
+        reject(new ApiError(detail || `HTTP ${xhr.status}`, xhr.status));
+      };
+      xhr.onerror = () => reject(new ApiError("Gagal mengunggah — jaringan bermasalah.", 0));
+      const fd = new FormData();
+      fd.append("file", file);
+      xhr.send(fd);
+    }),
+
+  /** Direct URL to stream/download one reference photo (self-validated ?token=). */
+  buildingTypeImageUrl: (typeId: string, imgId: string, download?: boolean): string =>
+    `${BASE}/building-types/${typeId}/images/${imgId}?token=${encodeURIComponent(token)}` + (download ? "&download=1" : ""),
+
+  deleteBuildingTypeImage: (typeId: string, imgId: string) =>
+    request<{ status: string }>("DELETE", `/building-types/${typeId}/images/${imgId}`),
 
   // --- Blok + Kavling per project (Fase 2) ---
   saveBlok: (projectId: string, b: Partial<Blok>) =>
@@ -520,12 +569,12 @@ export const api = {
   // Bulk-create/update kavling from a pasted spreadsheet or an uploaded file.
   importKavling: (projectId: string, rows: KavlingImportRow[], upsert: boolean) =>
     request<KavlingImportResult>("POST", `/projects/${projectId}/kavling/import`, { rows, upsert }),
-  // Bulk-create/update a produk master (gp/tipe/lebar/lokasi) from paste/file.
+  // Bulk-create/update a produk master (gp/tipe) from paste/file.
   importMaster: (kind: MasterKind, rows: MasterImportRow[], upsert: boolean) =>
     request<MasterImportResult>("POST", "/master/import", { kind, rows, upsert }),
   // Bulk-create projects from a pasted spreadsheet or an uploaded file. One
   // shared deliverable template (sitePlans/includeUnit/includeKawasan) applies
-  // to every imported project; missing GP + Lokasi masters are auto-created.
+  // to every imported project; missing GP master is auto-created.
   importProjects: (
     rows: ProjectImportRow[],
     opts: { sitePlans: number; includeUnit: boolean; includeKawasan: boolean; skipExisting: boolean },

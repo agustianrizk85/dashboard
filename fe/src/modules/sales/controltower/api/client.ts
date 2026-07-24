@@ -1,5 +1,6 @@
 import type { Alert, AutoSyncStatus, Dashboard, ImportRecord, ImportResult, LoginResponse, User } from "../types";
 import type { AssessRequest, ScreeningQuestion, ScreeningSubmission } from "../../staff/types";
+import type { Skp, SkpProjectTemplate, UnitBooking } from "../../skp/types";
 
 /** AI Alert & Action Plan response (OpenRouter, with rule-based fallback). */
 export interface AiAlerts {
@@ -104,6 +105,26 @@ export const api = {
   assessScreening: (body: AssessRequest) => req<ScreeningSubmission>("POST", "/screening/assess", body),
   deleteScreening: (id: string) =>
     req<{ status: string }>("DELETE", `/screening/submissions/${encodeURIComponent(id)}`),
+
+  // ---- SKP (Surat Konfirmasi Pesanan) ----
+  /** Any logged-in sales user reads the project templates (prefill a new SKP). */
+  skpProjectTemplates: () => req<SkpProjectTemplate[]>("GET", "/skp/projects"),
+  /** Create/update a project template (Kadep/admin only — backend enforces). */
+  saveSkpProjectTemplate: (t: SkpProjectTemplate) => req<SkpProjectTemplate>("POST", "/skp/projects", t),
+  deleteSkpProjectTemplate: (id: string) =>
+    req<{ status: string }>("DELETE", `/skp/projects/${encodeURIComponent(id)}`),
+  /** Staff sees only their own SKPs; the Kadep sees every one. */
+  skpList: () => req<Skp[]>("GET", "/skp"),
+  saveSkp: (s: Skp) => req<Skp>("POST", "/skp", s),
+  deleteSkp: (id: string) => req<{ status: string }>("DELETE", `/skp/${encodeURIComponent(id)}`),
+
+  // ---- Master Booking (unit status: tersedia/booked/terjual) ----
+  /** Any logged-in sales user reads it (avoid double-booking a unit). */
+  unitBookings: () => req<UnitBooking[]>("GET", "/skp/units"),
+  /** Create/update a unit's status (Kadep/admin only — backend enforces). New
+   *  SKPs auto-flip a unit to "booked"; this is for manual inventory setup. */
+  saveUnitBooking: (u: UnitBooking) => req<UnitBooking>("POST", "/skp/units", u),
+  deleteUnitBooking: (id: string) => req<{ status: string }>("DELETE", `/skp/units/${encodeURIComponent(id)}`),
 
   // ---- import / upload pipeline ----
   importPreview: (file: File) => upload<ImportResult>("/import/preview", file),

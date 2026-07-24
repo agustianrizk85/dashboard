@@ -168,6 +168,7 @@ export function MyTasksView({
                       taskId={t.id}
                       status={t.status}
                       doc={t.doc}
+                      attachments={t.attachments}
                       approvedBy={t.approvedBy}
                       revisiNote={t.revisiNote}
                       canUpload={editable}

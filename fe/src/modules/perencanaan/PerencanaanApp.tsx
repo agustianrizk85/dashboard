@@ -26,8 +26,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import type { DivisionOutputs, ProjectRollup, Summary } from "./types";
 import "./perencanaan.css";
 
-// Full operational menu — managers (Kadep) only.
-const SECTIONS = [
+// Base menu — every account in the department sees these, Kadep or not.
+const COMMON_SECTIONS = [
   { key: "", label: "Ringkasan" },
   { key: "projects", label: "Proyek" },
   // "Tugas Saya" is now folded into the unified board: the caller's formal
@@ -35,20 +35,20 @@ const SECTIONS = [
   { key: "board", label: "Papan Tugas" },
   { key: "outputs", label: "Output Divisi" },
   { key: "workdrawings", label: "Gambar Kerja" },
+];
+
+// Extra manager-only sections appended after the common menu (Kadep/CEO).
+const MANAGER_SECTIONS = [
   { key: "staff", label: "Tim" },
   { key: "master", label: "Data Master" },
 ];
+
+const SECTIONS = [...COMMON_SECTIONS, ...MANAGER_SECTIONS];
 
 // AI tools (Kadep/CEO only) — grouped under an "AI" heading in the sidebar.
 const AI_SECTIONS = [
   { key: "skill", label: "Skill" },
   { key: "model", label: "Model" },
-];
-
-// Staff (arsitek/drafter, i.e. non-Kadep) get a deliberately minimal menu: their
-// own tasks plus the two communication tools. Everything else is manager-only.
-const STAFF_SECTIONS = [
-  { key: "board", label: "Papan Tugas" },
 ];
 
 function Loading() {
@@ -121,8 +121,9 @@ function PerencanaanWmsLayout() {
     roster,
   };
 
-  // Managers (Kadep) see the full operational menu; staff only their own tasks.
-  const menu = canManage ? SECTIONS : STAFF_SECTIONS;
+  // Managers (Kadep) see the full operational menu; staff get the common menu
+  // (Ringkasan, Proyek, Papan Tugas, Output Divisi) without the manager-only tools.
+  const menu = canManage ? SECTIONS : COMMON_SECTIONS;
   const groups: WmsNavGroup[] = [
     {
       heading: "Menu",
@@ -244,17 +245,21 @@ export default function PerencanaanApp() {
               </>
             ) : (
               <>
-                {/* Staff: the unified board is their primary work view (their formal
-                    tasks appear as cards there). Everything else is manager-only. */}
-                <Route index element={<Navigate to="/perencanaan/board" replace />} />
+                {/* Staff: common menu (Ringkasan, Proyek, Papan Tugas, Output Divisi,
+                    Gambar Kerja) — read-only where relevant (canManage=false gates edit
+                    controls inside each view). Tim / Data Master stay manager-only. */}
+                <Route index element={<PerencanaanOverviewWms />} />
+                <Route path="projects" element={<ProjectsSection />} />
                 <Route path="tasks" element={<Navigate to="/perencanaan/board" replace />} />
                 <Route path="board" element={<BoardView boardName="Departemen Perencanaan" />} />
+                <Route path="outputs" element={<OutputsSection />} />
+                <Route path="workdrawings" element={<WorkDrawingsSection />} />
               </>
             )}
             {/* Communication tools available to everyone. */}
             <Route path="chat" element={<ChatView />} />
             <Route path="inbox" element={<MessagesPane mode="dms" />} />
-            <Route path="*" element={<Navigate to={canManage ? "/perencanaan" : "/perencanaan/board"} replace />} />
+            <Route path="*" element={<Navigate to="/perencanaan" replace />} />
           </Route>
         </Routes>
       ) : (

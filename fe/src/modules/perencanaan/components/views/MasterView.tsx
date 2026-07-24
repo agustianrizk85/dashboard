@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
-import type { MasterKind } from "../../api/client";
 import type { AccountInfo, BuildingType, Division, DivisionInfo, GP, MasterData, MasterProjectInfo, ProjectDetail, Task } from "../../types";
 import { picName } from "../../lib/format";
 import { InfoTip } from "../ui";
@@ -11,7 +10,7 @@ import { MasterImportModal } from "../MasterImportModal";
 import { AddProjectModal } from "../AddProjectModal";
 import { ProjectImportModal } from "../ProjectImportModal";
 import { KavlingEditor } from "./KavlingEditor";
-import { DataTable } from "../DataTable";
+import { DataTable } from "@/components/DataTable";
 import { SearchSelect } from "../SearchSelect";
 
 const CATEGORIES = ["Site Plan", "Desain Unit Hunian", "Desain Kawasan"];
@@ -179,7 +178,7 @@ export function MasterView({
       <div className="master-subtabs">
         {([
           { key: "proyek", label: "Proyek", n: data.projects.length },
-          { key: "produk", label: "Master Produk", n: data.gps.length + data.types.length + data.lebars.length + data.lokasis.length },
+          { key: "produk", label: "Master Produk", n: data.gps.length + data.types.length },
           { key: "tim", label: "Tim & Divisi", n: data.accounts.length },
           { key: "kavling", label: "Kavling & Blok" },
           { key: "deliverable", label: "Deliverable" },
@@ -225,11 +224,9 @@ export function MasterView({
             <span className="mp-eyebrow">Master Produk</span>
             <span className="mp-note">Dipakai ulang antar proyek — isi ini dulu sebelum membuat proyek &amp; kavling.</span>
           </div>
-          <div className="master-products-grid">
+          <div className="master-products-stack">
             <GPMaster gps={data.gps} canManage={canManage} onChanged={load} />
             <TypeMaster types={data.types} canManage={canManage} onChanged={load} />
-            <SimpleMaster title="Lebar Kavling" importKind="lebar" tip="Kategori lebar (L3.5, L4, L5). Kavling memilih dari sini." placeholder="mis. L4" items={data.lebars} canManage={canManage} reload={load} save={(v) => api.saveLebar(v).then(load)} del={(id) => api.deleteLebar(id).then(load)} />
-            <SimpleMaster title="Lokasi" importKind="lokasi" tip="Master lokasi. Proyek memilih dari sini (bukan ketik bebas)." placeholder="mis. Leuwinanggung" items={data.lokasis} canManage={canManage} reload={load} save={(v) => api.saveLokasi(v).then(load)} del={(id) => api.deleteLokasi(id).then(load)} />
           </div>
         </>
       )}
@@ -287,7 +284,7 @@ export function MasterView({
 
       {sub === "kavling" &&
         (selectedId ? (
-          <KavlingEditor key={`kav-${selectedId}`} projectId={selectedId} types={data.types} lebars={data.lebars} canManage={canManage} onChanged={load} />
+          <KavlingEditor key={`kav-${selectedId}`} projectId={selectedId} types={data.types} canManage={canManage} onChanged={load} />
         ) : (
           <div className="empty-note">Pilih proyek di atas untuk mengelola kavling &amp; blok.</div>
         ))}
@@ -312,7 +309,6 @@ export function MasterView({
       {adding && (
         <AddProjectModal
           gps={data.gps}
-          lokasis={data.lokasis}
           onClose={() => setAdding(false)}
           onCreated={(id) => {
             setAdding(false);
@@ -405,6 +401,71 @@ function GPMaster({ gps, canManage, onChanged }: { gps: GP[]; canManage: boolean
   );
 }
 
+/** Reference-photo gallery for one building type — multi-file upload + delete,
+ *  inline in the Tipe Bangunan row. Thumbnails link to the full-size image. */
+function TypeImages({ type, canManage, onChanged }: { type: BuildingType; canManage: boolean; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const images = type.images ?? [];
+
+  const onPick = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setBusy(true);
+    setErr("");
+    try {
+      for (const f of Array.from(files)) {
+        await api.uploadBuildingTypeImage(type.id, f);
+      }
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const del = (imgId: string) => {
+    void api
+      .deleteBuildingTypeImage(type.id, imgId)
+      .then(onChanged)
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+  };
+
+  return (
+    <div className="bt-gallery" title={err || undefined}>
+      {images.map((img) => (
+        <a key={img.id} className="bt-thumb" href={api.buildingTypeImageUrl(type.id, img.id)} target="_blank" rel="noreferrer" title={img.name}>
+          <img src={api.buildingTypeImageUrl(type.id, img.id)} alt={img.name} loading="lazy" />
+          {canManage && (
+            <button
+              type="button"
+              className="bt-thumb-x"
+              title="Hapus gambar"
+              onClick={(e) => {
+                e.preventDefault();
+                del(img.id);
+              }}
+            >
+              ×
+            </button>
+          )}
+        </a>
+      ))}
+      {canManage && (
+        <>
+          <button type="button" className="bt-thumb-add" disabled={busy} onClick={() => inputRef.current?.click()} title="Unggah gambar (bisa pilih beberapa sekaligus)">
+            {busy ? "…" : "+"}
+          </button>
+          <input ref={inputRef} type="file" accept="image/*" multiple hidden onChange={(e) => void onPick(e.target.files)} />
+        </>
+      )}
+      {err && <span className="bt-thumb-err">!</span>}
+    </div>
+  );
+}
+
 /** Building-type master — DataTable + inline CRUD. */
 function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; canManage: boolean; onChanged: () => void }) {
   const [name, setName] = useState("");
@@ -439,8 +500,8 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
     },
     {
       accessorKey: "luasBangunan",
-      header: "Bangunan",
-      size: 88,
+      header: "Luas Bangunan",
+      size: 100,
       cell: (i) =>
         canManage ? (
           <input className="me-in me-num" type="number" defaultValue={i.row.original.luasBangunan} onBlur={(e) => num(e.target.value) !== i.row.original.luasBangunan && void run(api.saveBuildingType({ ...i.row.original, luasBangunan: num(e.target.value) }))} />
@@ -450,14 +511,21 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
     },
     {
       accessorKey: "luasTanah",
-      header: "Tanah",
-      size: 88,
+      header: "Luas Tanah",
+      size: 100,
       cell: (i) =>
         canManage ? (
           <input className="me-in me-num" type="number" defaultValue={i.row.original.luasTanah} onBlur={(e) => num(e.target.value) !== i.row.original.luasTanah && void run(api.saveBuildingType({ ...i.row.original, luasTanah: num(e.target.value) }))} />
         ) : (
           <span className="num">{i.row.original.luasTanah}</span>
         ),
+    },
+    {
+      id: "images",
+      header: "Gambar",
+      size: 240,
+      enableSorting: false,
+      cell: (i) => <TypeImages type={i.row.original} canManage={canManage} onChanged={onChanged} />,
     },
   ];
   if (canManage) cols.push({ id: "act", header: "", size: 64, enableSorting: false, cell: (i) => <button type="button" className="rv-btn reject" onClick={() => void run(api.deleteBuildingType(i.row.original.id))}>Hapus</button> });
@@ -485,78 +553,6 @@ function TypeMaster({ types, canManage, onChanged }: { types: BuildingType[]; ca
       </div>
       {err && <div className="review-err">{err}</div>}
       {importing && <MasterImportModal kind="tipe" title="Tipe Bangunan" onClose={() => setImporting(false)} onDone={onChanged} />}
-    </section>
-  );
-}
-
-/** Generic single-field ({id,name}) master — used by Lebar + Lokasi. */
-function SimpleMaster<T extends { id: string; name: string }>({
-  title,
-  importKind,
-  tip,
-  placeholder,
-  items,
-  canManage,
-  reload,
-  save,
-  del,
-}: {
-  title: string;
-  importKind: MasterKind;
-  tip: string;
-  placeholder: string;
-  items: T[];
-  canManage: boolean;
-  reload: () => void;
-  save: (v: Partial<T>) => Promise<unknown>;
-  del: (id: string) => Promise<unknown>;
-}) {
-  const [name, setName] = useState("");
-  const [err, setErr] = useState("");
-  const [importing, setImporting] = useState(false);
-  const run = (p: Promise<unknown>) =>
-    p.then(() => {
-      setErr("");
-    }).catch((e) => setErr(e instanceof Error ? e.message : String(e)));
-  const add = () => {
-    if (!name.trim()) return;
-    void run(save({ name: name.trim() } as Partial<T>)).then(() => setName(""));
-  };
-  const cols: ColumnDef<T, unknown>[] = [
-    {
-      accessorKey: "name",
-      header: "Nama",
-      cell: (i) =>
-        canManage ? (
-          <input className="me-in" defaultValue={i.row.original.name} onBlur={(e) => e.target.value.trim() !== i.row.original.name && void run(save({ ...i.row.original, name: e.target.value.trim() }))} />
-        ) : (
-          i.row.original.name
-        ),
-    },
-  ];
-  if (canManage) cols.push({ id: "act", header: "", size: 64, enableSorting: false, cell: (i) => <button type="button" className="rv-btn reject" onClick={() => void run(del(i.row.original.id))}>Hapus</button> });
-  return (
-    <section className="panel">
-      <h2 className="panel-title">
-        {title} · {items.length}
-        <InfoTip tip={tip} />
-        {canManage && (
-          <button type="button" className="acct-refresh" title={`Impor ${title} dari spreadsheet`} onClick={() => setImporting(true)}>
-            ⇪ Import
-          </button>
-        )}
-      </h2>
-      {canManage && (
-        <div className="me-addbar">
-          <input className="me-in" placeholder={placeholder} value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-          <button type="button" className="btn-primary sm" disabled={!name.trim()} onClick={add}>+ Tambah</button>
-        </div>
-      )}
-      <div className="panel-pad">
-        <DataTable columns={cols} data={items} pageSize={6} searchable={items.length > 6} searchPlaceholder="Cari…" empty="Belum ada data." />
-      </div>
-      {err && <div className="review-err">{err}</div>}
-      {importing && <MasterImportModal kind={importKind} title={title} onClose={() => setImporting(false)} onDone={reload} />}
     </section>
   );
 }
